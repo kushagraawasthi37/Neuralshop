@@ -43,7 +43,7 @@ export const registeration = async (req, res) => {
       sameSite: "Strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
     });
-
+    console.log("user created sucessfully");
     return res.status(201).json({ message: "User created successfully", user });
   } catch (error) {
     console.log("Something went wrong. Can't register user");
@@ -68,8 +68,8 @@ export const login = async (req, res) => {
       });
     }
 
-    console.log("User found:", user.email);
-    console.log("Stored hash:", user.password);
+    // console.log("User found:", user.email);
+    // console.log("Stored hash:", user.password);
 
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -91,7 +91,7 @@ export const login = async (req, res) => {
       user,
     });
   } catch (error) {
-    console.log("Login error");
+    // console.log("Login error");
     res.status(500).json({
       message: `Something went wrong while login ${error.message}`,
     });
@@ -106,7 +106,7 @@ export const logout = async (req, res) => {
       message: "logout successfully",
     });
   } catch (error) {
-    console.log("Logout error");
+    // console.log("Logout error");
     res.status(500).json({
       message: `Something went wrong while logout ${error.message}`,
     });
