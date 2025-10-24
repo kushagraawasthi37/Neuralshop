@@ -12,7 +12,11 @@ const port = process.env.PORT || 6000;
 
 app.use(
   cors({
-    origin: process.env.FROTNEND_URL || "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      process.env.FRONTEND_URL,
+    ],
     credentials: true,
   })
 );

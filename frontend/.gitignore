@@ -32,3 +32,4 @@ package-lock.json
 vite.config.js
 node_modules/
 README.md
+.env

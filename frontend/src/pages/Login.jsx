@@ -6,6 +6,8 @@ import { IoEyeOutline } from "react-icons/io5";
 import { IoEye } from "react-icons/io5";
 import { authDataContext } from "../context/authContext";
 import axios from "axios";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../../utils/firebase";
 
 function Login() {
   const navigate = useNavigate();
@@ -26,6 +28,26 @@ function Login() {
       );
 
       console.log(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const googleLogin = async () => {
+    try {
+      const response = await signInWithPopup(auth, provider);
+      const user = response.user;
+      const name = user.displayName;
+      const email = user.email;
+
+      const result = await axios.post(
+        `${serverUrl}/api/auth/googlelogin`,
+        { email, name },
+        {
+          withCredentials: true,
+        }
+      );
+      console.log(result.data);
     } catch (error) {
       console.log(error);
     }
@@ -57,7 +79,10 @@ function Login() {
           onSubmit={loginHandler}
           className="w-[90%] h-[90%] flex flex-col items-center justify-start gap-5"
         >
-          <div className="w-[90%] h-[50px] bg-[#3e636aae] rounded-lg flex items-center justify-center gap-2.5 py-5 cursor-pointer hover:bg-[#1f444cae] hover:scale-95 transition-all duration-200 ease-in-out">
+          <div
+            onClick={googleLogin}
+            className="w-[90%] h-[50px] bg-[#3e636aae] rounded-lg flex items-center justify-center gap-2.5 py-5 cursor-pointer hover:bg-[#1f444cae] hover:scale-95 transition-all duration-200 ease-in-out"
+          >
             <img src={google} alt="" className="w-5" /> Continue with Google
           </div>
           <div className="w-full h-5 flex items-center justify-center gap-2.5">

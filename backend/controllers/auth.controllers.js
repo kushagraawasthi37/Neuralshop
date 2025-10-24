@@ -112,3 +112,33 @@ export const logout = async (req, res) => {
     });
   }
 };
+
+export const googleLogin = async (req, res) => {
+  try {
+    console.log("Google login called");
+    const { email, name } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({ name, email });
+    }
+
+    const token = genToken(user._id);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
+    });
+
+    return res.status(200).json({
+      message: "Login Sucessfully",
+      user,
+    });
+  } catch (error) {
+    console.log("Something went wrong while google login");
+    res
+      .status(500)
+      .json({ message: "Something went wrong while google login" });
+  }
+};
