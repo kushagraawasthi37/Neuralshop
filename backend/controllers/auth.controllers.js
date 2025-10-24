@@ -50,3 +50,65 @@ export const registeration = async (req, res) => {
     return res.status(500).json({ message: `Register error ${error.message}` });
   }
 };
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (validator.isEmpty(email)) {
+      return res.status(400).json({ message: "email required" });
+    }
+    if (validator.isEmpty(password)) {
+      return res.status(400).json({ message: "password required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        message: "User not found",
+      });
+    }
+
+    console.log("User found:", user.email);
+    console.log("Stored hash:", user.password);
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "invalid credentials" });
+    }
+
+    const token = genToken(user._id);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
+    });
+
+    return res.status(200).json({
+      message: "Login Sucessfully",
+      user,
+    });
+  } catch (error) {
+    console.log("Login error");
+    res.status(500).json({
+      message: `Something went wrong while login ${error.message}`,
+    });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("token");
+
+    return res.status(200).json({
+      message: "logout successfully",
+    });
+  } catch (error) {
+    console.log("Logout error");
+    res.status(500).json({
+      message: `Something went wrong while logout ${error.message}`,
+    });
+  }
+};
