@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import cors from "cors";
 import userRoutes from "./routes/user.routes.js";
+import productRoutes from "./routes/product.routes.js";
+import isAuth from "./middlewares/isAuth.js";
 
 dotenv.config();
 
@@ -30,6 +32,9 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/product", productRoutes);
+
+
 
 connectDB();
 

@@ -40,13 +40,13 @@ function Lists() {
     fetchList();
   }, []);
   return (
-    <div className="w-[100vw] min-h-[100vh] bg-gradient-to-l from-[#141414] to-[#0c2025] text-[white]">
+    <div className="w-screen min-h-screen bg-gradient-to-l from-[#141414] to-[#0c2025] text-[white]">
       <Nav />
-      <div className="w-[100%] h-[100%] flex items-center justify-start">
+      <div className="w-full h-full flex items-center justify-start">
         <Sidebar />
 
-        <div className="w-[82%] h-[100%] lg:ml-[320px] md:ml-[230px] mt-[70px] flex flex-col gap-[30px] overflow-x-hidden py-[50px] ml-[100px]">
-          <div className="w-[400px] h-[50px] text-[28px] md:text-[40px] mb-[20px] text-white">
+        <div className="w-[82%] h-full lg:ml-[320px] md:ml-[230px] mt-[70px] flex flex-col gap-[30px] overflow-x-hidden py-[50px] ml-[100px]">
+          <div className="w-[400px] h-[50px] text-[28px] md:text-10 mb-5 text-white">
             All Listed Products
           </div>
 
@@ -62,7 +62,7 @@ function Lists() {
                   alt=""
                 />
                 <div className="w-[90%] h-[80%] flex flex-col items-start justify-center gap-[2px]">
-                  <div className="w-[100%] md:text-[20px] text-[15px] text-[#bef0f3]">
+                  <div className="w-full md:text-5 text-[15px] text-[#bef0f3]">
                     {item.name}
                   </div>
                   <div className="md:text-[17px] text-[15px] text-[#bef3da]">
@@ -72,7 +72,7 @@ function Lists() {
                     ₹{item.price}
                   </div>
                 </div>
-                <div className="w-[10%] h-[100%] bg-transparent flex items-center justify-center">
+                <div className="w-[10%] h-full bg-transparent flex items-center justify-center">
                   <span
                     className="w-[35px] h-[30%] flex items-center justify-center rounded-md md:hover:bg-red-300 md:hover:text-black cursor-pointer"
                     onClick={() => removeList(item._id)}

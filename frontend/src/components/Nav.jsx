@@ -43,22 +43,22 @@ function Nav() {
           className="w-[30px] hover:cursor-pointer"
           onClick={() => navigate("/")}
         />
-        <h1 className="text-5 md:text-[25px] text-[black] font-sans ">
+        <h1 className="text-5 md:text-[20px] text-[black] font-sans ">
           NeuralShop
         </h1>
       </div>
       <div className="w-[50%] lg:w-[40%] hidden md:flex">
         <ul className="flex items-center justify-center gap-[19px] text-[white] ">
-          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-[20px] rounded-2xl">
+          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-5 rounded-2xl">
             HOME
           </li>
-          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-[20px] rounded-2xl">
+          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-5 rounded-2xl">
             COLLECTIONS
           </li>
-          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-[20px] rounded-2xl">
+          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-5 rounded-2xl">
             ABOUT
           </li>
-          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-[20px] rounded-2xl">
+          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-5 rounded-2xl">
             CONTACT
           </li>
         </ul>
@@ -104,7 +104,7 @@ function Nav() {
         <div className=" w-full  h-[65px] md:h-20 bg-[#d8f6f9dd] absolute top-full left-0 right-0 flex items-center justify-center ">
           <input
             type="text"
-            className="lg:w-[50%] ease w-[80%] h-[70%] bg-[#54958f] rounded-[30px] px-[50px] placeholder:text-white text-[white] text-4 md:text-[18px]"
+            className="lg:w-[50%] ease w-[80%] h-[70%] bg-[#54958f] rounded-[30px] px-[50px] placeholder:text-white text-[white] text-4 md:md:text-4"
             placeholder="Search Here"
           />
         </div>
@@ -150,7 +150,7 @@ function Nav() {
       )}
 
       <div
-        className="w-full h-[55px] md:h-[90px] flex items-center justify-between px-[20px] text-[12px]
+        className="w-full h-[55px] md:h-[90px] flex items-center justify-between px-5 text-[12px]
          fixed bottom-0 left-0 bg-[#191818]   md:hidden"
       >
         <button className="text-[white] flex items-center justify-center flex-col gap-0.5">

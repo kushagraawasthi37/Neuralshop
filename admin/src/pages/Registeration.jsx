@@ -56,7 +56,7 @@ const Registeration = () => {
             }}
           />
         </span>
-        <span className="text-[14px] md:text-[20px] text-white/50 ">
+        <span className="text-[14px] md:text-5 text-white/50 ">
           Step into control.Create your admin account now.
         </span>
       </div>

@@ -19,6 +19,8 @@ function Login() {
   const loginHandler = async (e) => {
     try {
       e.preventDefault();
+      console.log(serverUrl);
+
       const response = await axios.post(
         `${serverUrl}/api/auth/adminlogin`,
         { email, password },
