@@ -8,6 +8,7 @@ import { authDataContext } from "../context/authContext";
 import axios from "axios";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../utils/firebase";
+import { userDataContext } from "../context/UserContext";
 
 function Registeration() {
   let navigate = useNavigate();
@@ -17,7 +18,7 @@ function Registeration() {
 
   const [show, setShow] = useState(false);
   const { serverUrl } = useContext(authDataContext);
-  console.log(serverUrl);
+  const { getCurrentUser } = useContext(userDataContext);
 
   const handleSignup = async (e) => {
     try {
@@ -33,6 +34,9 @@ function Registeration() {
         },
         { withCredentials: true }
       );
+
+      getCurrentUser();
+      navigate("/");
 
       console.log(response.data.message);
     } catch (error) {
@@ -54,6 +58,9 @@ function Registeration() {
           withCredentials: true,
         }
       );
+      getCurrentUser();
+      navigate("/");
+
       console.log(result.data);
     } catch (error) {
       console.log(error);

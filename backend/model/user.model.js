@@ -18,6 +18,12 @@ const userSchema = new mongoose.Schema(
       type: Object,
       default: {},
     },
+    // Add a flag to distinguish OAuth users
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
   },
   { timestamps: true, minimize: false }
 );

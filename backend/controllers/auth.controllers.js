@@ -1,144 +1,117 @@
-import { request } from "express";
 import User from "../model/user.model.js";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import { genToken } from "../config/token.js";
 
-export const registeration = async (req, res) => {
+export const registration = async (req, res) => {
   try {
     const { name, email, password } = req.body;
     const existUser = await User.findOne({ email });
-
     if (existUser) {
-      return res.status(400).json({
-        message: "User already exist",
-      });
+      return res.status(400).json({ message: "User already exist" });
     }
-
-    //Check kare ki wo email format mai hai ya nahi
     if (!validator.isEmail(email)) {
-      return res.status(400).json({
-        message: "Enter valid email",
-      });
+      return res.status(400).json({ message: "Enter valid Email" });
     }
-
     if (password.length < 8) {
-      return res.status(400).json({
-        message: "Password must be have atleast size 8",
-      });
+      return res.status(400).json({ message: "Enter Strong Password" });
     }
     let hashPassword = await bcrypt.hash(password, 10);
 
-    const user = await User.create({
-      name,
-      email,
-      password: hashPassword,
-    });
-
+    const user = await User.create({ name, email, password: hashPassword });
     let token = await genToken(user._id);
-
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
       sameSite: "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    console.log("user created sucessfully");
-    return res.status(201).json({ message: "User created successfully", user });
+    return res.status(201).json(user);
   } catch (error) {
-    console.log("Something went wrong. Can't register user");
-    return res.status(500).json({ message: `Register error ${error.message}` });
+    console.log("registration error");
+    return res.status(500).json({ message: `registration error ${error}` });
   }
 };
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (validator.isEmpty(email)) {
-      return res.status(400).json({ message: "email required" });
-    }
-    if (validator.isEmpty(password)) {
-      return res.status(400).json({ message: "password required" });
-    }
-
-    const user = await User.findOne({ email });
+    let { email, password } = req.body;
+    let user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({
-        message: "User not found",
-      });
+      return res.status(404).json({ message: "User is not Found" });
     }
-
-    // console.log("User found:", user.email);
-    // console.log("Stored hash:", user.password);
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
+    let isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "invalid credentials" });
+      return res.status(400).json({ message: "Incorrect password" });
     }
-
-    const token = genToken(user._id);
-
+    let token = await genToken(user._id);
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
       sameSite: "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
-    return res.status(200).json({
-      message: "Login Sucessfully",
-      user,
-    });
+    return res.status(201).json(user);
   } catch (error) {
-    // console.log("Login error");
-    res.status(500).json({
-      message: `Something went wrong while login ${error.message}`,
-    });
+    console.log("login error");
+    return res.status(500).json({ message: `Login error ${error}` });
   }
 };
-
-export const logout = async (req, res) => {
+export const logOut = async (req, res) => {
   try {
     res.clearCookie("token");
-
-    return res.status(200).json({
-      message: "logout successfully",
-    });
+    return res.status(200).json({ message: "logOut successful" });
   } catch (error) {
-    // console.log("Logout error");
-    res.status(500).json({
-      message: `Something went wrong while logout ${error.message}`,
-    });
+    console.log("logOut error");
+    return res.status(500).json({ message: `LogOut error ${error}` });
   }
 };
 
 export const googleLogin = async (req, res) => {
   try {
-    console.log("Google login called");
-    const { email, name } = req.body;
-    const user = await User.findOne({ email });
+    let { name, email } = req.body;
+    let user = await User.findOne({ email });
     if (!user) {
-      user = await User.create({ name, email });
+      user = await User.create({
+        name,
+        email,
+        authProvider: "google",
+      });
     }
 
-    const token = genToken(user._id);
-
+    let token = await genToken(user._id);
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
       sameSite: "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
-    return res.status(200).json({
-      message: "Login Sucessfully",
-      user,
-    });
+    return res.status(200).json(user);
   } catch (error) {
-    console.log("Something went wrong while google login");
-    res
-      .status(500)
-      .json({ message: "Something went wrong while google login" });
+    console.log("googleLogin error", error);
+    return res.status(500).json({ message: `googleLogin error ${error}` });
   }
 };
+
+// export const adminLogin = async (req, res) => {
+//   try {
+//     let { email, password } = req.body;
+//     if (
+//       email === process.env.ADMIN_EMAIL &&
+//       password === process.env.ADMIN_PASSWORD
+//     ) {
+//       let token = await genToken1(email);
+//       res.cookie("token", token, {
+//         httpOnly: true,
+//         secure: false,
+//         sameSite: "Strict",
+//         maxAge: 1 * 24 * 60 * 60 * 1000,
+//       });
+//       return res.status(200).json(token);
+//     }
+//     return res.status(400).json({ message: "Invaild creadintials" });
+//   } catch (error) {
+//     console.log("AdminLogin error");
+//     return res.status(500).json({ message: `AdminLogin error ${error}` });
+//   }
+// };
