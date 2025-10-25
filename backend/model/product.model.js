@@ -49,6 +49,11 @@ const productSchema = new mongoose.Schema(
     bestseller: {
       type: Boolean,
     },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId, // store the admin user's ID
+      ref: "User", // reference the User (or Admin) model
+      required: true,
+    },
   },
   { timestamps: true }
 );

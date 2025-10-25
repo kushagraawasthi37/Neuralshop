@@ -1,11 +1,14 @@
 import uploadOnCloudinary from "../config/cloudinary.js";
+import Admin from "../model/admin.model.js";
 import Product from "../model/product.model.js";
+import userRoutes from "../routes/user.routes.js";
 
 export const addProduct = async (req, res) => {
   try {
     let { name, description, price, category, subCategory, sizes, bestseller } =
       req.body;
 
+    const email = req.email;
     // Check if files exist
     if (
       !req.files?.image1?.[0] ||
@@ -36,6 +39,8 @@ export const addProduct = async (req, res) => {
       });
     }
 
+    const owner = await Admin.findOne({ email });
+
     console.log("All images uploaded successfully");
 
     let productData = {
@@ -51,10 +56,11 @@ export const addProduct = async (req, res) => {
       image3,
       image4,
       date: Date.now(),
+      owner: owner._id,
     };
 
     const product = await Product.create(productData);
-
+    console.log("product added");
     return res.status(201).json({ message: "Product created", product });
   } catch (error) {
     console.error("AddProduct error:", error);
@@ -67,7 +73,9 @@ export const addProduct = async (req, res) => {
 
 export const listProduct = async (req, res) => {
   try {
-    const product = await Product.find({});
+    const email = req.email;
+    const owner = await Admin.findOne({ email });
+    const product = await Product.find({ owner: owner._id });
     return res.status(200).json(product);
   } catch (error) {
     console.log("ListProduct error");
@@ -77,11 +85,33 @@ export const listProduct = async (req, res) => {
 
 export const removeProduct = async (req, res) => {
   try {
-    let { id } = req.params;
-    const product = await Product.findByIdAndDelete(id);
-    return res.status(200).json(product);
+    const { id } = req.params;
+
+    // 1. Get admin ID from email
+    const admin = await Admin.findOne({ email: req.email });
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    // 2. Find product by id
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // 3. Check owner
+    if (product.owner.toString() !== admin._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to delete this product" });
+    }
+
+    // 4. Delete product
+    await product.deleteOne();
+
+    res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
-    console.log("RemoveProduct error");
-    return res.status(500).json({ message: `RemoveProduct error ${error}` });
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong" });
   }
 };

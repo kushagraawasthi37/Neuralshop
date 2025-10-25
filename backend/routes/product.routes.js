@@ -6,12 +6,14 @@ import {
 } from "../controllers/product.controller.js";
 import upload from "../middlewares/multer.js";
 import isAuth from "../middlewares/isAuth.js";
+import isAdmin from "../middlewares/isAdmin.js";
 
 let productRoutes = express.Router();
 
 productRoutes.post(
   "/addproduct",
   isAuth,
+  isAdmin,
   upload.fields([
     { name: "image1", maxCount: 1 },
     { name: "image2", maxCount: 1 },
@@ -21,7 +23,7 @@ productRoutes.post(
   addProduct
 );
 
-productRoutes.get("/list", isAuth, listProduct);
-productRoutes.post("/remove/:id", isAuth, removeProduct);
+productRoutes.get("/list", isAuth, isAdmin, listProduct);
+productRoutes.post("/remove/:id", isAuth, isAdmin, removeProduct);
 
 export default productRoutes;
