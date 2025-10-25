@@ -5,7 +5,7 @@ function Hero(props) {
   const { heroData, heroCount, setHeroCount } = props;
   return (
     <div className="w-[40%] h-full  relative">
-      <div className="absolute  text-[#88d9ee]  text-4 md:text-[40px] lg:text-[55px] md:left-[10%] md:top-[90px] lg:top-[130px] left-[10%] top-2.5">
+      <div className="absolute  text-[#88d9ee]  text- md:text-[40px] lg:text-[55px] md:left-[10%] md:top-[90px] lg:top-[130px] left-[10%] top-2.5">
         <p>{heroData.text1}</p>
         <p>{heroData.text2}</p>
       </div>
@@ -16,24 +16,17 @@ function Hero(props) {
           onClick={() => setHeroCount(0)}
         />
         <FaCircle
-          className={`w-3.5 ${
-            heroCount === 1 ? "text-red-400" : "text-white"
-          }`}
+          className={`w-3.5 ${heroCount === 1 ? "text-red-400" : "text-white"}`}
           onClick={() => setHeroCount(1)}
         />
         <FaCircle
-          className={`w-3.5 ${
-            heroCount === 2 ? "text-red-400" : "text-white"
-          }`}
+          className={`w-3.5 ${heroCount === 2 ? "text-red-400" : "text-white"}`}
           onClick={() => setHeroCount(2)}
         />
         <FaCircle
-          className={`w-3.5 ${
-            heroCount === 3 ? "text-red-400" : "text-white"
-          }`}
+          className={`w-3.5 ${heroCount === 3 ? "text-red-400" : "text-white"}`}
           onClick={() => setHeroCount(3)}
         />
-        
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 import User from "../model/user.model.js";
 import validator from "validator";
 import bcrypt from "bcrypt";
-import { genToken } from "../config/token.js";
+import { genToken, genToken1 } from "../config/token.js";
+import Admin from "../model/admin.model.js";
 
 export const registration = async (req, res) => {
   try {
@@ -93,25 +94,65 @@ export const googleLogin = async (req, res) => {
   }
 };
 
-// export const adminLogin = async (req, res) => {
-//   try {
-//     let { email, password } = req.body;
-//     if (
-//       email === process.env.ADMIN_EMAIL &&
-//       password === process.env.ADMIN_PASSWORD
-//     ) {
-//       let token = await genToken1(email);
-//       res.cookie("token", token, {
-//         httpOnly: true,
-//         secure: false,
-//         sameSite: "Strict",
-//         maxAge: 1 * 24 * 60 * 60 * 1000,
-//       });
-//       return res.status(200).json(token);
-//     }
-//     return res.status(400).json({ message: "Invaild creadintials" });
-//   } catch (error) {
-//     console.log("AdminLogin error");
-//     return res.status(500).json({ message: `AdminLogin error ${error}` });
-//   }
-// };
+export const adminRegistration = async (req, res) => {
+  try {
+    console.log(req.body);
+    const { name, email, password } = req.body;
+    const existAdmin = await Admin.findOne({ email });
+    if (existAdmin) {
+      return res.status(400).json({ message: "Admin already exist" });
+    }
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ message: "Enter valid Email" });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Enter Strong Password" });
+    }
+    let hashPassword = await bcrypt.hash(password, 10);
+
+    const admin = await Admin.create({ name, email, password: hashPassword });
+    let token = await genToken1(email);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Strict",
+      maxAge: 1 * 24 * 60 * 60 * 1000,
+    });
+    console.log("login working");
+    return res.status(201).json(admin);
+  } catch (error) {
+    console.log("registration error");
+    return res.status(500).json({ message: `registration error ${error}` });
+  }
+};
+
+export const adminLogin = async (req, res) => {
+  try {
+    let { email, password } = req.body;
+    let admin = await Admin.findOne({ email });
+    if (!admin) {
+      return res.status(404).json({ message: "admin is not Found" });
+    }
+    console.log(admin);
+    console.log("Entered password:", `"${password}"`);
+    console.log("Stored password:", `"${admin.password}"`);
+
+    let isMatch = await bcrypt.compare(password, admin.password);
+    console.log("password correct ", isMatch);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
+    let token = await genToken1(admin.email);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Strict",
+      maxAge: 1 * 24 * 60 * 60 * 1000,
+    });
+    console.log("login working");
+    return res.status(201).json(admin);
+  } catch (error) {
+    console.log("login error", error);
+    return res.status(500).json({ message: `Login error ${error}` });
+  }
+};

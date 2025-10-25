@@ -14,7 +14,8 @@ const isAuth = async (req, res, next) => {
       // console.log("Verifying token:", token);
       let verifyToken = jwt.verify(token, process.env.JWT_SECRET);
       console.log("Decoded token:", verifyToken);
-      req.userId = verifyToken.userId;
+      req.userId = verifyToken?.userId;
+      req.email = verifyToken?.email;
       next();
     } catch (error) {
       // console.log("JWT error:", error.message);

@@ -1,16 +1,13 @@
 import React, { useContext, useState } from "react";
-import Logo from "../assets/asset/logo.png";
+import Logo from "../assets/logo.png";
 import { useNavigate } from "react-router-dom";
-import google from "../assets/asset/google.png";
 import { IoEyeOutline } from "react-icons/io5";
 import { IoEye } from "react-icons/io5";
 import { authDataContext } from "../context/authContext";
 import axios from "axios";
-import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "../utils/firebase";
-import { userDataContext } from "../context/UserContext";
+import { adminDataContext } from "../context/AdminContext";
 
-function Registeration() {
+const Registeration = () => {
   let navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -18,7 +15,7 @@ function Registeration() {
 
   const [show, setShow] = useState(false);
   const { serverUrl } = useContext(authDataContext);
-  const { getCurrentUser } = useContext(userDataContext);
+  const { getCurrentAdmin } = useContext(adminDataContext);
 
   const handleSignup = async (e) => {
     try {
@@ -26,7 +23,7 @@ function Registeration() {
       e.preventDefault();
 
       const response = await axios.post(
-        `${serverUrl}/api/auth/registeration`,
+        `${serverUrl}/api/auth/adminregister`,
         {
           name,
           email,
@@ -35,33 +32,10 @@ function Registeration() {
         { withCredentials: true }
       );
 
-      getCurrentUser();
+      getCurrentAdmin();
       navigate("/");
 
       console.log(response.data.message);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const googleSignup = async () => {
-    try {
-      const response = await signInWithPopup(auth, provider);
-      const user = response.user;
-      const name = user.displayName;
-      const email = user.email;
-
-      const result = await axios.post(
-        `${serverUrl}/api/auth/googlelogin`,
-        { email, name },
-        {
-          withCredentials: true,
-        }
-      );
-      getCurrentUser();
-      navigate("/");
-
-      console.log(result.data);
     } catch (error) {
       console.log(error);
     }
@@ -82,8 +56,8 @@ function Registeration() {
             }}
           />
         </span>
-        <span className="text-[12px] md:text-[16px] text-white/50 ">
-          Sign Up to Shop Smarter Today
+        <span className="text-[14px] md:text-[20px] text-white/50 ">
+          Step into control.Create your admin account now.
         </span>
       </div>
 
@@ -94,16 +68,6 @@ function Registeration() {
           action=""
           className="w-[90%] h-[90%] flex flex-col items-center justify-start gap-5"
         >
-          <div
-            onClick={googleSignup}
-            className="w-[90%] h-[50px] bg-[#3e636aae] rounded-lg flex items-center justify-center gap-2.5 py-5 cursor-pointer hover:bg-[#1f444cae] hover:scale-95 transition-all duration-200 ease-in-out"
-          >
-            <img src={google} alt="" className="w-5" /> Continue with Google
-          </div>
-          <div className="w-full h-5 flex items-center justify-center gap-2.5">
-            <div className="w-[40%] h-px bg-[#96969635]"></div> OR{" "}
-            <div className="w-[40%] h-px bg-[#96969635]"></div>
-          </div>
           <div className="w-[90%] h-[400px] flex flex-col items-center justify-center gap-[15px]  relative">
             <input
               type="text"
@@ -171,6 +135,6 @@ function Registeration() {
       </div>
     </div>
   );
-}
+};
 
 export default Registeration;
