@@ -96,7 +96,7 @@ function Registeration() {
         >
           <div
             onClick={googleSignup}
-            className="w-[90%] h-[50px] bg-[#3e636aae] rounded-lg flex items-center justify-center gap-2.5 py-5 cursor-pointer hover:bg-[#1f444cae] hover:scale-95 transition-all duration-200 ease-in-out"
+            className="w-[90%] h-[50px] bg-[#5796e3d6] rounded-lg flex items-center justify-center gap-2.5 py-5 cursor-pointer hover:bg-[#2f7eded6] hover:scale-95 transition-all duration-200 ease-in-out"
           >
             <img src={google} alt="" className="w-5" /> Continue with Google
           </div>
@@ -154,7 +154,7 @@ function Registeration() {
                 }}
               />
             )}
-            <button className=" w-full h-[50px] bg-[#6060f5] rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#0909b3] hover:cursor-pointer">
+            <button className=" w-full h-[50px] bg-[#5796e3d7] rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer transition-all duration-200 ease-in-out">
               Create Account
             </button>
             <p className="flex gap-2.5 text-white/50">

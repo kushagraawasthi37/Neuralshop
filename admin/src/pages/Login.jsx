@@ -87,7 +87,7 @@ function Login() {
             {/* Agar show nhi kiya hai to ye icon */}
             {!show && (
               <IoEyeOutline
-                className="w-5 h-5 cursor-pointer absolute bottom-[56%] right-[4%]"
+                className="w-5 h-5 cursor-pointer absolute bottom-[55%] right-[4%]"
                 onClick={() => {
                   setShow((prev) => !prev);
                 }}
@@ -103,7 +103,7 @@ function Login() {
                 }}
               />
             )}
-            <button className=" w-full h-[50px] bg-[#6060f5] rounded-lg flex items-center justify-center mt-5 md:text-[17px] font-semibold active:scale-95 hover:bg-[#000075] hover:cursor-pointer">
+            <button className=" w-full h-[50px] bg-[#5796e3d6] transition-all duration-200 ease-in-out rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer">
               Login
             </button>
             <p className="text-4 md:text-5 flex gap-2.5 text-white/50">

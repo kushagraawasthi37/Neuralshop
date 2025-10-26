@@ -118,7 +118,7 @@ const Registeration = () => {
                 }}
               />
             )}
-            <button className=" w-full h-[50px] bg-[#6060f5] rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#0909b3] hover:cursor-pointer">
+            <button className=" w-full h-[50px] bg-[#5796e3d7] rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer transition-all duration-200 ease-in-out">
               Create Account
             </button>
             <p className="flex gap-2.5 text-white/50">
