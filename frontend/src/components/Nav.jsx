@@ -34,7 +34,8 @@ function Nav() {
   };
 
   return (
-    <div className="w-screen h-[45px] z-100 md:h-[70px] bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940]  fixed top-0 flex items-center justify-between px-[30px] shadow-md shadow-black select-none transition-colors duration-500 ease-in-out">
+    <div 
+    className="w-screen h-[45px] z-100 md:h-[70px] bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940]  fixed top-0 flex items-center justify-between px-[30px] shadow-md shadow-black select-none transition-colors duration-500 ease-in-out">
       <div className="mr-14 w-[20%]  lg:w-[30%] lg:mr-4 flex items-center justify-start gap-2.5">
         <img
           src={logo}

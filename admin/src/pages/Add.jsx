@@ -1,12 +1,9 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import Nav from "../component/Nav";
 import Sidebar from "../component/Sidebar";
 import upload from "../assets/upload image.jpg";
-import { useState } from "react";
 import { authDataContext } from "../context/AuthContext";
 import axios from "axios";
-// import { toast } from 'react-toastify'
-// import Loading from "../component/Loading";
 
 function Add() {
   let [image1, setImage1] = useState(false);
@@ -25,10 +22,10 @@ function Add() {
   let { serverUrl } = useContext(authDataContext);
 
   const handleAddProduct = async (e) => {
+    e.preventDefault();
     try {
-      e.preventDefault();
+      setLoading(true);
       let formData = new FormData();
-
       formData.append("name", name);
       formData.append("description", description);
       formData.append("price", price);
@@ -45,7 +42,9 @@ function Add() {
       let response = await axios.post(
         `${serverUrl}/api/product/addproduct`,
         formData,
-        { withCredentials: true }
+        {
+          withCredentials: true,
+        }
       );
 
       console.log(response.data);
@@ -61,296 +60,227 @@ function Add() {
         setBestSeller(false);
         setCategory("Men");
         setSubCategory("TopWear");
+        setSizes([]);
       }
     } catch (error) {
-      console.log("something went wrong cant add product ", error);
+      console.log("Something went wrong, can't add product", error);
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
-    <div className="w-screen min-h-screen bg-gradient-to-l from-[#141414] to-[#0c2025] text-[white] overflow-x-hidden relative">
+    <div className="min-h-screen bg-gradient-to-l from-[#141414] to-[#0c2025] text-white overflow-hidden flex flex-col">
       <Nav />
-      <Sidebar />
-
-      <div className="w-[82%] h-full flex items-center justify-start overflow-x-hidden absolute  right-0 bottom-[5%] ">
-        <form
-          action=""
-          onSubmit={handleAddProduct}
-          className="w-full md:w-[90%] h-full  mt-[70px] flex flex-col gap-[30px] py-[90px] px-[30px] md:px-[60px]"
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar />
+        <main
+          style={{
+            overflowY: "auto",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+          className="grow mt-[70px] py-2 md:py-6 px-19  md:px-10 lg:px-53 overflow-y-auto "
         >
-          <div className="w-[400px] h-[50px] text-[20px] md:text-10 text-white">
-            Add Product Page
-          </div>
+          <form
+            onSubmit={handleAddProduct}
+            className="max-w-4xl mx-auto flex flex-col gap-6 md:gap-12"
+          >
+            <h1 className="text-2xl md:text-4xl font-semibold text-yellow-400 select-none">
+              Add Product Page
+            </h1>
 
-          <div className="w-[80%] h-[130px] flex items-start justify-center flex-col mt-5  gap-2.5 ">
-            <p className="text-3 md:text-5 md:text-[20px]  md:font-semibold">
-              Upload Images
-            </p>
-            <div className="w-full h-full flex items-center justify-start ">
-              <label
-                htmlFor="image1"
-                className=" w-[65px] h-[65px] md:w-[100px] md:h-[100px] cursor-pointer hover:border-[#46d1f7]"
-              >
-                <img
-                  src={!image1 ? upload : URL.createObjectURL(image1)}
-                  alt=""
-                  className="w-[80%] h-[80%] rounded-lg shadow-2xl hover:border-[#1d1d1d] border-[2px]"
-                />
+            {/* Upload Images */}
+            <section>
+              <h2 className="text-lg md:text-2xl font-semibold mb-4 select-none">
+                Upload Images
+              </h2>
+              <div className="flex flex-wrap gap-6">
+                {[image1, image2, image3, image4].map((img, idx) => (
+                  <label
+                    key={idx}
+                    htmlFor={`image${idx + 1}`}
+                    className="w-[50px] h-[50px] md:w-[100px] md:h-[100px] cursor-pointer border-2 border-transparent rounded-lg shadow-lg hover:border-yellow-400 transition"
+                  >
+                    <img
+                      src={!img ? upload : URL.createObjectURL(img)}
+                      alt={`Upload ${idx + 1}`}
+                      className="w-full h-full rounded-lg object-cover"
+                    />
+                    <input
+                      type="file"
+                      id={`image${idx + 1}`}
+                      hidden
+                      required
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          switch (idx) {
+                            case 0:
+                              setImage1(file);
+                              break;
+                            case 1:
+                              setImage2(file);
+                              break;
+                            case 2:
+                              setImage3(file);
+                              break;
+                            case 3:
+                              setImage4(file);
+                              break;
+                            default:
+                              break;
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            {/* Product Details */}
+            <section className="flex flex-col gap-8">
+              <div className="flex flex-col gap-2 w-full max-w-3xl">
+                <label
+                  htmlFor="productName"
+                  className=" text-lg md:text-xl font-semibold select-none"
+                >
+                  Product Name
+                </label>
                 <input
-                  type="file"
-                  id="image1"
-                  hidden
-                  onChange={(e) => setImage1(e.target.files[0])}
+                  id="productName"
+                  type="text"
+                  placeholder="Type here"
+                  className="w-full h-12 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-5 placeholder-yellow-400 transition"
+                  onChange={(e) => setName(e.target.value)}
+                  value={name}
                   required
                 />
-              </label>
-              <label
-                htmlFor="image2"
-                className=" w-[65px] h-[65px] md:w-[100px] md:h-[100px] cursor-pointer hover:border-[#46d1f7]"
-              >
-                <img
-                  src={!image2 ? upload : URL.createObjectURL(image2)}
-                  alt=""
-                  className="w-[80%] h-[80%] rounded-lg shadow-2xl hover:border-[#1d1d1d] border-[2px]"
-                />
-                <input
-                  type="file"
-                  id="image2"
-                  hidden
-                  onChange={(e) => setImage2(e.target.files[0])}
+              </div>
+
+              <div className="flex flex-col gap-2 w-full max-w-3xl">
+                <label
+                  htmlFor="productDescription"
+                  className="text-lg md:text-xl  font-semibold select-none"
+                >
+                  Product Description
+                </label>
+                <textarea
+                  id="productDescription"
+                  placeholder="Type here"
+                  className="w-full h-24 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-5 py-3 placeholder-yellow-400 resize-none transition"
+                  onChange={(e) => setDescription(e.target.value)}
+                  value={description}
                   required
                 />
-              </label>
-              <label
-                htmlFor="image3"
-                className=" w-[65px] h-[65px] md:w-[100px] md:h-[100px] cursor-pointer hover:border-[#46d1f7]"
-              >
-                <img
-                  src={!image3 ? upload : URL.createObjectURL(image3)}
-                  alt=""
-                  className="w-[80%] h-[80%] rounded-lg shadow-2xl hover:border-[#1d1d1d] border-2"
-                />
+              </div>
+
+              <div className="flex flex-wrap gap-8 max-w-3xl">
+                <div className="flex flex-col gap-2 w-full sm:w-1/3">
+                  <label className="text-lg md:text-xl  font-semibold select-none">
+                    Product Category
+                  </label>
+                  <select
+                    className="w-full h-12 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-4 cursor-pointer transition"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    <option>Men</option>
+                    <option>Women</option>
+                    <option>Kids</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2 w-full sm:w-1/3">
+                  <label className="text-lg md:text-xl  font-semibold select-none">
+                    Sub-Category
+                  </label>
+                  <select
+                    className="w-full h-12 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-4 cursor-pointer transition"
+                    value={subCategory}
+                    onChange={(e) => setSubCategory(e.target.value)}
+                  >
+                    <option>TopWear</option>
+                    <option>BottomWear</option>
+                    <option>WinterWear</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 w-full max-w-3xl">
+                <label
+                  htmlFor="productPrice"
+                  className="text-lg md:text-xl  font-semibold select-none"
+                >
+                  Product Price
+                </label>
                 <input
-                  type="file"
-                  id="image3"
-                  hidden
-                  onChange={(e) => setImage3(e.target.files[0])}
+                  id="productPrice"
+                  type="number"
+                  placeholder="₹ 2000"
+                  className="w-full h-12 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-5 placeholder-yellow-400 transition"
+                  onChange={(e) => setPrice(e.target.value)}
+                  value={price}
                   required
                 />
-              </label>
-              <label
-                htmlFor="image4"
-                className=" w-[65px] h-[65px] md:w-[100px] md:h-[100px] cursor-pointer hover:border-[#46d1f7]"
-              >
-                <img
-                  src={!image4 ? upload : URL.createObjectURL(image4)}
-                  alt=""
-                  className="w-[80%] h-[80%] rounded-lg shadow-2xl hover:border-[#1d1d1d] border-[2px]"
-                />
+              </div>
+
+              <div className="max-w-3xl">
+                <p className="text-lg md:text-xl  font-semibold mb-3 select-none">
+                  Product Size
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  {["S", "M", "L", "XL", "XXL"].map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      className={`px-4 py-2 rounded-lg cursor-pointer bg-[#1a2733] border-2 transition-colors duration-300 select-none ${
+                        sizes.includes(size)
+                          ? "bg-yellow-400 border-yellow-400 text-black"
+                          : "border-transparent text-white hover:border-yellow-400"
+                      }`}
+                      onClick={() =>
+                        setSizes((prev) =>
+                          prev.includes(size)
+                            ? prev.filter((s) => s !== size)
+                            : [...prev, size]
+                        )
+                      }
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 max-w-3xl">
                 <input
-                  type="file"
-                  id="image4"
-                  hidden
-                  onChange={(e) => setImage4(e.target.files[0])}
-                  required
+                  type="checkbox"
+                  id="bestseller"
+                  className="w-6 h-6 cursor-pointer rounded border-2 border-yellow-400 text-yellow-400"
+                  checked={bestseller}
+                  onChange={() => setBestSeller((prev) => !prev)}
                 />
-              </label>
-            </div>
-          </div>
-
-          <div className="w-[80%] h-[100px] flex items-start justify-center flex-col  gap-2.5">
-            <p className="text-3 md:text-5 md:text-[20px]  md:font-semibold">
-              Product Name
-            </p>
-            <input
-              type="text"
-              placeholder="Type here"
-              className="w-[600px] text-3 max-w-[98%] h-8 md:h-10 rounded-lg hover:border-[#46d1f7] border-2 cursor-pointer bg-slate-600 px-5 md:text-4 placeholder:text-[#ffffffc2]"
-              onChange={(e) => {
-                return setName(e.target.value);
-              }}
-              value={name}
-              required
-            />
-          </div>
-
-          <div className="w-[80%] flex items-start justify-center flex-col  gap-[10px]">
-            <p className="text-3 md:text-5 md:text-[20px]  md:font-semibold">
-              Product Description
-            </p>
-            <textarea
-              type="text"
-              placeholder="Type here"
-              className="w-[600px] text-3 max-w-[98%] h-23 md:h-[100px] rounded-lg hover:border-[#46d1f7] border-[2px] cursor-pointer bg-slate-600 px-5 py-2.5  md:text-4 placeholder:text-[#ffffffc2]"
-              onChange={(e) => setDescription(e.target.value)}
-              value={description}
-              required
-            />
-          </div>
-
-          <div className="w-[80%]  flex items-center  gap-[10px] flex-wrap ">
-            <div className="md:w-[30%] w-full flex items-start sm:justify-center flex-col  gap-[10px]">
-              <p className="text-5 md:text-[20px]  md:font-semibold w-full">
-                Product Category
-              </p>
-              <select
-                name=""
-                id=""
-                className="bg-slate-600 text-3 w-[60%] px-2 md:px-[10px] py-1 md:py-[7px] rounded-lg hover:border-[#46d1f7] border-[2px] "
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="Men">Men</option>
-                <option value="Women">Women</option>
-                <option value="Kids">Kids</option>
-              </select>
-            </div>
-            <div className="md:w-[30%] w-full flex items-start sm:justify-center flex-col  gap-2.5">
-              <p className="text-3 md:text-5 md:text-[20px]  md:font-semibold w-full">
-                Sub-Category
-              </p>
-              <select
-                name=""
-                id=""
-                className="bg-slate-600 text-3 w-[60%] px-2 py-1 md:px-[10px] md:py-[7px] rounded-lg hover:border-[#46d1f7] border-[2px] "
-                onChange={(e) => setSubCategory(e.target.value)}
-              >
-                <option className="text-3 md:text-4 " value="TopWear">
-                  TopWear
-                </option>
-                <option className="text-3 md:text-4 " value="BottomWear">
-                  BottomWear
-                </option>
-                <option className="text-3 md:text-4 " value="WinterWear">
-                  WinterWear
-                </option>
-              </select>
-            </div>
-          </div>
-          <div className="w-[80%] h-[100px] flex items-start justify-center flex-col  gap-[10px]">
-            <p className="text-5 md:text-[20px]  md:font-semibold">
-              Product Price
-            </p>
-            <input
-              type="number"
-              placeholder="₹ 2000"
-              className="w-[600px] text-3 max-w-[98%] h-9 md:h-10 rounded-lg hover:border-[#46d1f7] border-[2px] cursor-pointer bg-slate-600 px-5 md:text-4 placeholder:text-[#ffffffc2]"
-              onChange={(e) => setPrice(e.target.value)}
-              value={price}
-              required
-            />
-          </div>
-
-          <div className="w-[80%] h-[220px] md:h-[100px] flex items-start justify-center flex-col gap-[10px] py-[10px] md:py-[0px]">
-            <p className="text-3 md:text-5 md:text-[20px]  md:font-semibold">
-              Product Size
-            </p>
-
-            <div className="flex items-center justify-start gap-[15px] flex-wrap">
-              <div
-                className={`px-3 py-1 text-3 md:px-5 md:py-[7px] rounded-lg bg-slate-600 md:text-4 hover:border-[#46d1f7] border-[2px] cursor-pointer ${
-                  sizes.includes("S")
-                    ? "bg-green-400 text-black border-[#46d1f7]"
-                    : ""
-                }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("S")
-                      ? prev.filter((item) => item !== "S")
-                      : [...prev, "S"]
-                  )
-                }
-              >
-                S
+                <label
+                  htmlFor="bestseller"
+                  className="text-lg md:text-xl  font-semibold select-none"
+                >
+                  Add to BestSeller
+                </label>
               </div>
 
-              <div
-                className={`px-3 py-1 md:px-5 md:py-[7px] rounded-lg bg-slate-600 md:text-4 hover:border-[#46d1f7] border-[2px] cursor-pointer ${
-                  sizes.includes("M")
-                    ? "bg-green-400 text-black border-[#46d1f7]"
-                    : ""
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-30 md:w-40  py-3 rounded-xl bg-yellow-400 text-black font-semibold hover:bg-yellow-500 active:bg-yellow-600 transition duration-200 select-none ${
+                  loading && "opacity-70 cursor-not-allowed"
                 }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("M")
-                      ? prev.filter((item) => item !== "M")
-                      : [...prev, "M"]
-                  )
-                }
               >
-                M
-              </div>
-
-              <div
-                className={`px-3 py-1 md:px-5 md:py-[7px] rounded-lg bg-slate-600 text-3 md:text-4 hover:border-[#46d1f7] border-[2px] cursor-pointer ${
-                  sizes.includes("L")
-                    ? "bg-green-400 text-black border-[#46d1f7]"
-                    : ""
-                }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("L")
-                      ? prev.filter((item) => item !== "L")
-                      : [...prev, "L"]
-                  )
-                }
-              >
-                L
-              </div>
-
-              <div
-                className={`px-3 py-1 md:px-5 md:py-[7px] rounded-lg bg-slate-600 md:text-4 hover:border-[#46d1f7] border-[2px] cursor-pointer ${
-                  sizes.includes("XL")
-                    ? "bg-green-400 text-black border-[#46d1f7]"
-                    : ""
-                }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("XL")
-                      ? prev.filter((item) => item !== "XL")
-                      : [...prev, "XL"]
-                  )
-                }
-              >
-                XL
-              </div>
-
-              <div
-                className={`px-1 py-1 md:px-5 text-3 md:py-[7px] rounded-lg bg-slate-600 md:text-4 hover:border-[#46d1f7] border-[2px] cursor-pointer${
-                  sizes.includes("XXL")
-                    ? "bg-green-400 text-black border-[#46d1f7]"
-                    : ""
-                }`}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes("XXL")
-                      ? prev.filter((item) => item !== "XXL")
-                      : [...prev, "XXL"]
-                  )
-                }
-              >
-                XXL
-              </div>
-            </div>
-          </div>
-
-          <div className="w-[80%] flex items-center justify-start gap-[10px] mt-5">
-            <input
-              type="checkbox"
-              id="checkbox"
-              className="w-[25px] text-3 h-[25px] cursor-pointer"
-              onChange={() => setBestSeller((prev) => !prev)}
-            />
-            <label
-              htmlFor="checkbox"
-              className="text-4 md:text-[20px]  md:font-semibold"
-            >
-              Add to BestSeller
-            </label>
-          </div>
-
-          <button className="w-[140px] px-3 py-2 md:px-5 md:py-5 rounded-xl bg-cyan-400 hover:bg-cyan-500 flex items-center justify-center gap-[10px] text-black font-semibold active:bg-slate-700 active:text-white active:border-2 border-white transition-all duration-200">
-            {loading ? <Loading /> : "Add Product"}
-          </button>
-        </form>
+                {loading ? "Adding..." : "Add Product"}
+              </button>
+            </section>
+          </form>
+        </main>
       </div>
     </div>
   );
