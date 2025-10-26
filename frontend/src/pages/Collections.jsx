@@ -74,10 +74,10 @@ function Collections() {
       <div
         className={`md:w-[28vw] lg:w-[20vw] w-full md:min-h-[100vh] ${
           showFilter ? "h-auto" : "h-[6vh]"
-        } p-3.5 md:p-5 border-r border-white/10 text-white/90 bg-white/5 backdrop-blur-lg shadow-[0_8px_25px_rgba(0,0,0,0.4)] rounded-r-2xl transition-all duration-700 ease-in-out lg:fixed`}
+        } p-3.5 md:p-5 border-r border-white/10 text-white/90 bg-white/5 backdrop-blur-lg shadow-[0_8px_25px_rgba(0,0,0,0.4)] rounded-lg transition-all duration-700 ease-in-out lg:fixed`}
       >
         <p
-          className="text-md md:text-2xl font-semibold flex gap-2 items-center cursor-pointer hover:text-yellow-300 transition-all duration-300"
+          className="text-md md:text-2xl font-semibold flex gap-2 items-center cursor-pointer hover:text-yellow-300 transition-all duration-200"
           onClick={() => setShowFilter((prev) => !prev)}
         >
           FILTERS
@@ -162,7 +162,7 @@ function Collections() {
           <div className="w-full md:w-auto mt-2 md:mt-0 p-2 md:p-3 border border-white/20 rounded-xl backdrop-blur-md bg-white/10 transition-all duration-500 ease-in-out hover:bg-white/20 hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]">
             <button
               onClick={() => setShowSort((prev) => !prev)}
-              className="w-full flex justify-between items-center px-4 py-2 bg-transparent text-white rounded-xl hover:text-yellow-300 transition-all duration-300"
+              className="w-full flex justify-between items-center px-4 md:py-2 bg-transparent text-white rounded-xl hover:text-yellow-300 transition-all duration-300"
             >
               {sortType === "relavent"
                 ? "Sort By: Relevant"

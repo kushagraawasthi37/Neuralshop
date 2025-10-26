@@ -10,11 +10,13 @@ import { HiOutlineCollection } from "react-icons/hi";
 import { MdContacts } from "react-icons/md";
 import axios from "axios";
 import { authDataContext } from "../context/authContext";
+import { shopDataContext } from "../context/ShopContext";
 
 function Nav() {
   let navigate = useNavigate();
   let [showProfile, setShowProfile] = useState(false);
-  let [showSearch, setShowSearch] = useState(false);
+  let { search, setSearch, showSearch, setShowSearch } =
+    useContext(shopDataContext);
   let { serverUrl } = useContext(authDataContext);
   let { getCurrentUser } = useContext(userDataContext);
 
@@ -34,8 +36,7 @@ function Nav() {
   };
 
   return (
-    <div 
-    className="w-screen h-[45px] z-100 md:h-[70px] bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940]  fixed top-0 flex items-center justify-between px-[30px] shadow-md shadow-black select-none transition-colors duration-500 ease-in-out">
+    <div className="w-screen h-[45px] z-100 md:h-[70px] bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940]  fixed top-0 flex items-center justify-between px-[30px] shadow-md shadow-[#150822] select-none transition-colors duration-500 ease-in-out">
       <div className="mr-14 w-[20%]  lg:w-[30%] lg:mr-4 flex items-center justify-start gap-2.5">
         <img
           src={logo}
@@ -86,7 +87,10 @@ function Nav() {
         {/* Search icon */}
         {!showSearch && (
           <IoSearchCircleOutline
-            onClick={() => setShowSearch((prev) => !prev)}
+            onClick={() => {
+              setShowSearch((prev) => !prev);
+              navigate("/collection");
+            }}
             className="h-8.5 w-8.5 md:w-[38px] md:h-[38px] text-white cursor-pointer hover:text-yellow-300 transition-colors duration-300"
           />
         )}
@@ -125,6 +129,10 @@ function Nav() {
             type="text"
             className="lg:w-[50%] ease w-[80%] h-[70%] bg-[#252940] rounded-2xl md:rounded-[30px] px-[50px] placeholder-yellow-300 text-white text-4 md:text-4 focus:outline-yellow-400"
             placeholder="Search Here"
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+            value={search}
           />
         </div>
       )}
@@ -172,7 +180,7 @@ function Nav() {
       )}
 
       {/* Mobile bottom nav (unchanged) */}
-      <div className="w-full h-[45px]  md:h-[90px] flex items-center justify-between px-5 text-[12px] fixed bottom-0 left-0 bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940] md:hidden">
+      <div className="w-full h-[45px]  md:h-[90px] flex items-center justify-between px-5 text-[12px] fixed -bottom-0.5 left-0 bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940] md:hidden">
         <button
           onClick={() => navigate("/")}
           className="text-white flex items-center justify-center flex-col gap-0.5 hover:text-yellow-300 transition-colors duration-300"
