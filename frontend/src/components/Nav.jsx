@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { IoMdHome } from "react-icons/io";
 import { HiOutlineCollection } from "react-icons/hi";
 import { MdContacts } from "react-icons/md";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 import { authDataContext } from "../context/authContext";
 import { shopDataContext } from "../context/ShopContext";
 
@@ -26,9 +26,10 @@ function Nav() {
       const respose = await axios.get(`${serverUrl}/api/auth/logout`, {
         withCredentials: true,
       });
-
       console.log(respose.data);
-      getCurrentUser();
+      localStorage.removeItem("authToken");
+
+      await getCurrentUser();
       navigate("/login");
     } catch (error) {
       console.log(error);

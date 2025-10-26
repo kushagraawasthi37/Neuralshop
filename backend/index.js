@@ -13,13 +13,11 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 6000;
 
+console.log(process.env.FRONTEND_URL_USER);
+console.log(process.env.FRONTEND_URL_ADMIN);
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      process.env.FRONTEND_URL,
-    ],
+    origin: [process.env.FRONTEND_URL_USER, process.env.FRONTEND_URL_ADMIN],
     credentials: true,
   })
 );
@@ -33,8 +31,6 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/product", productRoutes);
-
-
 
 connectDB();
 

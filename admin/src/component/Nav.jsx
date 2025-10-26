@@ -1,7 +1,7 @@
 // import React, { useContext } from 'react'
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 import { useContext } from "react";
 import { authDataContext } from "../context/authContext";
 import { adminDataContext } from "../context/AdminContext";
@@ -12,13 +12,15 @@ function Nav() {
   const { serverUrl } = useContext(authDataContext);
   const { getCurrentAdmin } = useContext(adminDataContext);
 
-  const logOut = () => {
+  const logOut = async () => {
     try {
-      const respose = axios.get(`${serverUrl}/api/auth/logout`, {
+      const respose = await axios.get(`${serverUrl}/api/auth/logout`, {
         withCredentials: true,
       });
       console.log(respose.data);
-      getCurrentAdmin();
+      console.log(respose.data);
+      localStorage.removeItem("authToken");
+      await getCurrentAdmin();
       navigate("/login");
     } catch (error) {
       console.log("Admin logout error", error);

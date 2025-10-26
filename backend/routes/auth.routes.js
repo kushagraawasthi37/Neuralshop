@@ -13,7 +13,7 @@ const authRoutes = express.Router();
 
 authRoutes.post("/registeration", registration);
 authRoutes.post("/login", login);
-authRoutes.get("/logout", isAuth, logOut);
+authRoutes.get("/logout", logOut);
 authRoutes.post("/googlelogin", googleLogin);
 authRoutes.post("/adminlogin", adminLogin);
 authRoutes.post("/adminregister", adminRegistration);

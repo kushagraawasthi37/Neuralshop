@@ -2,7 +2,8 @@ import React, { useContext, useEffect, useState } from "react";
 import Nav from "../component/Nav";
 import Sidebar from "../component/Sidebar";
 import { authDataContext } from "../context/AuthContext";
-import axios from "axios";
+
+import axios from "../context/axiosInstance.js";
 
 function Lists() {
   let [list, setList] = useState([]);
@@ -86,7 +87,9 @@ function Lists() {
               </article>
             ))
           ) : (
-            <p className="text-white text-lg select-none">No products available.</p>
+            <p className="text-white text-lg select-none">
+              No products available.
+            </p>
           )}
         </main>
       </div>

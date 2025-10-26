@@ -25,23 +25,26 @@ export const getCurrentUser = async (req, res) => {
 
 export const getCurrentAdmin = async (req, res) => {
   try {
-    console.log(req.email);
-    const admin = await Admin.findOne({ email: req.email }).select("-password");
+    // Email should be extracted from req.user/email set by auth middleware
+    const email = req.email || (req.user && req.user.email);
+    if (!email) {
+      return res.status(401).json({ message: "Unauthorized: email missing" });
+    }
+
+    const admin = await Admin.findOne({ email }).select("-password");
 
     if (!admin) {
-      return res.status(403).json({
-        message: "admin not found ",
-      });
+      return res.status(403).json({ message: "Admin not found" });
     }
 
     return res.status(200).json({
-      message: "current admin",
-      admin,
+      message: "Current admin fetched successfully",
+      admin, // sending back admin data without password
     });
   } catch (error) {
-    console.log("Something went wrong. Admin not found ", error);
+    console.error("Error in getCurrentAdmin:", error);
     return res.status(500).json({
-      message: "Something went wrong. Admin not found ",
+      message: "Internal Server Error in fetching admin",
     });
   }
 };

@@ -3,7 +3,7 @@ import Nav from "../component/Nav";
 import Sidebar from "../component/Sidebar";
 import upload from "../assets/upload image.jpg";
 import { authDataContext } from "../context/AuthContext";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 
 function Add() {
   let [image1, setImage1] = useState(false);

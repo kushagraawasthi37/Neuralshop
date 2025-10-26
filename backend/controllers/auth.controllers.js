@@ -21,13 +21,15 @@ export const registration = async (req, res) => {
 
     const user = await User.create({ name, email, password: hashPassword });
     let token = await genToken(user._id);
+    const isProd = process.env.NODE_ENV === "production";
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "Strict",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    return res.status(201).json(user);
+    return res.status(201).json({ user, token });
   } catch (error) {
     console.log("registration error");
     return res.status(500).json({ message: `registration error ${error}` });
@@ -46,13 +48,16 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Incorrect password" });
     }
     let token = await genToken(user._id);
+
+    const isProd = process.env.NODE_ENV === "production";
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "Strict",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    return res.status(201).json(user);
+    return res.status(201).json({ user, token });
   } catch (error) {
     console.log("login error");
     return res.status(500).json({ message: `Login error ${error}` });
@@ -63,7 +68,7 @@ export const logOut = async (req, res) => {
     res.clearCookie("token");
     return res.status(200).json({ message: "logOut successful" });
   } catch (error) {
-    console.log("logOut error");
+    console.log("logOut error", error);
     return res.status(500).json({ message: `LogOut error ${error}` });
   }
 };
@@ -81,13 +86,15 @@ export const googleLogin = async (req, res) => {
     }
 
     let token = await genToken(user._id);
+    const isProd = process.env.NODE_ENV === "production";
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "Strict",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    return res.status(200).json(user);
+    return res.status(200).json({ user, token });
   } catch (error) {
     console.log("googleLogin error", error);
     return res.status(500).json({ message: `googleLogin error ${error}` });
@@ -112,14 +119,16 @@ export const adminRegistration = async (req, res) => {
 
     const admin = await Admin.create({ name, email, password: hashPassword });
     let token = await genToken1(email);
+    const isProd = process.env.NODE_ENV === "production";
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "Strict",
-      maxAge: 1 * 24 * 60 * 60 * 1000,
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     console.log("login working");
-    return res.status(201).json(admin);
+    return res.status(201).json({ admin, token });
   } catch (error) {
     console.log("registration error");
     return res.status(500).json({ message: `registration error ${error}` });
@@ -143,14 +152,18 @@ export const adminLogin = async (req, res) => {
       return res.status(400).json({ message: "Incorrect password" });
     }
     let token = await genToken1(admin.email);
+    const isProd = process.env.NODE_ENV === "production";
+    console.log(process.env.NODE_ENV);
+    console.log(isProd);
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "Strict",
-      maxAge: 1 * 24 * 60 * 60 * 1000,
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     console.log("login working");
-    return res.status(201).json(admin);
+    return res.status(201).json({ admin, token });
   } catch (error) {
     console.log("login error", error);
     return res.status(500).json({ message: `Login error ${error}` });

@@ -4,7 +4,7 @@ import React from "react";
 import { useState } from "react";
 import { useContext } from "react";
 import { authDataContext } from "../context/AuthContext";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 import { useEffect } from "react";
 import { SiEbox } from "react-icons/si";
 

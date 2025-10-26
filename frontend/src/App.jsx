@@ -9,83 +9,70 @@ import Collections from "./pages/Collections";
 import About from "./pages/About";
 import Product from "./pages/Product";
 import Contact from "./pages/Contact";
+import ProtectedRoute from "./ProtectedRoute";
+
 const App = () => {
-  let { userData } = useContext(userDataContext);
-  let location = useLocation();
+  const { userData } = useContext(userDataContext);
+  const location = useLocation();
+
+  // Show Nav if userData is present and valid (logged in)
+  const isLoggedIn = userData && Object.keys(userData).length > 0;
+
   return (
     <>
-      {userData && <Nav />}
-
+      {isLoggedIn && <Nav />} {/* Render Nav once for logged-in users */}
       <Routes>
-        <Route
-          path="/signup"
-          element={
-            userData ? (
-              <Navigate to={location.state?.from || "/"} />
-            ) : (
-              <Registeration />
-            )
-          }
-        />
+        <Route path="/signup" element={<Registeration />} />
         <Route
           path="/login"
           element={
-            userData ? <Navigate to={location.state?.from || "/"} /> : <Login />
+            isLoggedIn ? (
+              <Navigate to={location.state?.from || "/"} replace />
+            ) : (
+              <Login />
+            )
           }
         />
 
+        {/* Protected routes without Nav wrapping */}
         <Route
           path="/"
           element={
-            userData ? (
+            <ProtectedRoute>
               <Home />
-            ) : (
-              <Navigate to="/login" state={{ from: location.pathname }} />
-            )
+            </ProtectedRoute>
           }
         />
-
         <Route
           path="/about"
           element={
-            userData ? (
+            <ProtectedRoute>
               <About />
-            ) : (
-              <Navigate to="/login" state={{ from: location.pathname }} />
-            )
+            </ProtectedRoute>
           }
         />
-
         <Route
           path="/collection"
           element={
-            userData ? (
+            <ProtectedRoute>
               <Collections />
-            ) : (
-              <Navigate to="/login" state={{ from: location.pathname }} />
-            )
+            </ProtectedRoute>
           }
         />
-
         <Route
           path="/product"
           element={
-            userData ? (
+            <ProtectedRoute>
               <Product />
-            ) : (
-              <Navigate to="/login" state={{ from: location.pathname }} />
-            )
+            </ProtectedRoute>
           }
         />
-
         <Route
           path="/contact"
           element={
-            userData ? (
+            <ProtectedRoute>
               <Contact />
-            ) : (
-              <Navigate to="/login" state={{ from: location.pathname }} />
-            )
+            </ProtectedRoute>
           }
         />
       </Routes>

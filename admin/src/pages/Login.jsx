@@ -3,7 +3,7 @@ import Logo from "../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { IoEyeOutline } from "react-icons/io5";
 import { IoEye } from "react-icons/io5";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 import { authDataContext } from "../context/authContext";
 import { adminDataContext } from "../context/AdminContext";
 
@@ -28,7 +28,14 @@ function Login() {
           withCredentials: true,
         }
       );
-      getCurrentAdmin();
+      console.log(response.data);
+      console.log(response.data.token);
+      // Save token to localStorage
+      if (response?.data?.token) {
+        localStorage.setItem("authToken", response.data.token);
+      }
+
+      await getCurrentAdmin();
       navigate("/");
 
       console.log(response.data);
@@ -74,6 +81,7 @@ function Login() {
                 setEmail(e.target.value);
               }}
             />
+
             <input
               type={show ? "text" : "password"}
               className="w-full h-[50px] border-2 border-[#96969635] backdrop:blur-sm rounded-lg shadow-lg bg-transparent placeholder-[#ffffffc7] px-5 font-semibold"
@@ -87,7 +95,7 @@ function Login() {
             {/* Agar show nhi kiya hai to ye icon */}
             {!show && (
               <IoEyeOutline
-                className="w-5 h-5 cursor-pointer absolute bottom-[55%] right-[4%]"
+                className="w-5 h-5 cursor-pointer absolute bottom-[56%] right-[4%]"
                 onClick={() => {
                   setShow((prev) => !prev);
                 }}
@@ -103,6 +111,7 @@ function Login() {
                 }}
               />
             )}
+
             <button className=" w-full h-[50px] bg-[#5796e3d6] transition-all duration-200 ease-in-out rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer">
               Login
             </button>

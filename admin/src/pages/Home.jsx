@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import Nav from "../component/Nav";
 import Sidebar from "../component/Sidebar";
 import { authDataContext } from "../context/AuthContext";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 
 function Home() {
   const [totalProducts, setTotalProducts] = useState(0);
@@ -16,14 +16,15 @@ function Home() {
       });
       setTotalProducts(products.data.length);
 
-      const orders = await axios.post(
-        `${serverUrl}/api/order/list`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
-      setTotalOrders(orders.data.length);
+      // const orders = await axios.post(
+      //   `${serverUrl}/api/order/list`,
+      //   {},
+      //   {
+      //     withCredentials: true,
+      //   }
+      // );
+      const orders=[1,2];
+      // setTotalOrders(orders.data.length);
     } catch (err) {
       console.error("Failed to fetch counts", err);
     }

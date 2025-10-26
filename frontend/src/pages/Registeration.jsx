@@ -5,7 +5,7 @@ import google from "../assets/asset/google.png";
 import { IoEyeOutline } from "react-icons/io5";
 import { IoEye } from "react-icons/io5";
 import { authDataContext } from "../context/authContext";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../utils/firebase";
 import { userDataContext } from "../context/UserContext";
@@ -34,11 +34,18 @@ function Registeration() {
         },
         { withCredentials: true }
       );
+      console.log(response.data);
+      console.log(response.data.token);
 
-      getCurrentUser();
+      // Save token to localStorage
+      if (response?.data?.token) {
+        localStorage.setItem("authToken", response.data.token);
+      }
+
+      await getCurrentUser();
       navigate("/");
 
-      console.log(response.data.message);
+      // console.log(response.data.message);
     } catch (error) {
       console.log(error);
     }
@@ -58,7 +65,14 @@ function Registeration() {
           withCredentials: true,
         }
       );
-      getCurrentUser();
+      console.log(result.data);
+      console.log(result.data.token);
+      // Save token to localStorage
+      if (result?.data?.token) {
+        localStorage.setItem("authToken", result.data.token);
+      }
+
+      await getCurrentUser();
       navigate("/");
 
       console.log(result.data);

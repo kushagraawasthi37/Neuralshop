@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { IoEyeOutline } from "react-icons/io5";
 import { IoEye } from "react-icons/io5";
 import { authDataContext } from "../context/authContext";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 import { adminDataContext } from "../context/AdminContext";
 
 const Registeration = () => {
@@ -32,7 +32,14 @@ const Registeration = () => {
         { withCredentials: true }
       );
 
-      getCurrentAdmin();
+      console.log(response.data);
+      console.log(response.data.token);
+      // Save token to localStorage
+      if (response?.data?.token) {
+        localStorage.setItem("authToken", response.data.token);
+      }
+
+      await getCurrentAdmin();
       navigate("/");
 
       console.log(response.data.message);

@@ -5,10 +5,11 @@ import google from "../assets/asset/google.png";
 import { IoEyeOutline } from "react-icons/io5";
 import { IoEye } from "react-icons/io5";
 import { authDataContext } from "../context/authContext";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../utils/firebase";
 import { userDataContext } from "../context/UserContext";
+import serverUrl from "../context/axiosInstance.js";
 
 function Login() {
   const navigate = useNavigate();
@@ -28,7 +29,14 @@ function Login() {
           withCredentials: true,
         }
       );
-      getCurrentUser();
+      console.log(response.data);
+      console.log(response.data.token);
+      // Save token to localStorage
+      if (response?.data?.token) {
+        localStorage.setItem("authToken", response.data.token);
+      }
+
+      await getCurrentUser();
       navigate("/");
 
       console.log(response.data);
@@ -51,7 +59,14 @@ function Login() {
           withCredentials: true,
         }
       );
-      getCurrentUser();
+      // Save token to localStorage
+      console.log(result.data);
+      console.log(result.data.token);
+      if (result?.data?.token) {
+        localStorage.setItem("authToken", result.data.token);
+      }
+
+      await getCurrentUser();
       navigate("/");
       console.log(result.data);
     } catch (error) {
@@ -135,8 +150,7 @@ function Login() {
                 }}
               />
             )}
-            <button 
-            className=" w-full h-[50px] bg-[#5796e3d6] transition-all duration-200 ease-in-out rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer">
+            <button className=" w-full h-[50px] bg-[#5796e3d6] transition-all duration-200 ease-in-out rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer">
               Login
             </button>
             <p className="flex gap-2.5 text-white/50">

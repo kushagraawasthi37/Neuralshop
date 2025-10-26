@@ -1,38 +1,43 @@
 import React from "react";
-// import Title from '../component/Title'
+import Title from "../components/Title";
 import about from "../assets/asset/about.jpg";
-// import NewLetterBox from '../component/NewLetterBox'
+import NewLetterBox from "../components/NewLetterBox";
 
 function About() {
   return (
-    <div className=" w-[99vw] min-h-[100vh] flex items-center justify-center flex-col  bg-gradient-to-l from-[#141414] to-[#0c2025] gap-[50px] pt-[80px]">
+    <div className="w-[99vw] min-h-screen flex flex-col items-center justify-center bg-gradient-to-l from-[#141414] to-[#0c2025] gap-12 pt-20 px-5 md:px-16 select-none">
       <Title text1={"ABOUT"} text2={"US"} />
-      <div className="w-[100%]  flex items-center justify-center flex-col lg:flex-row">
-        <div className="lg:w-[50%] w-[100%] flex items-center justify-center ">
+
+      <div className="w-full flex flex-col lg:flex-row items-center justify-center gap-10">
+        <div className="lg:w-1/2 w-full flex items-center justify-center">
           <img
             src={about}
-            alt=""
-            className="lg:w-[65%] w-[80%] shadow-md shadow-black rounded-sm"
+            alt="About Us"
+            className="
+             w-4/5 lg:w-2/3 shadow-lg rounded-sm transition-transform transition-shadow duration-500
+            hover:scale-105 hover:shadow-[0_0_15px_5px_rgba(45,212,191,0.8)] hover:ring-4 hover:ring-teal-400 hover:ring-opacity-50
+            "
           />
         </div>
-        <div className="lg:w-[50%] w-[80%] flex items-start justify-center gap-[20px]  flex-col mt-[20px] lg:mt-[0px]">
-          <p className="lg:w-[80%] w-[100%] text-[white] md:text-[16px] text-[13px]">
+
+        <div className="lg:w-1/2 w-10/12 flex flex-col gap-5 mt-5 lg:mt-0">
+          <p className="lg:w-4/5 w-full text-white md:text-lg text-sm leading-relaxed">
             NeuralShop born for smart, seamless shopping—created to deliver
             quality products, trending styles, and everyday essentials in one
             place. With reliable service, fast delivery, and great value,
             NeuralShop makes your online shopping experience simple, satisfying,
             and stress-free.
           </p>
-          <p className="lg:w-[80%] w-[100%] text-[white] md:text-[16px] text-[13px]">
+          <p className="lg:w-4/5 w-full text-white md:text-lg text-sm leading-relaxed">
             modern shoppers—combining style, convenience, and affordability.
             Whether it’s fashion, essentials, or trends, we bring everything you
             need to one trusted platform with fast delivery, easy returns, and a
             customer-first shopping experience you’ll love.
           </p>
-          <p className="lg:w-[80%] w-[100%] text-[15px] text-[white] lg:text-[18px] mt-[10px] font-bold">
+          <p className="lg:w-4/5 w-full text-white md:text-xl text-base font-bold mt-3">
             Our Mission
           </p>
-          <p className="lg:w-[80%] w-[100%] text-[white] md:text-[16px] text-[13px]">
+          <p className="lg:w-4/5 w-full text-white md:text-lg text-sm leading-relaxed">
             Our mission is to redefine online shopping by delivering quality,
             affordability, and convenience. NeuralShop connects customers with
             trusted products and brands, offering a seamless, customer-focused
@@ -41,38 +46,37 @@ function About() {
           </p>
         </div>
       </div>
-      <div className="w-[100%] flex items-center justify-center flex-col gap-[10px]">
-        <Title text1={"WHY"} text2={"CHOOSE US"} />
-        <div className="w-[80%] flex items-center justify-center lg:flex-row flex-col py-[40px]">
-          <div className="lg:w-[33%] w-[90%] h-[250px] border-[1px] border-gray-100 flex items-center justify-center gap-[20px] flex-col  px-[40px] py-[10px] text-[white] backdrop-blur-[2px] bg-[#ffffff0b]">
-            <b className="text-[20px] font-semibold text-[#bff1f9]">
-              Quality Assurance
-            </b>
-            <p>
-              We guarantee quality through strict checks, reliable sourcing, and
-              a commitment to customer satisfaction always.
-            </p>
+
+      <div className="w-full max-w-6xl flex flex-col md:flex-row justify-center gap-8 py-10">
+        {[
+          {
+            title: "Quality Assurance",
+            desc: "We guarantee quality through strict checks, reliable sourcing, and a commitment to customer satisfaction always.",
+          },
+          {
+            title: "Convenience",
+            desc: "Shop easily with fast delivery, simple navigation, secure checkout, and everything you need in one place.",
+          },
+          {
+            title: "Exceptional Customer Service",
+            desc: "Our dedicated support team ensures quick responses, helpful solutions, and a smooth shopping experience every time.",
+          },
+        ].map(({ title, desc }, idx) => (
+          <div
+            key={idx}
+            className="
+        w-11/12 sm:w-72 md:w-80 lg:w-1/3 h-60 border border-gray-200 rounded-xl backdrop-blur-[2px] bg-white/5
+        shadow-lg shadow-black/50 p-6 flex flex-col justify-center items-center gap-4
+        text-white text-center transition-all duration-500 ease-in-out transform
+        hover:scale-105 hover:shadow-[0_0_25px_8px_rgba(12,34,37,0.85)] cursor-pointer
+      "
+          >
+            <b className="text-xl font-semibold text-[#bff1f9]">{title}</b>
+            <p className="text-sm leading-relaxed">{desc}</p>
           </div>
-          <div className="lg:w-[33%] w-[90%] h-[250px] border-[1px] border-gray-100 flex items-center justify-center gap-[20px] flex-col  px-[40px] py-[10px] text-[white] backdrop-blur-[2px] bg-[#ffffff0b]">
-            <b className="text-[20px] font-semibold text-[#bff1f9]">
-              Convenience
-            </b>
-            <p>
-              Shop easily with fast delivery, simple navigation, secure
-              checkout, and everything you need in one place.
-            </p>
-          </div>
-          <div className="lg:w-[33%] w-[90%] h-[250px] border-[1px] border-gray-100 flex items-center justify-center gap-[20px] flex-col  px-[40px] py-[10px] text-[white] backdrop-blur-[2px] bg-[#ffffff0b]">
-            <b className="text-[20px] font-semibold text-[#bff1f9]">
-              Exceptional Customer Service
-            </b>
-            <p>
-              Our dedicated support team ensures quick responses, helpful
-              solutions, and a smooth shopping experience every time.
-            </p>
-          </div>
-        </div>
+        ))}
       </div>
+
       <NewLetterBox />
     </div>
   );

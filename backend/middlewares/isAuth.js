@@ -5,7 +5,12 @@ const isAuth = async (req, res, next) => {
     // console.log("Cookies received:", req.cookies);
     // console.log("Token:", req.cookies?.token);
 
-    const token = req.cookies?.token;
+    const authHeader = req.header("Authorization");
+    const token =
+      req.cookies?.token ||
+      (authHeader && authHeader.startsWith("Bearer ")
+        ? authHeader.split(" ")[1].trim()
+        : null);
 
     if (!token) {
       return res.status(400).json({ message: "user does not have token" });
@@ -26,7 +31,5 @@ const isAuth = async (req, res, next) => {
     return res.status(500).json({ message: `isAuth error ${error}` });
   }
 };
-
-
 
 export default isAuth;

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { authDataContext } from "./authContext";
-import axios from "axios";
+import axios from "../context/axiosInstance.js";
 import { userDataContext } from "./UserContext";
 // import { toast } from 'react-toastify'
 
