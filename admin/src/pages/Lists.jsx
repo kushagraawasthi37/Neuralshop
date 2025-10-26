@@ -10,8 +10,7 @@ function Lists() {
 
   const fetchList = async () => {
     try {
-      // Should be:
-      const result = await axios.get(`${serverUrl}/api/product/list`, {
+      const result = await axios.get(`${serverUrl}/api/product/admin/list`, {
         withCredentials: true,
       });
       setList(result.data);
@@ -28,7 +27,6 @@ function Lists() {
         {},
         { withCredentials: true }
       );
-
       if (result.data) {
         fetchList();
       } else {
@@ -42,53 +40,55 @@ function Lists() {
   useEffect(() => {
     fetchList();
   }, []);
+
   return (
-    <div className="w-screen min-h-screen bg-gradient-to-l from-[#141414] to-[#0c2025] text-[white]">
+    <div className="w-screen min-h-screen bg-gradient-to-l from-[#10121a] via-[#1a1f2e] to-[#252940] text-white">
       <Nav />
-      <div className="w-full h-full flex items-center justify-start">
+      <div className="flex">
         <Sidebar />
 
-        <div className="w-[82%] h-full lg:ml-[320px] md:ml-[230px] mt-[70px] flex flex-col gap-[30px] overflow-x-hidden py-[50px] ml-[100px]">
-          <div className="w-[400px] h-[50px] text-[28px] md:text-10 mb-5 text-white">
+        <main className="flex-grow mt-[70px] py-[50px] px-5.5 md:px-10  ml-10 lg:px-16 lg:ml-[320px] md:ml-[230px] overflow-x-hidden flex flex-col md:gap-6 gap-3">
+          <h2 className="text-center text-2xl md:text-4xl font-semibold  md:mb-6 select-none truncate">
             All Listed Products
-          </div>
+          </h2>
 
           {list?.length > 0 ? (
             list.map((item, index) => (
-              <div
-                className="w-[90%] md:h-[120px] h-[90px] bg-slate-600 rounded-xl flex items-center justify-start gap-[5px] md:gap-[30px] p-[10px] md:px-[30px]"
+              <article
                 key={index}
+                className="w-full max-w-6xl min-w-0 h-[90px] md:h-[120px] bg-white/5 rounded-2xl p-1 md:p-2 flex items-center gap-4 md:gap-10 shadow-md hover:shadow-lg transition-shadow duration-300"
               >
                 <img
                   src={item.image1}
-                  className="w-[30%] md:w-[120px] h-[90%] rounded-lg"
-                  alt=""
+                  alt={item.name}
+                  className="w-[30%] md:w-[140px] h-full rounded-xl object-cover flex-shrink-0"
                 />
-                <div className="w-[90%] h-[80%] flex flex-col items-start justify-center gap-[2px]">
-                  <div className="w-full md:text-5 text-[15px] text-[#bef0f3]">
+                <div className="flex flex-col justify-center flex-grow gap-1 min-w-0 overflow-hidden">
+                  <h3 className="text-lg md:text-xl text-yellow-300 font-semibold truncate select-text">
                     {item.name}
-                  </div>
-                  <div className="md:text-[17px] text-[15px] text-[#bef3da]">
+                  </h3>
+                  <p className="text-md md:text-lg text-[#b6ecf3] truncate select-text">
                     {item.category}
-                  </div>
-                  <div className="md:text-[17px] text-[15px] text-[#bef3da]">
+                  </p>
+                  <p className="text-md md:text-lg text-[#b6ecf3] truncate select-text">
                     ₹{item.price}
-                  </div>
+                  </p>
                 </div>
-                <div className="w-[10%] h-full bg-transparent flex items-center justify-center">
-                  <span
-                    className="w-[35px] h-[30%] flex items-center justify-center rounded-md md:hover:bg-red-300 md:hover:text-black cursor-pointer"
+                <div className="flex items-center justify-center w-[50px] md:w-[70px] flex-shrink-0">
+                  <button
                     onClick={() => removeList(item._id)}
+                    className="w-10 h-8 rounded-md bg-red-600 text-white text-lg font-bold flex items-center justify-center hover:bg-red-500 focus:outline-none transition-colors duration-300"
+                    aria-label={`Remove ${item.name}`}
                   >
-                    X
-                  </span>
+                    &times;
+                  </button>
                 </div>
-              </div>
+              </article>
             ))
           ) : (
-            <div className="text-white text-lg">No products available.</div>
+            <p className="text-white text-lg select-none">No products available.</p>
           )}
-        </div>
+        </main>
       </div>
     </div>
   );

@@ -32,7 +32,14 @@ function Nav() {
         onClick={() => navigate("/")}
       >
         <img src={logo} alt="" className="w-8 md:w-[30px]" />
-        <h1 className="text-5 md:text-[20px] text-white font-sans font-bold ">
+        <h1
+          className="text-5 font-bold md:text-[20px] font-sans select-none"
+          style={{
+            background: "linear-gradient(90deg, #ffd43b, #ffea7f)", // warm yellow gradient
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
           NeuralShop
         </h1>
       </div>
