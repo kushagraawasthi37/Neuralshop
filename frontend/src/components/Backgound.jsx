@@ -5,39 +5,17 @@ import img3 from "../assets/asset/back2.jpg";
 import img4 from "../assets/asset/back4.jpg";
 
 function Backgound({ heroCount }) {
-  if (heroCount === 0) {
-    return (
+  const imgs = [img1, img2, img3, img4];
+  return (
+    <div className="relative w-full h-full">
       <img
-        src={img1}
+        src={imgs[heroCount]}
         alt=""
-        className="w-full h-full  float-left overflow-auto  object-cover"
+        className="w-full h-full object-cover brightness-[0.9] contrast-[1.1] transition-all duration-700"
       />
-    );
-  } else if (heroCount === 1) {
-    return (
-      <img
-        src={img2}
-        alt=""
-        className="w-full h-full float-left overflow-auto  object-cover"
-      />
-    );
-  } else if (heroCount === 2) {
-    return (
-      <img
-        src={img3}
-        alt=""
-        className="w-full  h-full float-left overflow-auto  object-cover"
-      />
-    );
-  } else if (heroCount === 3) {
-    return (
-      <img
-        src={img4}
-        alt=""
-        className="w-full h-full float-left overflow-auto  object-cover"
-      />
-    );
-  }
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0f]/60 via-[#141b2e]/40 to-[#1a223a]/50"></div>
+    </div>
+  );
 }
 
 export default Backgound;

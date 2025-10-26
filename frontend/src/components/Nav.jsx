@@ -1,10 +1,9 @@
 import React, { useContext, useState } from "react";
 import logo from "../assets/asset/logo.png";
-import { IoSearchCircleOutline } from "react-icons/io5";
+import { IoSearchCircleOutline, IoSearchCircleSharp } from "react-icons/io5";
 import { FaCircleUser } from "react-icons/fa6";
-import { MdOutlineShoppingCart } from "react-icons/md";
+import { MdOutlineShoppingCart, MdViewAgenda } from "react-icons/md";
 import { userDataContext } from "../context/UserContext";
-import { IoSearchCircleSharp } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { IoMdHome } from "react-icons/io";
 import { HiOutlineCollection } from "react-icons/hi";
@@ -35,30 +34,49 @@ function Nav() {
   };
 
   return (
-    <div className="w-screen  h-[45px]  md:h-[70px] bg-[#cbe4e4ec] z-10 fixed top-0 flex  items-center justify-between px-[30px] shadow-md shadow-black ">
-      <div className="w-[20%] lg:w-[30%] mr-4 flex items-center justify-start   gap-2.5">
+    <div className="w-screen h-[45px] z-100 md:h-[70px] bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940]  fixed top-0 flex items-center justify-between px-[30px] shadow-md shadow-black select-none transition-colors duration-500 ease-in-out">
+      <div className="mr-14 w-[20%]  lg:w-[30%] lg:mr-4 flex items-center justify-start gap-2.5">
         <img
           src={logo}
           alt=""
-          className="w-[30px] hover:cursor-pointer"
+          className="w-[30px] cursor-pointer transition-transform duration-300 hover:scale-110"
           onClick={() => navigate("/")}
         />
-        <h1 className="text-5 md:text-[20px] text-[black] font-sans ">
+        <h1
+          className="text-5 font-bold md:text-[20px] font-sans select-none"
+          style={{
+            background: "linear-gradient(90deg, #ffd43b, #ffea7f)", // warm yellow gradient
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
           NeuralShop
         </h1>
       </div>
-      <div className="w-[50%] lg:w-[40%] hidden md:flex">
-        <ul className="flex items-center justify-center gap-[19px] text-[white] ">
-          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-5 rounded-2xl">
+      <div className="w-[50%]  lg:w-[40%] hidden md:flex items-center ">
+        <ul className="flex items-center justify-center gap-3 lg:gap-[19px] text-yellow-400">
+          <li
+            onClick={() => navigate("/")}
+            className=" text-3 lg:text-[15px] bg-white/10 hover:bg-yellow-500/50 cursor-pointer py-1 lg:py-2.5 px-3 lg:px-5 rounded-xl lg:rounded-2xl transition-colors duration-300"
+          >
             HOME
           </li>
-          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-5 rounded-2xl">
+          <li
+            onClick={() => navigate("/collection")}
+            className="text-3 lg:text-[15px] bg-white/10 hover:bg-yellow-500/50 cursor-pointer py-1 lg:py-2.5 px-3 lg:px-5 rounded-xl lg:rounded-2xl transition-colors duration-300"
+          >
             COLLECTIONS
           </li>
-          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-5 rounded-2xl">
+          <li
+            onClick={() => navigate("/about")}
+            className="text-3 lg:text-[15px] bg-white/10 hover:bg-yellow-500/50 cursor-pointer py-1 lg:py-2.5 px-3 lg:px-5 rounded-xl lg:rounded-2xl transition-colors duration-300"
+          >
             ABOUT
           </li>
-          <li className="text-[15px] hover:bg-slate-500 cursor-pointer bg-[#000000c9] py-2.5 px-5 rounded-2xl">
+          <li
+            onClick={() => navigate("/contact")}
+            className="text-3 lg:text-[15px] bg-white/10 hover:bg-yellow-500/50 cursor-pointer py-1 lg:py-2.5 px-3 lg:px-5 rounded-xl lg:rounded-2xl transition-colors duration-300"
+          >
             CONTACT
           </li>
         </ul>
@@ -68,13 +86,13 @@ function Nav() {
         {!showSearch && (
           <IoSearchCircleOutline
             onClick={() => setShowSearch((prev) => !prev)}
-            className="h-8.5 w-8.5 md:w-[38px] md:h-[38px] text-[#000000]  cursor-pointer"
+            className="h-8.5 w-8.5 md:w-[38px] md:h-[38px] text-white cursor-pointer hover:text-yellow-300 transition-colors duration-300"
           />
         )}
         {showSearch && (
           <IoSearchCircleSharp
             onClick={() => setShowSearch((prev) => !prev)}
-            className="transition-all duration-300 ease w-8.5 h-8.5 md:w-[38px]  md:h-[38px] text-[#000000]  cursor-pointer"
+            className="transition-all duration-300 ease w-8.5 h-8.5 md:w-[38px] md:h-[38px] text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors duration-300"
           />
         )}
 
@@ -82,38 +100,38 @@ function Nav() {
         {!userData && (
           <FaCircleUser
             onClick={() => setShowProfile((prev) => !prev)}
-            className="w-7 h-7 md:w-[29px] md:h-[29px] text-[#000000]  cursor-pointer"
+            className="w-7 h-7 md:w-[29px] md:h-[29px] text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors duration-300"
           />
         )}
         {userData && (
           <div
             onClick={() => setShowProfile((prev) => !prev)}
-            className="h-6.5 w-6.5 md:w-[30px] md:h-[30px] bg-[#080808] text-[white] rounded-full flex items-center justify-center cursor-pointer"
+            className="h-6.5 w-6.5 md:w-[30px] md:h-[30px] bg-yellow-500 text-[#10121a] rounded-full flex items-center justify-center cursor-pointer hover:bg-yellow-400 transition-colors duration-300 select-none font-semibold"
           >
             {userData?.user?.name?.slice(0, 1)}
           </div>
         )}
 
         {/* Cart */}
-        <MdOutlineShoppingCart className="h-6 w-6 md:w-[30px] md:h-[30px] text-[#000000]  cursor-pointer hidden md:block" />
-        <p className="absolute w-[18px] h-[18px] items-center  justify-center bg-black px-[5px] py-[2px] text-white  rounded-full text-[9px] top-2.5 right-[23px] hidden md:block"></p>
+        <MdOutlineShoppingCart className="h-6 w-6 md:w-[30px] md:h-[30px] text-white cursor-pointer hover:text-yellow-300 transition-colors duration-300 hidden md:block" />
+        <p className="absolute w-[18px] h-[18px] flex items-center justify-center bg-yellow-400 text-[#10121a] rounded-full text-[11px] font-semibold select-none top-2.5 right-[23px] hidden md:block"></p>
       </div>
 
       {/* SearchBox */}
       {showSearch && (
-        <div className=" w-full  h-[65px] md:h-20 bg-[#d8f6f9dd] absolute top-full left-0 right-0 flex items-center justify-center ">
+        <div className="w-full h-[50px] md:h-20 bg-[#1a1f2e] absolute top-full left-0 right-0 flex items-center justify-center transition-colors duration-300">
           <input
             type="text"
-            className="lg:w-[50%] ease w-[80%] h-[70%] bg-[#54958f] rounded-[30px] px-[50px] placeholder:text-white text-[white] text-4 md:md:text-4"
+            className="lg:w-[50%] ease w-[80%] h-[70%] bg-[#252940] rounded-2xl md:rounded-[30px] px-[50px] placeholder-yellow-300 text-white text-4 md:text-4 focus:outline-yellow-400"
             placeholder="Search Here"
           />
         </div>
       )}
 
-      {/* Jab profile icon par click kroge to toggle hoga */}
+      {/* Profile dropdown */}
       {showProfile && (
-        <div className="absolute w-30 h-45 md:w-[220px] md:h-[150px] bg-[#151414d7] top-[110%] right-[4%] border-[1px] border-[#aaa9a9] rounded-2.5 z-10">
-          <ul className="w-full h-full flex items-start justify-around flex-col text-[17px] py-2.5 text-[white] ">
+        <div className="absolute w-30 h-45 md:w-[220px] md:h-[150px] bg-[#151414d7] top-[110%] right-[4%] border-[1px] border-yellow-400 rounded-2.5 z-10 transition-colors duration-300">
+          <ul className="w-full h-full flex items-start justify-around flex-col text-2 md:text-[17px] py-2.5 text-white hover:text-yellow-400">
             {/* User nahi hai to login show hoga */}
             {!userData && (
               <li
@@ -121,7 +139,7 @@ function Nav() {
                   navigate("/login");
                   setShowProfile(false);
                 }}
-                className="w-full hover:bg-[#2f2f2f]  px-[15px] py-2.5 cursor-pointer"
+                className="w-full hover:bg-yellow-600  px-[15px] py-2.5 cursor-pointer transition-colors duration-300 rounded"
               >
                 Login
               </li>
@@ -134,42 +152,55 @@ function Nav() {
                   logout();
                   setShowProfile(false);
                 }}
-                className="w-full hover:bg-[#2f2f2f]  px-[15px] py-2.5 cursor-pointer"
+                className="w-full hover:bg-yellow-600 px-[15px] py-2.5 cursor-pointer transition-colors duration-300 rounded"
               >
                 LogOut
               </li>
             )}
-            <li className="w-full hover:bg-[#2f2f2f]  px-[15px] py-2.5 cursor-pointer">
+            <li className="w-full hover:bg-yellow-600 px-[15px] py-2.5 cursor-pointer transition-colors duration-300 rounded">
               Orders
             </li>
-            <li className="w-full hover:bg-[#2f2f2f]  px-[15px] py-2.5 cursor-pointer">
+            <li
+              onClick={() => navigate("/about")}
+              className="w-full hover:bg-yellow-600 px-[15px] py-2.5 cursor-pointer transition-colors duration-300 rounded"
+            >
               About
             </li>
           </ul>
         </div>
       )}
 
-      <div
-        className="w-full h-[55px] md:h-[90px] flex items-center justify-between px-5 text-[12px]
-         fixed bottom-0 left-0 bg-[#191818]   md:hidden"
-      >
-        <button className="text-[white] flex items-center justify-center flex-col gap-0.5">
-          <IoMdHome className="w-[25px] h-[25px]  md:w-7 md:h-7 text-[white] md:hidden" />{" "}
+      {/* Mobile bottom nav (unchanged) */}
+      <div className="w-full h-[45px]  md:h-[90px] flex items-center justify-between px-5 text-[12px] fixed bottom-0 left-0 bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940] md:hidden">
+        <button
+          onClick={() => navigate("/")}
+          className="text-white flex items-center justify-center flex-col gap-0.5 hover:text-yellow-300 transition-colors duration-300"
+        >
+          <IoMdHome className="w-[22px] h-[22px] md:w-7 md:h-7 hover:text-yellow-400 md:hidden" />{" "}
           Home
         </button>
-        <button className="text-[white] flex items-center justify-center flex-col gap-[2px]">
-          <HiOutlineCollection className="w-[25px] h-[25px] md:w-7 md:h-7 text-[white] md:hidden" />{" "}
+        <button
+          onClick={() => navigate("/collection")}
+          className="text-white flex items-center justify-center flex-col gap-[2px] hover:text-yellow-300 transition-colors duration-300"
+        >
+          <HiOutlineCollection className="w-[22px] h-[22px] md:w-7 md:h-7 hover:text-yellow-400 md:hidden" />{" "}
           Collections
         </button>
-        <button className="text-[white] flex items-center justify-center flex-col gap-[2px] ">
-          <MdContacts className="w-[25px] h-[25px] md:w-7 md:h-7 text-[white] md:hidden" />
+        <button
+          onClick={() => navigate("/contact")}
+          className="text-white flex items-center justify-center flex-col gap-[2px] hover:text-yellow-300 transition-colors duration-300"
+        >
+          <MdContacts className="w-[22px] h-[22px] md:w-7 md:h-7 hover:text-yellow-400 md:hidden" />
           Contact
         </button>
-        <button className="text-[white] flex items-center justify-center flex-col gap-[2px]">
-          <MdOutlineShoppingCart className="w-[25px] h-[25px] md:w-7 md:h-7 text-[white] md:hidden" />{" "}
+        <button
+          onClick={() => navigate("/cart")}
+          className="text-white flex items-center justify-center flex-col gap-[2px] hover:text-yellow-300 transition-colors duration-300"
+        >
+          <MdOutlineShoppingCart className="w-[22px] h-[22px] md:w-7 md:h-7 hover:text-yellow-400 md:hidden" />{" "}
           Cart
         </button>
-        <p className="absolute w-3 h-3 md:w-[18px] md:h-[18px] flex items-center justify-center bg-white px-[5px] py-0.5 text-black font-semibold  rounded-full text-[9px] top-[5px] right-[17px] md:top-2 md:right-[18px]"></p>
+        <p className="absolute h-2.5 w-2.5 md:w-[18px] md:h-[18px] flex items-center justify-center bg-white px-[5px] py-0.5 text-[#10121a] rounded-full text-[9px] top-0 right-4.5 md:top-2  md:right-[18px]"></p>
       </div>
     </div>
   );
