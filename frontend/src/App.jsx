@@ -11,6 +11,7 @@ import Product from "./pages/Product";
 import Contact from "./pages/Contact";
 import ProtectedRoute from "./ProtectedRoute";
 import ProductDetail from "./pages/ProductDetail"
+import Cart from "./pages/Cart";
 
 const App = () => {
   const { userData } = useContext(userDataContext);
@@ -81,6 +82,14 @@ const App = () => {
           element={
             <ProtectedRoute>
               <ProductDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <Cart/>
             </ProtectedRoute>
           }
         />

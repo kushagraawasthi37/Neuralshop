@@ -15,7 +15,7 @@ import { shopDataContext } from "../context/ShopContext";
 function Nav() {
   let navigate = useNavigate();
   let [showProfile, setShowProfile] = useState(false);
-  let { search, setSearch, showSearch, setShowSearch } =
+  let { search, setSearch, showSearch, setShowSearch, getCartCount } =
     useContext(shopDataContext);
   let { serverUrl } = useContext(authDataContext);
   let { getCurrentUser } = useContext(userDataContext);
@@ -119,8 +119,13 @@ function Nav() {
         )}
 
         {/* Cart */}
-        <MdOutlineShoppingCart className="h-6 w-6 md:w-[30px] md:h-[30px] text-white cursor-pointer hover:text-yellow-300 transition-colors duration-300 hidden md:block" />
-        <p className="absolute w-[18px] h-[18px] flex items-center justify-center bg-yellow-400 text-[#10121a] rounded-full text-[11px] font-semibold select-none top-2.5 right-[23px] hidden md:block"></p>
+        <MdOutlineShoppingCart
+          onClick={() => navigate("/cart")}
+          className="h-6 w-6 md:w-[30px] md:h-[30px] text-white cursor-pointer hover:text-yellow-300 transition-colors duration-300 hidden md:block"
+        />
+        <p className="absolute w-[14px] h-[14px] flex items-center justify-center bg-white text-black  rounded-full text-[11px] text-center font-bold select-none top-[15px] right-[27px] hidden md:block">
+          {getCartCount()}
+        </p>
       </div>
 
       {/* SearchBox */}
@@ -210,7 +215,9 @@ function Nav() {
           <MdOutlineShoppingCart className="w-[22px] h-[22px] md:w-7 md:h-7 hover:text-yellow-400 md:hidden" />{" "}
           Cart
         </button>
-        <p className="absolute h-2.5 w-2.5 md:w-[18px] md:h-[18px] flex items-center justify-center bg-white px-[5px] py-0.5 text-[#10121a] rounded-full text-[9px] top-0 right-4.5 md:top-2  md:right-[18px]"></p>
+        <p className="absolute h-2.5 w-2.5 md:w-[18px] md:h-[18px] flex items-center justify-center bg-white px-[5px] py-0.5 text-[#10121a] rounded-full text-[10px] font-bold top-0 right-4.5 md:top-2  md:right-[18px]">
+          {getCartCount()}
+        </p>
       </div>
     </div>
   );

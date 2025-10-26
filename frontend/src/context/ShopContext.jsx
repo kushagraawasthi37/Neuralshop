@@ -56,12 +56,12 @@ function ShopContext({ children }) {
           { withCredentials: true }
         );
         console.log(result.data);
-        toast.success("Product Added");
+        // toast.success("Product Added");
         setLoading(false);
       } catch (error) {
         console.log(error);
         setLoading(false);
-        toast.error("Add Cart Error");
+        // toast.error("Add Cart Error");
       }
     }
   };
