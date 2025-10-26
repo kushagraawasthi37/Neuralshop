@@ -15,9 +15,7 @@ function Sidebar() {
           title="Add Items"
         >
           <IoIosAddCircleOutline className="w-6 h-6 md:w-5 md:h-5" />
-          <p className="hidden lg:block font-medium text-sm select-none">
-            Add Items
-          </p>
+          <p className="hidden lg:block font-medium text-sm select-none">Add Items</p>
         </div>
 
         <div
@@ -26,9 +24,7 @@ function Sidebar() {
           title="List Items"
         >
           <FaRegListAlt className="w-6 h-6 md:w-5 md:h-5" />
-          <p className="hidden lg:block font-medium text-sm select-none">
-            List Items
-          </p>
+          <p className="hidden lg:block font-medium text-sm select-none">List Items</p>
         </div>
 
         <div
@@ -37,9 +33,7 @@ function Sidebar() {
           title="View Orders"
         >
           <SiTicktick className="w-6 h-6 md:w-5 md:h-5" />
-          <p className="hidden lg:block font-medium text-sm select-none">
-            View Orders
-          </p>
+          <p className="hidden lg:block font-medium text-sm select-none">View Orders</p>
         </div>
       </div>
     </div>

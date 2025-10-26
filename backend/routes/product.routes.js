@@ -1,6 +1,7 @@
 import express from "express";
 import {
   addProduct,
+  AdminlistProduct,
   listProduct,
   removeProduct,
 } from "../controllers/product.controller.js";
@@ -23,7 +24,8 @@ productRoutes.post(
   addProduct
 );
 
-productRoutes.get("/list", isAuth, isAdmin, listProduct);
+productRoutes.get("/admin/list", isAuth, isAdmin, AdminlistProduct);
+productRoutes.get("/list", listProduct);
 productRoutes.post("/remove/:id", isAuth, isAdmin, removeProduct);
 
 export default productRoutes;

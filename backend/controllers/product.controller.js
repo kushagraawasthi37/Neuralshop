@@ -71,14 +71,26 @@ export const addProduct = async (req, res) => {
   }
 };
 
-export const listProduct = async (req, res) => {
+export const AdminlistProduct = async (req, res) => {
   try {
     const email = req.email;
     const owner = await Admin.findOne({ email });
     const product = await Product.find({ owner: owner._id });
     return res.status(200).json(product);
   } catch (error) {
-    console.log("ListProduct error");
+    console.log("ListProduct error admin", error);
+    return res
+      .status(500)
+      .json({ message: `ListProduct error admin ${error}` });
+  }
+};
+
+export const listProduct = async (req, res) => {
+  try {
+    const product = await Product.find();
+    return res.status(200).json(product);
+  } catch (error) {
+    console.log("ListProduct error", error);
     return res.status(500).json({ message: `ListProduct error ${error}` });
   }
 };
