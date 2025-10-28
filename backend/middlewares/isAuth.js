@@ -16,11 +16,16 @@ const isAuth = async (req, res, next) => {
       return res.status(400).json({ message: "user does not have token" });
     }
     try {
-      console.log("Verifying token:", token);
+      // console.log("Verifying token:", token);
       let verifyToken = jwt.verify(token, process.env.JWT_SECRET);
       console.log("Decoded token:", verifyToken);
       req.userId = verifyToken?.userId;
+      // console.log(req.userId);
       req.email = verifyToken?.email;
+      console.log(req.email);
+      req.token = token;
+
+      // console.log("isAuth done");
       next();
     } catch (error) {
       console.log("JWT error:", error.message);

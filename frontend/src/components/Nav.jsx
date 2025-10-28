@@ -11,9 +11,11 @@ import { MdContacts } from "react-icons/md";
 import axios from "../context/axiosInstance.js";
 import { authDataContext } from "../context/authContext";
 import { shopDataContext } from "../context/ShopContext";
+import { toast } from "react-toastify";
 
 function Nav() {
   let navigate = useNavigate();
+  let adminURL = import.meta.env.VITE_ADMIN_URL;
   let [showProfile, setShowProfile] = useState(false);
   let { search, setSearch, showSearch, setShowSearch, getCartCount } =
     useContext(shopDataContext);
@@ -27,11 +29,14 @@ function Nav() {
         withCredentials: true,
       });
       console.log(respose.data);
+      toast.success("LogOut Successfully");
       localStorage.removeItem("authToken");
 
       await getCurrentUser();
       navigate("/login");
     } catch (error) {
+      localStorage.removeItem("authToken");
+      toast.error("LogOut Failed");
       console.log(error);
     }
   };
@@ -145,41 +150,57 @@ function Nav() {
 
       {/* Profile dropdown */}
       {showProfile && (
-        <div className="absolute w-30 h-45 md:w-[220px] md:h-[150px] bg-[#151414d7] top-[110%] right-[4%] border-[1px] border-yellow-400 rounded-2.5 z-10 transition-colors duration-300">
-          <ul className="w-full h-full flex items-start justify-around flex-col text-2 md:text-[17px] py-2.5 text-white hover:text-yellow-400">
-            {/* User nahi hai to login show hoga */}
+        <div className="absolute w-52 md:w-[220px] md:h-[150px] bg-[#151414d7] top-[110%] right-[4%] border border-yellow-400 rounded-2xl z-10 transition-colors duration-300 overflow-x-hidden">
+          <ul className="w-full h-full flex flex-col items-start justify-around text-[17px] py-2.5 text-white">
+            {/* User not logged in, show login */}
             {!userData && (
               <li
                 onClick={() => {
                   navigate("/login");
                   setShowProfile(false);
                 }}
-                className="w-full hover:bg-yellow-600  px-[15px] py-2.5 cursor-pointer transition-colors duration-300 rounded"
+                className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words"
               >
                 Login
               </li>
             )}
 
-            {/* User hai to logout show hoga */}
+            {/* User logged in, show logout */}
             {userData && (
               <li
                 onClick={() => {
                   logout();
                   setShowProfile(false);
                 }}
-                className="w-full hover:bg-yellow-600 px-[15px] py-2.5 cursor-pointer transition-colors duration-300 rounded"
+                className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words"
               >
                 LogOut
               </li>
             )}
-            <li className="w-full hover:bg-yellow-600 px-[15px] py-2.5 cursor-pointer transition-colors duration-300 rounded">
+
+            <li
+              onClick={() => navigate("/order")}
+              className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words"
+            >
               Orders
             </li>
+
             <li
               onClick={() => navigate("/about")}
-              className="w-full hover:bg-yellow-600 px-[15px] py-2.5 cursor-pointer transition-colors duration-300 rounded"
+              className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words"
             >
               About
+            </li>
+
+            <li className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words">
+              <a
+                className="block w-full text-inherit"
+                href={adminURL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Admin mode
+              </a>
             </li>
           </ul>
         </div>

@@ -7,7 +7,7 @@ import CartTotal from "../components/CartTotal";
 
 function Cart() {
   const { products, currency, cartItem, updateQuantity } =
-    useContext(shopDataContext);
+  useContext(shopDataContext);
   const [cartData, setCartData] = useState([]);
   const navigate = useNavigate();
 
@@ -37,8 +37,10 @@ function Cart() {
       {/* Cart Items List */}
       <div className="w-full max-w-4xl flex flex-col gap-8">
         {cartData.length === 0 ? (
-          <div className="w-full text-center text-lg text-gray-300 bg-[#1e272e]/40 rounded-lg p-10 shadow my-20">
-            Your cart is empty.
+          <div className="w-full text-center text-xl font-bold text-gray-300 bg-[#1e272e]/40 rounded-lg p-10 shadow my-20">
+            <p className="text-center text-xl font-bold"></p> Your cart is
+            empty.
+            <p>Add items to your cart</p>
           </div>
         ) : (
           cartData.map((item, index) => {
@@ -50,10 +52,10 @@ function Cart() {
                 key={index}
                 className="w-full rounded-2xl shadow-md border border-[#262e33] bg-[#23273a]/60 overflow-hidden"
               >
-                <div className="flex flex-col sm:flex-row items-center px-3 sm:px-6 py-4 gap-4 md:gap-8">
+                <div className="flex  sm:flex-row items-center px-3 sm:px-6 py-4 gap-4 md:gap-8">
                   {/* Image */}
                   <img
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-md object-cover shadow transition-transform duration-200 hover:scale-105"
+                    className=" w-30 h-30  rounded-md object-cover shadow transition-transform duration-200 hover:scale-105"
                     src={productData?.image1}
                     alt={productData?.name}
                   />
@@ -85,12 +87,17 @@ function Cart() {
                         }
                       />
                     </div>
+                    {/* Delete Icon */}
+                    <div className="flex gap-1 sm:gap-2 md:gap-4">
+                      <p className="text-md md:text-lg  font-semibold text-white truncate ">
+                        Remove item
+                      </p>
+                      <RiDeleteBin6Line
+                        className="text-[#9ff9f9] w-4 h-7 sm:w-6 sm:h-6 md:w-8 md:h-8 cursor-pointer transition hover:text-red-400 hover:scale-110"
+                        onClick={() => updateQuantity(item._id, item.size, 0)}
+                      />{" "}
+                    </div>
                   </div>
-                  {/* Delete Icon */}
-                  <RiDeleteBin6Line
-                    className="text-[#9ff9f9] w-6 h-6 md:w-8 md:h-8 cursor-pointer transition hover:text-red-400 hover:scale-110"
-                    onClick={() => updateQuantity(item._id, item.size, 0)}
-                  />
                 </div>
               </div>
             );
@@ -99,26 +106,28 @@ function Cart() {
       </div>
 
       {/* Cart Total & Checkout */}
-      <div className="w-full mt-12 flex flex-col items-center">
-        <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl bg-[#2b353d]/80 rounded-2xl p-5 sm:p-8 shadow-md border border-[#212e37]">
-          {<CartTotal />}
-          <button
-            className={`mt-4 md:mt-6 w-full text-base sm:text-lg font-bold py-2 md:py-3 rounded-xl
+      {cartData.length !== 0 && (
+        <div className="w-full mt-12 flex flex-col items-center">
+          <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl bg-[#2b353d]/80 rounded-2xl p-5 sm:p-8 shadow-md border border-[#212e37]">
+            {<CartTotal />}
+            <button
+              className={`mt-4 md:mt-6 w-full text-base sm:text-lg font-bold py-2 md:py-3 rounded-xl
         ${
           cartData.length
             ? "bg-gradient-to-r from-[#2f97f1] to-[#44c0f1] hover:from-[#237db6] hover:to-[#45badd] text-white cursor-pointer"
             : "bg-gray-600 text-gray-300 cursor-not-allowed"
         }
         transition-all duration-300 shadow-lg`}
-            disabled={!cartData.length}
-            onClick={() =>
-              cartData.length > 0 ? navigate("/placeorder") : undefined
-            }
-          >
-            PROCEED TO CHECKOUT
-          </button>
+              disabled={!cartData.length}
+              onClick={() =>
+                cartData.length > 0 ? navigate("/placeorder") : undefined
+              }
+            >
+              PROCEED TO CHECKOUT
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

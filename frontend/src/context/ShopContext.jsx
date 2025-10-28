@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { authDataContext } from "./authContext";
 import axios from "../context/axiosInstance.js";
 import { userDataContext } from "./UserContext";
-// import { toast } from 'react-toastify'
+import { toast } from "react-toastify";
 
 export const shopDataContext = createContext();
 function ShopContext({ children }) {
@@ -20,7 +20,10 @@ function ShopContext({ children }) {
     try {
       let result = await axios.get(serverUrl + "/api/product/list");
       console.log(result.data);
-      setProducts(result.data);
+      setProducts(result.data.product);
+      if (result?.data?.token) {
+        localStorage.setItem("authToken", result.data.token);
+      }
     } catch (error) {
       console.log(error);
     }
@@ -55,13 +58,15 @@ function ShopContext({ children }) {
           { itemId, size },
           { withCredentials: true }
         );
-        console.log(result.data);
-        // toast.success("Product Added");
+        if (result?.data?.token) {
+          localStorage.setItem("authToken", result.data.token);
+        }
+        toast.success("Product Added");
         setLoading(false);
       } catch (error) {
         console.log(error);
         setLoading(false);
-        // toast.error("Add Cart Error");
+        toast.error("Add Cart Error");
       }
     }
   };
@@ -74,28 +79,38 @@ function ShopContext({ children }) {
         { withCredentials: true }
       );
 
-      setCartItem(result.data);
+      if (result?.data?.token) {
+        localStorage.setItem("authToken", result.data.token);
+      }
+
+      setCartItem(result?.data?.cartData);
     } catch (error) {
       console.log(error);
     }
   };
+
   const updateQuantity = async (itemId, size, quantity) => {
     let cartData = structuredClone(cartItem);
+
     cartData[itemId][size] = quantity;
     setCartItem(cartData);
 
     if (userData) {
       try {
-        await axios.post(
+        const result = await axios.post(
           serverUrl + "/api/cart/update",
           { itemId, size, quantity },
           { withCredentials: true }
         );
+        if (result?.data?.token) {
+          localStorage.setItem("authToken", result.data.token);
+        }
       } catch (error) {
         console.log(error);
       }
     }
   };
+
   const getCartCount = () => {
     let totalCount = 0;
     for (const items in cartItem) {
@@ -104,7 +119,9 @@ function ShopContext({ children }) {
           if (cartItem[items][item] > 0) {
             totalCount += cartItem[items][item];
           }
-        } catch (error) {}
+        } catch (error) {
+          console.log(error);
+        }
       }
     }
     return totalCount;
@@ -119,7 +136,9 @@ function ShopContext({ children }) {
           if (cartItem[items][item] > 0) {
             totalAmount += itemInfo.price * cartItem[items][item];
           }
-        } catch (error) {}
+        } catch (error) {
+          console.log(error);
+        }
       }
     }
     return totalAmount;

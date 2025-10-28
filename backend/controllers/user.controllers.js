@@ -11,9 +11,12 @@ export const getCurrentUser = async (req, res) => {
       });
     }
 
+    const token = req.token;
+
     return res.status(200).json({
       message: "Current user ",
       user,
+      token,
     });
   } catch (error) {
     console.log("Something went wrong..user not found ", error);
@@ -26,20 +29,23 @@ export const getCurrentUser = async (req, res) => {
 export const getCurrentAdmin = async (req, res) => {
   try {
     // Email should be extracted from req.user/email set by auth middleware
-    const email = req.email || (req.user && req.user.email);
-    if (!email) {
-      return res.status(401).json({ message: "Unauthorized: email missing" });
-    }
+    const adminId = req.adminId;
+    console.log("Admin id :", adminId);
 
-    const admin = await Admin.findOne({ email }).select("-password");
+    const admin = await Admin.findById(adminId).select("-password");
 
     if (!admin) {
+      console.log("Admin not found with this email");
       return res.status(403).json({ message: "Admin not found" });
     }
 
+    const token = req.token;
+
+    console.log("Admin Found succesfully");
     return res.status(200).json({
       message: "Current admin fetched successfully",
       admin, // sending back admin data without password
+      token,
     });
   } catch (error) {
     console.error("Error in getCurrentAdmin:", error);

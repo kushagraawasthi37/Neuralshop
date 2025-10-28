@@ -6,6 +6,8 @@ import { IoEye } from "react-icons/io5";
 import axios from "../context/axiosInstance.js";
 import { authDataContext } from "../context/authContext";
 import { adminDataContext } from "../context/AdminContext";
+import { toast } from "react-toastify";
+import Loading from "../component/Loading";
 
 function Login() {
   const navigate = useNavigate();
@@ -15,6 +17,7 @@ function Login() {
   const { serverUrl } = useContext(authDataContext);
   const { adminData, setAdminData, getCurrentAdmin } =
     useContext(adminDataContext);
+  const [loading, setLoading] = useState(false);
 
   const loginHandler = async (e) => {
     try {
@@ -35,12 +38,15 @@ function Login() {
         localStorage.setItem("authToken", response.data.token);
       }
 
+      toast.success("AdminLogin Successfully");
       await getCurrentAdmin();
       navigate("/");
-
+      setLoading(false);
       console.log(response.data);
     } catch (error) {
       console.log(error);
+      toast.error("AdminLogin Failed");
+      setLoading(false);
     }
   };
 
@@ -113,7 +119,7 @@ function Login() {
             )}
 
             <button className=" w-full h-[50px] bg-[#5796e3d6] transition-all duration-200 ease-in-out rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer">
-              Login
+              {loading ? <Loading /> : "Login"}
             </button>
             <p className="text-4 md:text-5 flex gap-2.5 text-white/50">
               Don't have an Admin Account?{" "}

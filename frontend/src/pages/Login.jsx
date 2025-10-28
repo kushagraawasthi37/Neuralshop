@@ -9,7 +9,8 @@ import axios from "../context/axiosInstance.js";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../utils/firebase";
 import { userDataContext } from "../context/UserContext";
-import serverUrl from "../context/axiosInstance.js";
+import { toast } from "react-toastify";
+import Loading from "../components/Loading";
 
 function Login() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const { serverUrl } = useContext(authDataContext);
   const { getCurrentUser } = useContext(userDataContext);
+  let [loading, setLoading] = useState(false);
 
   const loginHandler = async (e) => {
     try {
@@ -35,12 +37,16 @@ function Login() {
       if (response?.data?.token) {
         localStorage.setItem("authToken", response.data.token);
       }
+      setLoading(false);
 
       await getCurrentUser();
       navigate("/");
+      toast.success("User Login Successful");
 
       console.log(response.data);
     } catch (error) {
+      toast.error("User Login Failed");
+
       console.log(error);
     }
   };
@@ -63,13 +69,16 @@ function Login() {
       console.log(result.data);
       console.log(result.data.token);
       if (result?.data?.token) {
-        localStorage.setItem("authToken", result.data.token);
+        localStorage.setItem("authToken", result?.data?.token);
       }
 
       await getCurrentUser();
       navigate("/");
+      toast.success("User Login Successful");
+
       console.log(result.data);
     } catch (error) {
+      toast.error("User Login Failed");
       console.log(error);
     }
   };
@@ -151,7 +160,7 @@ function Login() {
               />
             )}
             <button className=" w-full h-[50px] bg-[#5796e3d6] transition-all duration-200 ease-in-out rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer">
-              Login
+              {loading ? <Loading /> : "Login"}
             </button>
             <p className="flex gap-2.5 text-white/50">
               Don't have an Account?{" "}

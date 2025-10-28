@@ -3,11 +3,15 @@ import Admin from "../model/admin.model.js";
 
 const isAdmin = async (req, res, next) => {
   try {
-    const { email } = req.email;
-    const admin = Admin.findOne({ email });
+    const email = req.email;
+    // console.log(req.email);
+    const admin = await Admin.findOne({ email });
     if (!admin) {
+      // console.log("Not a admin");
       return res.status(400).json({ message: "Not a admin" });
     }
+    req.adminId = admin._id;
+    // console.log(req.adminId);
     next();
   } catch (error) {
     console.log("Only authorized by admin", error);

@@ -9,12 +9,15 @@ import axios from "../context/axiosInstance.js";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../utils/firebase";
 import { userDataContext } from "../context/UserContext";
+import { toast } from "react-toastify";
+import Loading from "../components/Loading";
 
 function Registeration() {
   let navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [show, setShow] = useState(false);
   const { serverUrl } = useContext(authDataContext);
@@ -44,10 +47,13 @@ function Registeration() {
 
       await getCurrentUser();
       navigate("/");
+      toast.success("User Registration Successful");
+      setLoading(false);
 
       // console.log(response.data.message);
     } catch (error) {
       console.log(error);
+      toast.error("User Registration Failed");
     }
   };
 
@@ -74,10 +80,12 @@ function Registeration() {
 
       await getCurrentUser();
       navigate("/");
+      toast.success("User Registration Successful");
 
       console.log(result.data);
     } catch (error) {
       console.log(error);
+      toast.error("User Registration Failed");
     }
   };
 
@@ -169,7 +177,7 @@ function Registeration() {
               />
             )}
             <button className=" w-full h-[50px] bg-[#5796e3d7] rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer transition-all duration-200 ease-in-out">
-              Create Account
+              {loading ? <Loading /> : "Create Account"}
             </button>
             <p className="flex gap-2.5 text-white/50">
               You have any account?{" "}

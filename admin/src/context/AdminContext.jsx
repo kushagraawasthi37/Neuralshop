@@ -12,16 +12,17 @@ const AdminContext = (props) => {
 
   const getCurrentAdmin = async () => {
     try {
-      console.log(localStorage.getItem("authToken"));
+      // console.log(localStorage.getItem("authToken"));
       const response = await axios.post(
         `${serverUrl}/api/user/getcurrentadmin`,
         {},
         { withCredentials: true }
       );
 
-      console.log(response.data.admin);
+      console.log(response);
+      console.log(response?.data?.admin);
 
-      if (response.data.admin) {
+      if (response?.data?.admin) {
         setAdminData(response.data.admin);
       } else {
         // No admin info means unauthenticated

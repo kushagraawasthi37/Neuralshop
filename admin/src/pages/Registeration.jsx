@@ -6,13 +6,15 @@ import { IoEye } from "react-icons/io5";
 import { authDataContext } from "../context/authContext";
 import axios from "../context/axiosInstance.js";
 import { adminDataContext } from "../context/AdminContext";
+import { toast } from "react-toastify";
+import Loading from "../component/Loading";
 
 const Registeration = () => {
   let navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [loading, setLoading] = useState(false);
   const [show, setShow] = useState(false);
   const { serverUrl } = useContext(authDataContext);
   const { getCurrentAdmin } = useContext(adminDataContext);
@@ -39,12 +41,16 @@ const Registeration = () => {
         localStorage.setItem("authToken", response.data.token);
       }
 
+      toast.success("Admin Register Successfully");
+
       await getCurrentAdmin();
       navigate("/");
-
+      setLoading(false);
       console.log(response.data.message);
     } catch (error) {
       console.log(error);
+      toast.error("Admin Registeration Failed");
+      setLoading(false);
     }
   };
 
@@ -126,7 +132,7 @@ const Registeration = () => {
               />
             )}
             <button className=" w-full h-[50px] bg-[#5796e3d7] rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer transition-all duration-200 ease-in-out">
-              Create Account
+              {loading ? <Loading /> : "Create Account"}
             </button>
             <p className="flex gap-2.5 text-white/50">
               You have any account?{" "}

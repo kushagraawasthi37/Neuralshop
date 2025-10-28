@@ -1,6 +1,6 @@
 import React from "react";
-// import Nav from '../component/Nav'
-// import Sidebar from '../component/Sidebar'
+import Nav from "../component/Nav";
+import Sidebar from "../component/Sidebar";
 import { useState } from "react";
 import { useContext } from "react";
 import { authDataContext } from "../context/AuthContext";
@@ -19,11 +19,16 @@ function Orders() {
         {},
         { withCredentials: true }
       );
-      setOrders(result.data.reverse());
+      // Save token to localStorage
+      if (result?.data?.token) {
+        localStorage.setItem("authToken", result.data.token);
+      }
+      setOrders(result.data.orders.reverse());
     } catch (error) {
       console.log(error);
     }
   };
+
   const statusHandler = async (e, orderId) => {
     try {
       const result = await axios.post(
@@ -31,8 +36,11 @@ function Orders() {
         { orderId, status: e.target.value },
         { withCredentials: true }
       );
-      if (result.data) {
+      if (result.data.token) {
         await fetchAllOrders();
+      }
+      if (result?.data?.token) {
+        localStorage.setItem("authToken", result.data.token);
       }
     } catch (error) {
       console.log(error);

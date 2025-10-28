@@ -40,6 +40,9 @@ export const addProduct = async (req, res) => {
     }
 
     const owner = await Admin.findOne({ email });
+    if (!owner) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
 
     console.log("All images uploaded successfully");
 
@@ -59,9 +62,10 @@ export const addProduct = async (req, res) => {
       owner: owner._id,
     };
 
+    const token = req.token;
     const product = await Product.create(productData);
     console.log("product added");
-    return res.status(201).json({ message: "Product created", product });
+    return res.status(201).json({ message: "Product created", product, token });
   } catch (error) {
     console.error("AddProduct error:", error);
     return res.status(500).json({
@@ -74,9 +78,12 @@ export const addProduct = async (req, res) => {
 export const AdminlistProduct = async (req, res) => {
   try {
     const email = req.email;
+    console.log("Admin Product list hitted");
     const owner = await Admin.findOne({ email });
+
+    const token = req.token;
     const product = await Product.find({ owner: owner._id });
-    return res.status(200).json(product);
+    return res.status(200).json({ product, token });
   } catch (error) {
     console.log("ListProduct error admin", error);
     return res
@@ -87,8 +94,9 @@ export const AdminlistProduct = async (req, res) => {
 
 export const listProduct = async (req, res) => {
   try {
+    const token = req.token;
     const product = await Product.find();
-    return res.status(200).json(product);
+    return res.status(200).json({ product, token });
   } catch (error) {
     console.log("ListProduct error", error);
     return res.status(500).json({ message: `ListProduct error ${error}` });
@@ -99,6 +107,7 @@ export const removeProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const token = req.token;
     // 1. Get admin ID from email
     const admin = await Admin.findOne({ email: req.email });
     if (!admin) {
@@ -121,7 +130,7 @@ export const removeProduct = async (req, res) => {
     // 4. Delete product
     await product.deleteOne();
 
-    res.status(200).json({ message: "Product deleted successfully" });
+    res.status(200).json({ message: "Product deleted successfully", token });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Something went wrong" });

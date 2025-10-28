@@ -14,8 +14,11 @@ function Lists() {
       const result = await axios.get(`${serverUrl}/api/product/admin/list`, {
         withCredentials: true,
       });
-      setList(result.data);
-      console.log(result.data);
+      setList(result.data.product);
+      if (result?.data?.token) {
+        localStorage.setItem("authToken", result.data.token);
+      }
+      console.log(result.data.product);
     } catch (error) {
       console.log(error);
     }
@@ -28,10 +31,13 @@ function Lists() {
         {},
         { withCredentials: true }
       );
-      if (result.data) {
+      if (result.data.token) {
         fetchList();
       } else {
         console.log("Failed to remove Product");
+      }
+      if (result?.data?.token) {
+        localStorage.setItem("authToken", result.data.token);
       }
     } catch (error) {
       console.log(error);

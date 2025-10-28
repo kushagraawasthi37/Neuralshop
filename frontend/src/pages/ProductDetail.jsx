@@ -14,6 +14,9 @@ function ProductDetail() {
   const [zoom, setZoom] = useState(false);
   const [size, setSize] = useState("");
 
+  // Define desired size order
+  const sizeOrder = ["S", "M", "L", "XL", "XXL"];
+
   useEffect(() => {
     const item = products.find((p) => p._id === productId);
     if (item) {
@@ -23,6 +26,11 @@ function ProductDetail() {
   }, [productId, products]);
 
   if (!productData) return <Loading />;
+
+  // Sort sizes before rendering
+  const sortedSizes = [...productData.sizes].sort(
+    (a, b) => sizeOrder.indexOf(a) - sizeOrder.indexOf(b)
+  );
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-l from-[#141414] to-[#0c2025] text-white px-2 md:px-6 pt-24 pb-12 select-none">
@@ -45,14 +53,13 @@ function ProductDetail() {
                     img === image
                       ? "border-[#2f97f1] shadow-[0_0_10px_2px_rgba(47,151,241,0.4)]"
                       : "border-[#2e3a43]"
-                  } cursor-pointer object-cover overflow-hidden hover:scale-105 transition-all duration-300 
-                  ${
+                  } cursor-pointer object-cover overflow-hidden hover:scale-105 transition-all duration-300 ${
                     zoom
                       ? "hover:shadow-[0_0_45px_8px_rgba(47,151,241,0.35)] scale-[1.02]"
                       : ""
                   }`}
                   style={{
-                    height: `calc(25% - ${arr.length > 1 ? "23px" : "0"})`, // Ensures 4 images fit in 100% height w/ gaps
+                    height: `calc(25% - ${arr.length > 1 ? "23px" : "0"})`,
                   }}
                   onClick={() => setImage(img)}
                 >
@@ -84,7 +91,7 @@ function ProductDetail() {
             />
           </div>
 
-          {/* Horizontal Thumbnails - For mobile and below md screens */}
+          {/* Horizontal Thumbnails - For smaller screens */}
           <div className="flex md:hidden gap-3 mt-3 w-full max-w-[430px]">
             {[
               productData.image1,
@@ -102,7 +109,7 @@ function ProductDetail() {
                       : "border-[#2e3a43]"
                   } cursor-pointer overflow-hidden hover:scale-105 transition-all duration-300`}
                   style={{
-                    width: `calc(25% - ${arr.length > 1 ? "12px" : "0"})`, // Makes sure 4 images fit the big image width
+                    width: `calc(25% - ${arr.length > 1 ? "12px" : "0"})`,
                   }}
                   onClick={() => setImage(img)}
                 >
@@ -117,26 +124,26 @@ function ProductDetail() {
         </div>
 
         {/* RIGHT: PRODUCT INFO */}
-        <div className="flex flex-col gap-5">
-          <h1 className="mx-4 md:mx-2 lg:mx-0 text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight capitalize">
+        <div className="flex flex-col gap-2 md:gap-5">
+          <h1 className="mx-4 md:mx-2 lg:mx-0 text-xl md:text-2xl lg:text-3xl font-semibold leading-tight capitalize">
             {productData.name}
           </h1>
 
-          <div className="mx-4 md:mx-2 lg:mx-0 flex items-center gap-2 text-yellow-400">
+          <div className="mx-4 md:mx-2 lg:mx-0 flex items-center gap-0.5 sm:gap-2 text-yellow-400">
             {[...Array(4)].map((_, i) => (
               <FaStar key={i} />
             ))}
             <FaStarHalfAlt />
-            <span className="mx-4 md:mx-2 lg:mx-0 text-white text-sm font-medium pl-1">
+            <span className=" md:mx-2 lg:mx-0 text-white sm:text sm:font-medium pl-1">
               (124 ratings)
             </span>
           </div>
 
-          <p className="mx-4 md:mx-2 lg:mx-0 text-xl md:text-2xl font-bold">
+          <p className="mx-4 md:mx-2 lg:mx-0 text-lg sm:text-lg md:text-2xl font-bold">
             {currency} {productData.price}
           </p>
 
-          <p className="mx-4 md:mx-2 lg:mx-0 text-sm md:text-base text-gray-200 leading-relaxed">
+          <p className="mx-4 md:mx-2 lg:mx-0 text md:text-base text-gray-200 leading-relaxed">
             {productData.description ||
               "High-quality, breathable cotton shirt with a modern fit. Perfect for all-day comfort and style."}
           </p>
@@ -146,12 +153,12 @@ function ProductDetail() {
             <h2 className="mx-4 md:mx-2 lg:mx-0 text-lg font-semibold mb-2">
               Select Size
             </h2>
-            <div className="flex flex-wrap mx-4 md:mx-2 lg:mx-0 gap-2">
-              {productData.sizes.map((item, idx) => (
+            <div className="flex flex-wrap mx-4 md:mx-2 lg:mx-0 gap-2 md:gap-4">
+              {sortedSizes.map((item, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSize(item)}
-                  className={`px-3 py-1  md:py-2 rounded-md border font-medium transition-all duration-200 ${
+                  className={`px-[11px] py-1  md:px-[14px] md:py-2 rounded-md border font-medium transition-all duration-200 ${
                     item === size
                       ? "bg-[#2f97f1] text-white border-[#2f97f1] shadow-md"
                       : "bg-transparent border-[#99b0d9] hover:bg-[#2f97f1] hover:text-white"

@@ -20,6 +20,10 @@ const UserContext = (props) => {
         }
       );
 
+      if (response?.data?.token) {
+        localStorage.setItem("authToken", response?.data?.token);
+      }
+
       console.log(response.data);
       setUserData(response.data);
     } catch (error) {

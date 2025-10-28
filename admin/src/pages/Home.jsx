@@ -11,20 +11,24 @@ function Home() {
 
   const fetchCounts = async () => {
     try {
-      const products = await axios.get(`${serverUrl}/api/product/list`, {
+      const products = await axios.get(`${serverUrl}/api/product/admin/list`, {
         withCredentials: true,
       });
-      setTotalProducts(products.data.length);
+      setTotalProducts(products.data.product.length);
 
-      // const orders = await axios.post(
-      //   `${serverUrl}/api/order/list`,
-      //   {},
-      //   {
-      //     withCredentials: true,
-      //   }
-      // );
-      const orders=[1,2];
-      // setTotalOrders(orders.data.length);
+      const orders = await axios.post(
+        `${serverUrl}/api/order/list`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (orders?.data?.token) {
+        localStorage.setItem("authToken", orders.data.token);
+      }
+
+      setTotalOrders(orders.data.orders.length);
     } catch (err) {
       console.error("Failed to fetch counts", err);
     }

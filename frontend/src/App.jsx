@@ -10,8 +10,12 @@ import About from "./pages/About";
 import Product from "./pages/Product";
 import Contact from "./pages/Contact";
 import ProtectedRoute from "./ProtectedRoute";
-import ProductDetail from "./pages/ProductDetail"
+import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
+import PlaceOrder from "./pages/PlaceOrder";
+import Order from "./pages/Order";
+import { ToastContainer, toast } from "react-toastify";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   const { userData } = useContext(userDataContext);
@@ -22,6 +26,7 @@ const App = () => {
 
   return (
     <>
+      <ToastContainer />
       {isLoggedIn && <Nav />} {/* Render Nav once for logged-in users */}
       <Routes>
         <Route path="/signup" element={<Registeration />} />
@@ -89,10 +94,27 @@ const App = () => {
           path="/cart"
           element={
             <ProtectedRoute>
-              <Cart/>
+              <Cart />
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/placeorder"
+          element={
+            <ProtectedRoute>
+              <PlaceOrder />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/order"
+          element={
+            <ProtectedRoute>
+              <Order />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFound/>} />
       </Routes>
     </>
   );

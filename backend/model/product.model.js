@@ -51,7 +51,7 @@ const productSchema = new mongoose.Schema(
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId, // store the admin user's ID
-      ref: "User", // reference the User (or Admin) model
+      ref: "Admin", // reference the User (or Admin) model
       required: true,
     },
   },

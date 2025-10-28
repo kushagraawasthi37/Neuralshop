@@ -1,4 +1,4 @@
-import React, { useContext,useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import {
   Routes,
   Route,
@@ -13,6 +13,8 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Registeration from "./pages/Registeration";
 import { adminDataContext } from "./context/AdminContext";
+import { ToastContainer, toast } from "react-toastify";
+import NotFound from "./pages/NotFound";
 
 const ProtectedRoute = ({ children }) => {
   const { adminData } = useContext(adminDataContext);
@@ -47,46 +49,52 @@ const ProtectedRoute = ({ children }) => {
 
 const App = () => {
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Registeration />} />
+    <>
+      <ToastContainer />
 
-      {/* Protected Routes */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/add"
-        element={
-          <ProtectedRoute>
-            <Add />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/orders"
-        element={
-          <ProtectedRoute>
-            <Orders />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/lists"
-        element={
-          <ProtectedRoute>
-            <Lists />
-          </ProtectedRoute>
-        }
-      />
-      {/* Optionally add a catch-all route for 404 or redirect */}
-    </Routes>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Registeration />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/add"
+          element={
+            <ProtectedRoute>
+              <Add />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/lists"
+          element={
+            <ProtectedRoute>
+              <Lists />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<NotFound />} />
+        {/* Optionally add a catch-all route for 404 or redirect */}
+      </Routes>
+    </>
   );
 };
 

@@ -4,6 +4,8 @@ import Sidebar from "../component/Sidebar";
 import upload from "../assets/upload image.jpg";
 import { authDataContext } from "../context/AuthContext";
 import axios from "../context/axiosInstance.js";
+import { toast } from "react-toastify";
+import Loading from "../component/Loading.jsx";
 
 function Add() {
   let [image1, setImage1] = useState(false);
@@ -47,7 +49,12 @@ function Add() {
         }
       );
 
-      console.log(response.data);
+      if (response?.data?.token) {
+        localStorage.setItem("authToken", response.data.token);
+      }
+      toast.success("ADD Product Successfully");
+
+      console.log(response.data.product);
 
       if (response.data) {
         setName("");
@@ -63,7 +70,9 @@ function Add() {
         setSizes([]);
       }
     } catch (error) {
-      console.log("Something went wrong, can't add product", error);
+      console.log(error);
+      setLoading(false);
+      toast.error("Add Product Failed");
     } finally {
       setLoading(false);
     }
@@ -276,7 +285,7 @@ function Add() {
                   loading && "opacity-70 cursor-not-allowed"
                 }`}
               >
-                {loading ? "Adding..." : "Add Product"}
+                {loading ? <Loading /> : "Add Product"}
               </button>
             </section>
           </form>

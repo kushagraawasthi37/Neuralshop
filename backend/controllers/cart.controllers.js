@@ -2,6 +2,7 @@ import User from "../model/user.model.js";
 
 export const addToCart = async (req, res) => {
   try {
+    const token = req.token;
     const { itemId, size } = req.body;
 
     const userData = await User.findById(req.userId);
@@ -27,7 +28,7 @@ export const addToCart = async (req, res) => {
 
     await User.findByIdAndUpdate(req.userId, { cartData });
 
-    return res.status(201).json({ message: "Added to cart" });
+    return res.status(201).json({ message: "Added to cart", token });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "addToCart error" });
@@ -40,11 +41,12 @@ export const UpdateCart = async (req, res) => {
     const userData = await User.findById(req.userId);
     let cartData = await userData.cartData;
 
+    const token = req.token;
     cartData[itemId][size] = quantity;
 
     await User.findByIdAndUpdate(req.userId, { cartData });
 
-    return res.status(201).json({ message: "cart updated" });
+    return res.status(201).json({ message: "cart updated", token });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "updateCart error" });
@@ -54,9 +56,14 @@ export const UpdateCart = async (req, res) => {
 export const getUserCart = async (req, res) => {
   try {
     const userData = await User.findById(req.userId);
+
+    const token = req.token;
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
+    }
     let cartData = await userData.cartData;
 
-    return res.status(200).json(cartData);
+    return res.status(200).json({ cartData, token });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "getUserCart error" });

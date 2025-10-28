@@ -5,9 +5,10 @@ import axios from "../context/axiosInstance.js";
 import { useContext } from "react";
 import { authDataContext } from "../context/authContext";
 import { adminDataContext } from "../context/AdminContext";
-// import { toast } from 'react-toastify'
+import { toast } from "react-toastify";
 
 function Nav() {
+  const userUrl = import.meta.env.VITE_USER_URL;
   let navigate = useNavigate();
   const { serverUrl } = useContext(authDataContext);
   const { getCurrentAdmin } = useContext(adminDataContext);
@@ -17,13 +18,16 @@ function Nav() {
       const respose = await axios.get(`${serverUrl}/api/auth/logout`, {
         withCredentials: true,
       });
+
       console.log(respose.data);
-      console.log(respose.data);
+      // console.log(respose.data);
       localStorage.removeItem("authToken");
+      toast.success("LogOut Successfully");
       await getCurrentAdmin();
       navigate("/login");
     } catch (error) {
       console.log("Admin logout error", error);
+      toast.error("LogOut Failed");
     }
   };
 
@@ -45,12 +49,22 @@ function Nav() {
           NeuralShop
         </h1>
       </div>
-      <button
-        className="text-[12px] md:text-4 bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-[#10121a] font-semibold py-2 px-4 md:py-2.5 md:px-6 rounded-lg md:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer select-none"
-        onClick={logOut}
-      >
-        LogOut
-      </button>
+
+      <div className="flex gap-3">
+        <a
+          className="text-[12px] md:text-4 bg-red-500 hover:bg-red-600 active:bg-red-700 text-[#10121a] font-semibold py-2 px-2 md:py-2.5 md:px-4 rounded-lg md:rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer select-none"
+          href={userUrl}
+          target="_blank"
+        >
+          User Mode
+        </a>
+        <button
+          className="text-[12px] md:text-4 bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-[#10121a] font-semibold py-2 px-4 md:py-2.5 md:px-6 rounded-lg md:rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer select-none"
+          onClick={logOut}
+        >
+          LogOut
+        </button>
+      </div>
     </div>
   );
 }
