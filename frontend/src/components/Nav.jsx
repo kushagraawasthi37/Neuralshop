@@ -22,6 +22,10 @@ function Nav() {
   let { serverUrl } = useContext(authDataContext);
   let { getCurrentUser } = useContext(userDataContext);
 
+  if (!showSearch) {
+    setSearch("");
+  }
+
   const { userData } = useContext(userDataContext);
   const logout = async () => {
     try {
