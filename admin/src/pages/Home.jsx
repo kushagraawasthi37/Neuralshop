@@ -55,16 +55,17 @@ function Home() {
       <Ai />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 mt-[70px] md:mt-0 pl-13 md:p-12 md:pl-25 flex flex-col items-center justify-center text-center overflow-y-auto">
-          <h1 className="text-2xl md:text-4xl text-[#afe2f2] font-semibold mb-10 select-none">
-            NeuralShop Admin Dashboard
-          </h1>
-          {loading ? (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3">
-              <p className="text-white text-lg">Loading your products</p>{" "}
-              <Loading />
-            </div>
-          ) : (
+        {loading ? (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3">
+            <p className="text-white text-lg">Loading your products</p>{" "}
+            <Loading />
+          </div>
+        ) : (
+          <main className="flex-1 mt-[70px] md:mt-0 pl-13 md:p-12 md:pl-25 flex flex-col items-center justify-center text-center overflow-y-auto">
+            <h1 className="text-2xl md:text-4xl text-[#afe2f2] font-semibold mb-10 select-none">
+              NeuralShop Admin Dashboard
+            </h1>
+
             <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-5xl">
               <div className="bg-[#0000003a] w-[90%] sm:w-[300px] md:w-[350px] lg:w-[400px] h-[180px] flex flex-col items-center justify-center gap-4 rounded-xl shadow-lg shadow-black/40 backdrop-blur-lg border border-[#6b6b6b] hover:border-yellow-400 hover:scale-105 transition-all duration-300">
                 <p className="text-lg md:text-xl text-[#dcfafd] font-medium">
@@ -84,8 +85,8 @@ function Home() {
                 </span>
               </div>
             </div>
-          )}
-        </main>
+          </main>
+        )}
       </div>
     </div>
   );
