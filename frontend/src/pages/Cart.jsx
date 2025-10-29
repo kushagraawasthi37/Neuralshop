@@ -62,14 +62,14 @@ function Cart() {
                   {/* Details */}
                   <div className="flex-1 flex flex-col gap-2 min-w-0">
                     <p className="text-md  md:text-lg font-semibold text-white truncate">
-                      {productData.name}
+                      {productData?.name}
                     </p>
                     <div className="flex flex-wrap items-center gap-5">
                       <span className="text-lg text-[#7be6eb] font-semibold">
-                        {currency} {productData.price}
+                        {currency} {productData?.price}
                       </span>
                       <span className="min-w-9 md:min-w-14 h-7 md:h-8 px-3 flex items-center justify-center bg-[#344f56]/80 rounded-md text-sm text-white border border-[#5de0fb]">
-                        {item.size}
+                        {item?.size}
                       </span>
                       <input
                         type="number"

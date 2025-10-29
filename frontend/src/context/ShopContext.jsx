@@ -83,6 +83,7 @@ function ShopContext({ children }) {
 
   const getUserCart = async () => {
     try {
+      setLoading(true);
       const result = await axios.post(
         serverUrl + "/api/cart/get",
         {},
@@ -96,6 +97,8 @@ function ShopContext({ children }) {
       setCartItem(result?.data?.cartData);
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,10 +118,9 @@ function ShopContext({ children }) {
         if (result?.data?.token) {
           localStorage.setItem("authToken", result.data.token);
         }
-        toast.success("Cart Updated ")
+        toast.success("Cart Updated ");
       } catch (error) {
         console.log(error);
-
       }
     }
   };
@@ -146,7 +148,7 @@ function ShopContext({ children }) {
       for (const item in cartItem[items]) {
         try {
           if (cartItem[items][item] > 0) {
-            totalAmount += itemInfo.price * cartItem[items][item];
+            totalAmount += itemInfo?.price * cartItem[items][item];
           }
         } catch (error) {
           console.log(error);

@@ -49,7 +49,6 @@ function Home() {
   useEffect(() => {
     fetchCounts();
   }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-l from-[#1e1e1e] to-[#0c2025] text-white relative overflow-hidden flex flex-col">
       <Nav />

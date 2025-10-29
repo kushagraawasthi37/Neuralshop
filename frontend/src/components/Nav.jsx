@@ -90,7 +90,7 @@ function Nav() {
           </li>
         </ul>
       </div>
-      <div className="w-[30%] flex items-center justify-end gap-1.5">
+      <div className="w-[30%] flex items-center justify-end gap-1.5 md:gap-">
         {/* Search icon */}
         {!showSearch && (
           <IoSearchCircleOutline
@@ -151,7 +151,7 @@ function Nav() {
 
       {/* Profile dropdown */}
       {showProfile && (
-        <div className="absolute w-52 md:w-[220px] md:h-[150px] bg-[#151414d7] top-[110%] right-[4%] border border-yellow-400 rounded-2xl z-10 transition-colors duration-300 overflow-x-hidden">
+        <div className="absolute w-52 md:w-[220px] md:h-[200px] bg-[#151414d7] top-[110%] right-[4%] border border-yellow-400 rounded-2xl z-10 transition-colors duration-300 overflow-x-hidden">
           <ul className="w-full h-full flex flex-col items-start justify-around text-[17px] py-2.5 text-white">
             {/* User not logged in, show login */}
             {!userData && (
