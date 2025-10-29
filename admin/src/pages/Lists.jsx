@@ -2,8 +2,10 @@ import React, { useContext, useEffect, useState } from "react";
 import Nav from "../component/Nav";
 import Sidebar from "../component/Sidebar";
 import { authDataContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 import axios from "../context/axiosInstance.js";
+import Ai from "../component/Ai.jsx";
 
 function Lists() {
   let [list, setList] = useState([]);
@@ -18,9 +20,14 @@ function Lists() {
       if (result?.data?.token) {
         localStorage.setItem("authToken", result.data.token);
       }
-      console.log(result.data.product);
+      // console.log(result.data.product);
     } catch (error) {
-      console.log(error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong try again later";
+      toast.error(errorMessage);
+      // console.log(error);
     }
   };
 
@@ -34,13 +41,21 @@ function Lists() {
       if (result.data.token) {
         fetchList();
       } else {
-        console.log("Failed to remove Product");
+        // console.log("Failed to remove Product");
       }
       if (result?.data?.token) {
         localStorage.setItem("authToken", result.data.token);
       }
+
+      toast.success(response?.data?.message);
     } catch (error) {
-      console.log(error);
+      // console.log(error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong try again later";
+      toast.error(errorMessage);
     }
   };
 
@@ -51,6 +66,7 @@ function Lists() {
   return (
     <div className="w-screen min-h-screen bg-gradient-to-l from-[#10121a] via-[#1a1f2e] to-[#252940] text-white">
       <Nav />
+      <Ai />
       <div className="flex">
         <Sidebar />
 

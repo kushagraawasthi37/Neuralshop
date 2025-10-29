@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authDataContext } from "./authContext";
 import axios from "../context/axiosInstance.js";
+import { toast } from "react-toastify";
 
 export const userDataContext = createContext();
 
@@ -24,12 +25,15 @@ const UserContext = (props) => {
         localStorage.setItem("authToken", response?.data?.token);
       }
 
-      console.log(response.data);
+      // console.log(response.data);
       setUserData(response.data);
     } catch (error) {
       setUserData(null);
       localStorage.removeItem("authToken");
-      console.log(error);
+
+      // const errorMessage =
+      //   error.response?.data?.message || error.message || "Login Failed";
+      // toast.error(errorMessage);
     }
   };
 

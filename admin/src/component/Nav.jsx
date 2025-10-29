@@ -19,15 +19,16 @@ function Nav() {
         withCredentials: true,
       });
 
-      console.log(respose.data);
+      // console.log(respose.data);
       // console.log(respose.data);
       localStorage.removeItem("authToken");
       toast.success("LogOut Successfully");
       await getCurrentAdmin();
       navigate("/login");
     } catch (error) {
-      console.log("Admin logout error", error);
-      toast.error("LogOut Failed");
+      const errorMessage =
+        error.response?.data?.message || error.message || "Login Failed";
+      toast.error(errorMessage);
     }
   };
 

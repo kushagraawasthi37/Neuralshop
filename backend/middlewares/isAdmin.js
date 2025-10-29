@@ -14,7 +14,7 @@ const isAdmin = async (req, res, next) => {
     // console.log(req.adminId);
     next();
   } catch (error) {
-    console.log("Only authorized by admin", error);
+    // console.log("Only authorized by admin", error);
     return res
       .status(500)
       .json({ message: `Unauthorized access ${error.message}` });

@@ -16,6 +16,7 @@ import PlaceOrder from "./pages/PlaceOrder";
 import Order from "./pages/Order";
 import { ToastContainer, toast } from "react-toastify";
 import NotFound from "./pages/NotFound";
+import Ai from "./components/Ai";
 
 const App = () => {
   const { userData } = useContext(userDataContext);
@@ -114,8 +115,9 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<NotFound/>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
+      {isLoggedIn && <Ai />}
     </>
   );
 };

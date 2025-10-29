@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { createContext } from "react";
 import { authDataContext } from "./authContext";
 import axios from "./axiosInstance.js";
+import { toast } from "react-toastify";
 
 export const adminDataContext = createContext();
 
@@ -19,8 +20,8 @@ const AdminContext = (props) => {
         { withCredentials: true }
       );
 
-      console.log(response);
-      console.log(response?.data?.admin);
+      // console.log(response);
+      // console.log(response?.data?.admin);
 
       if (response?.data?.admin) {
         setAdminData(response.data.admin);
@@ -29,9 +30,12 @@ const AdminContext = (props) => {
         setAdminData(null);
       }
     } catch (error) {
+      // const errorMessage =
+      //   error.response?.data?.message || error.message || "Login Failed";
+      // toast.error(errorMessage);
       setAdminData(null);
       localStorage.removeItem("authToken");
-      console.log("can not fetch current admin something went wrong", error);
+      // console.log("can not fetch current admin something went wrong", error);
     }
   };
   useEffect(() => {

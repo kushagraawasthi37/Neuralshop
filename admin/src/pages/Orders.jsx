@@ -7,6 +7,8 @@ import { authDataContext } from "../context/AuthContext";
 import axios from "../context/axiosInstance.js";
 import { useEffect } from "react";
 import { SiEbox } from "react-icons/si";
+import Ai from "../component/Ai.jsx";
+import { toast } from "react-toastify";
 
 function Orders() {
   let [orders, setOrders] = useState([]);
@@ -25,7 +27,10 @@ function Orders() {
       }
       setOrders(result.data.orders.reverse());
     } catch (error) {
-      console.log(error);
+      // console.log(error);
+      const errorMessage =
+        error.response?.data?.message || error.message || "Try again later";
+      toast.error(errorMessage);
     }
   };
 
@@ -43,7 +48,10 @@ function Orders() {
         localStorage.setItem("authToken", result.data.token);
       }
     } catch (error) {
-      console.log(error);
+      // console.log(error);
+      const errorMessage =
+        error.response?.data?.message || error.message || "Login Failed";
+      toast.error(errorMessage);
     }
   };
   useEffect(() => {
@@ -51,6 +59,7 @@ function Orders() {
   }, []);
   return (
     <div className="w-[99vw] min-h-screen bg-gradient-to-l from-[#141414] to-[#0c2025] text-[white]">
+      <Ai />
       <Nav />
       <div className="w-full h-full flex items-center lg:justify-start justify-center">
         <Sidebar />

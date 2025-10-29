@@ -6,6 +6,7 @@ import { authDataContext } from "../context/AuthContext";
 import axios from "../context/axiosInstance.js";
 import { toast } from "react-toastify";
 import Loading from "../component/Loading.jsx";
+import Ai from "../component/Ai.jsx";
 
 function Add() {
   let [image1, setImage1] = useState(false);
@@ -52,9 +53,9 @@ function Add() {
       if (response?.data?.token) {
         localStorage.setItem("authToken", response.data.token);
       }
-      toast.success("ADD Product Successfully");
+      toast.success("Product added Successfully");
 
-      console.log(response.data.product);
+      // console.log(response.data.product);
 
       if (response.data) {
         setName("");
@@ -70,9 +71,9 @@ function Add() {
         setSizes([]);
       }
     } catch (error) {
-      console.log(error);
-      setLoading(false);
-      toast.error("Add Product Failed");
+      const errorMessage =
+        error.response?.data?.message || error.message || "Try again later";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -81,6 +82,7 @@ function Add() {
   return (
     <div className="min-h-screen bg-gradient-to-l from-[#141414] to-[#0c2025] text-white overflow-hidden flex flex-col">
       <Nav />
+      <Ai />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main
@@ -161,7 +163,7 @@ function Add() {
                   id="productName"
                   type="text"
                   placeholder="Type here"
-                  className="w-full h-12 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-5 placeholder-yellow-400 transition"
+                  className="w-full h-12 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-5  transition"
                   onChange={(e) => setName(e.target.value)}
                   value={name}
                   required
@@ -178,7 +180,7 @@ function Add() {
                 <textarea
                   id="productDescription"
                   placeholder="Type here"
-                  className="w-full h-24 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-5 py-3 placeholder-yellow-400 resize-none transition"
+                  className="w-full h-24 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-5 py-3  resize-none transition"
                   onChange={(e) => setDescription(e.target.value)}
                   value={description}
                   required
@@ -227,7 +229,7 @@ function Add() {
                   id="productPrice"
                   type="number"
                   placeholder="₹ 2000"
-                  className="w-full h-12 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-5 placeholder-yellow-400 transition"
+                  className="w-full h-12 rounded-lg bg-[#1a2733] border-2 border-transparent focus:border-yellow-400 text-white px-5  transition"
                   onChange={(e) => setPrice(e.target.value)}
                   value={price}
                   required

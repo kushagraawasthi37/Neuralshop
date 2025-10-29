@@ -22,7 +22,7 @@ function Login() {
   const loginHandler = async (e) => {
     try {
       e.preventDefault();
-      console.log(serverUrl);
+      // console.log(serverUrl);
 
       const response = await axios.post(
         `${serverUrl}/api/auth/adminlogin`,
@@ -31,21 +31,23 @@ function Login() {
           withCredentials: true,
         }
       );
-      console.log(response.data);
-      console.log(response.data.token);
+      // console.log(response.data);
+      // console.log(response.data.token);
       // Save token to localStorage
       if (response?.data?.token) {
         localStorage.setItem("authToken", response.data.token);
       }
 
-      toast.success("AdminLogin Successfully");
+      toast.success("Admin Login Successfully");
       await getCurrentAdmin();
       navigate("/");
       setLoading(false);
-      console.log(response.data);
+      // console.log(response.data);
     } catch (error) {
-      console.log(error);
-      toast.error("AdminLogin Failed");
+      // console.log(error);
+      const errorMessage =
+      error.response?.data?.message || error.message || "Login Failed";
+      toast.error(errorMessage);
       setLoading(false);
     }
   };

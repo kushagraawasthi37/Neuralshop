@@ -36,8 +36,9 @@ function Nav() {
       navigate("/login");
     } catch (error) {
       localStorage.removeItem("authToken");
-      toast.error("LogOut Failed");
-      console.log(error);
+      const errorMessage =
+        error.response?.data?.message || error.message || "Login Failed";
+      toast.error(errorMessage);
     }
   };
 

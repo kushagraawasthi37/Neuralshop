@@ -6,6 +6,8 @@ import { toast } from "react-toastify";
 
 export const shopDataContext = createContext();
 function ShopContext({ children }) {
+  const [size, setSize] = useState("");
+  const [productData, setProductData] = useState(null);
   let [products, setProducts] = useState([]);
   let [search, setSearch] = useState("");
   let { userData } = useContext(userDataContext);
@@ -13,6 +15,7 @@ function ShopContext({ children }) {
   let { serverUrl } = useContext(authDataContext);
   let [cartItem, setCartItem] = useState({});
   let [loading, setLoading] = useState(false);
+
   let currency = "₹";
   let delivery_fee = 40;
 
@@ -25,13 +28,16 @@ function ShopContext({ children }) {
         localStorage.setItem("authToken", result.data.token);
       }
     } catch (error) {
-      console.log(error);
+      const errorMessage =
+        error.response?.data?.message || error.message || "Get Product failed";
+      toast.error(errorMessage);
     }
   };
 
   const addtoCart = async (itemId, size) => {
     if (!size) {
-      console.log("Select Product Size");
+      // console.log("Select Product Size");
+      toast.error("Select size");
       return;
     }
 
@@ -66,7 +72,11 @@ function ShopContext({ children }) {
       } catch (error) {
         console.log(error);
         setLoading(false);
-        toast.error("Add Cart Error");
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Add to cart failed";
+        toast.error(errorMessage);
       }
     }
   };
@@ -105,8 +115,10 @@ function ShopContext({ children }) {
         if (result?.data?.token) {
           localStorage.setItem("authToken", result.data.token);
         }
+        toast.success("Cart Updated ")
       } catch (error) {
         console.log(error);
+
       }
     }
   };
@@ -153,6 +165,10 @@ function ShopContext({ children }) {
   }, []);
 
   let value = {
+    size,
+    setSize,
+    productData,
+    setProductData,
     products,
     currency,
     delivery_fee,

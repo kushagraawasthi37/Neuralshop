@@ -31,8 +31,8 @@ function Login() {
           withCredentials: true,
         }
       );
-      console.log(response.data);
-      console.log(response.data.token);
+      // console.log(response.data);
+      // console.log(response.data.token);
       // Save token to localStorage
       if (response?.data?.token) {
         localStorage.setItem("authToken", response.data.token);
@@ -43,11 +43,11 @@ function Login() {
       navigate("/");
       toast.success("User Login Successful");
 
-      console.log(response.data);
+      // console.log(response.data);
     } catch (error) {
-      toast.error("User Login Failed");
-
-      console.log(error);
+      const errorMessage =
+        error.response?.data?.message || error.message || "Login Failed";
+      toast.error(errorMessage);
     }
   };
 
@@ -66,8 +66,8 @@ function Login() {
         }
       );
       // Save token to localStorage
-      console.log(result.data);
-      console.log(result.data.token);
+      // console.log(result.data);
+      // console.log(result.data.token);
       if (result?.data?.token) {
         localStorage.setItem("authToken", result?.data?.token);
       }
@@ -76,10 +76,13 @@ function Login() {
       navigate("/");
       toast.success("User Login Successful");
 
-      console.log(result.data);
+      // console.log(result.data);
     } catch (error) {
-      toast.error("User Login Failed");
-      console.log(error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Goole Authentication failed";
+      toast.error(errorMessage);
     }
   };
 

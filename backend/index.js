@@ -15,8 +15,6 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 6000;
 
-console.log(process.env.FRONTEND_URL_USER);
-console.log(process.env.FRONTEND_URL_ADMIN);
 app.use(
   cors({
     origin: [process.env.FRONTEND_URL_USER, process.env.FRONTEND_URL_ADMIN],

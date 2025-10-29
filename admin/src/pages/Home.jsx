@@ -3,6 +3,8 @@ import Nav from "../component/Nav";
 import Sidebar from "../component/Sidebar";
 import { authDataContext } from "../context/AuthContext";
 import axios from "../context/axiosInstance.js";
+import Ai from "../component/Ai.jsx";
+import { toast } from "react-toastify";
 
 function Home() {
   const [totalProducts, setTotalProducts] = useState(0);
@@ -29,8 +31,13 @@ function Home() {
       }
 
       setTotalOrders(orders.data.orders.length);
-    } catch (err) {
-      console.error("Failed to fetch counts", err);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong try again later";
+      toast.error(errorMessage);
+      // console.error("Failed to fetch counts", err);
     }
   };
 
@@ -41,6 +48,7 @@ function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-l from-[#1e1e1e] to-[#0c2025] text-white relative overflow-hidden flex flex-col">
       <Nav />
+      <Ai />
       <div className="flex flex-1">
         <Sidebar />
         <main className="flex-1 mt-[70px] md:mt-0 pl-13 md:p-12 md:pl-25 flex flex-col items-center justify-center text-center overflow-y-auto">

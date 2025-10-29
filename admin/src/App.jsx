@@ -16,6 +16,7 @@ import { adminDataContext } from "./context/AdminContext";
 import { ToastContainer, toast } from "react-toastify";
 import NotFound from "./pages/NotFound";
 
+
 const ProtectedRoute = ({ children }) => {
   const { adminData } = useContext(adminDataContext);
   const token = localStorage.getItem("authToken");
@@ -48,10 +49,11 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const App = () => {
+  const { adminData } = useContext(adminDataContext);
+
   return (
     <>
       <ToastContainer />
-
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />

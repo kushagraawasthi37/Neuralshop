@@ -4,15 +4,22 @@ import { shopDataContext } from "../context/ShopContext";
 import { FaStar, FaStarHalfAlt } from "react-icons/fa";
 import RelatedProduct from "../components/RelatedProduct";
 import Loading from "../components/Loading";
+import { toast } from "react-toastify";
 
 function ProductDetail() {
   const { productId } = useParams();
-  const { products, currency, addtoCart, loading } =
-    useContext(shopDataContext);
-  const [productData, setProductData] = useState(null);
+  const {
+    products,
+    currency,
+    addtoCart,
+    productData,
+    setProductData,
+    size,
+    setSize,
+    loading,
+  } = useContext(shopDataContext);
   const [image, setImage] = useState("");
   const [zoom, setZoom] = useState(false);
-  const [size, setSize] = useState("");
 
   // Define desired size order
   const sizeOrder = ["S", "M", "L", "XL", "XXL"];

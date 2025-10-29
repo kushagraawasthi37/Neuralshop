@@ -19,7 +19,7 @@ export const addProduct = async (req, res) => {
       return res.status(400).json({ message: "All 4 images are required" });
     }
 
-    console.log("Starting image uploads...");
+    // console.log("Starting image uploads...");
 
     const image1 = await uploadOnCloudinary(req.files.image1[0].path);
     const image2 = await uploadOnCloudinary(req.files.image2[0].path);
@@ -44,7 +44,7 @@ export const addProduct = async (req, res) => {
       return res.status(404).json({ message: "Admin not found" });
     }
 
-    console.log("All images uploaded successfully");
+    // console.log("All images uploaded successfully");
 
     let productData = {
       name,
@@ -64,12 +64,12 @@ export const addProduct = async (req, res) => {
 
     const token = req.token;
     const product = await Product.create(productData);
-    console.log("product added");
-    return res.status(201).json({ message: "Product created", product, token });
+    // console.log("product added");
+    return res.status(201).json({ message: "Product Added", product, token });
   } catch (error) {
-    console.error("AddProduct error:", error);
+    // console.error("AddProduct error:", error);
     return res.status(500).json({
-      message: "AddProduct error",
+      message: "Product add failed",
       error: error.message,
     });
   }
@@ -78,17 +78,17 @@ export const addProduct = async (req, res) => {
 export const AdminlistProduct = async (req, res) => {
   try {
     const email = req.email;
-    console.log("Admin Product list hitted");
+    // console.log("Admin Product list hitted");
     const owner = await Admin.findOne({ email });
 
     const token = req.token;
     const product = await Product.find({ owner: owner._id });
     return res.status(200).json({ product, token });
   } catch (error) {
-    console.log("ListProduct error admin", error);
+    // console.log("Cant Fetch Product List right now", error);
     return res
       .status(500)
-      .json({ message: `ListProduct error admin ${error}` });
+      .json({ message: `Something went wrong try again later` });
   }
 };
 
@@ -98,8 +98,10 @@ export const listProduct = async (req, res) => {
     const product = await Product.find();
     return res.status(200).json({ product, token });
   } catch (error) {
-    console.log("ListProduct error", error);
-    return res.status(500).json({ message: `ListProduct error ${error}` });
+    // console.log("ListProduct error", error);
+    return res
+      .status(500)
+      .json({ message: `Something went wrong try again later` });
   }
 };
 
@@ -111,7 +113,7 @@ export const removeProduct = async (req, res) => {
     // 1. Get admin ID from email
     const admin = await Admin.findOne({ email: req.email });
     if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
+      return res.status(404).json({ message: "Unauthorized Access" });
     }
 
     // 2. Find product by id
@@ -132,7 +134,9 @@ export const removeProduct = async (req, res) => {
 
     res.status(200).json({ message: "Product deleted successfully", token });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Something went wrong" });
+    // console.error(error);
+    res
+      .status(500)
+      .json({ message: "Something went wrong can't delete right now" });
   }
 };

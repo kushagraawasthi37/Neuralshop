@@ -23,7 +23,7 @@ export const placeOrder = async (req, res) => {
     const user = await User.findById(userId);
     if (!user || !user.cartData || Object.keys(user.cartData).length === 0) {
       console.log("Cart is empty.Add Some item for order");
-      return res.status(400).json({ message: "Cart is empty" });
+      return res.status(400).json({ message: "Cart empty" });
     }
 
     const cartData = user.cartData;
@@ -54,9 +54,9 @@ export const placeOrder = async (req, res) => {
     }
 
     if (items.length === 0) {
-      console.log("Cart is empty Or invalid.Add Some item for order");
+      // console.log("Cart is empty Or invalid.Add Some item for order");
 
-      return res.status(400).json({ message: "Cart is empty or invalid" });
+      return res.status(400).json({ message: "Cart empty" });
     }
 
     // Prepare products array for Order document as [{ id: ObjectId }]
@@ -81,13 +81,13 @@ export const placeOrder = async (req, res) => {
     // Clear user cart after order is placed
     await User.findByIdAndUpdate(userId, { cartData: {} });
 
-    console.log("Order placed succesfully");
+    // console.log("Order placed succesfully");
     return res
       .status(201)
       .json({ message: "Order placed successfully", token });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Order placement error" });
+    // console.error(error);
+    return res.status(500).json({ message: "Order Can't placed" });
   }
 };
 
@@ -99,7 +99,7 @@ export const placeOrderRazorpay = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user || !user.cartData || Object.keys(user.cartData).length === 0) {
-      return res.status(400).json({ message: "Cart is empty" });
+      return res.status(400).json({ message: "Cart empty" });
     }
 
     const cartData = user.cartData;
@@ -128,7 +128,7 @@ export const placeOrderRazorpay = async (req, res) => {
     }
 
     if (items.length === 0) {
-      return res.status(400).json({ message: "Cart is empty or invalid" });
+      return res.status(400).json({ message: "Empty Cart" });
     }
 
     const products = Array.from(productIdSet).map((id) => ({
@@ -163,7 +163,7 @@ export const placeOrderRazorpay = async (req, res) => {
       res.status(200).json(order);
     });
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -191,7 +191,7 @@ export const verifyRazorpay = async (req, res) => {
       res.json({ message: "Payment Failed" });
     }
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -204,8 +204,8 @@ export const userOrders = async (req, res) => {
     const token = req.token;
     return res.status(200).json({ orders, token });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: "userOrders error", error });
+    // console.log(error);
+    return res.status(500).json({ message: "Cant fetch orders", error });
   }
 };
 
@@ -254,7 +254,9 @@ export const allOrders = async (req, res) => {
     return res.status(200).json({ orders, token });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Error fetching orders" });
+    return res
+      .status(500)
+      .json({ message: "Something went wrong.Try again later" });
   }
 };
 
@@ -285,8 +287,8 @@ export const updateStatus = async (req, res) => {
 
     return res.status(200).json({ message: "Status Updated", token });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error updating order status" });
+    // console.error(error);
+    return res.status(500).json({ message: "Order Stattus update failed" });
   }
 };
 

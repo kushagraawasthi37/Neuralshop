@@ -92,14 +92,14 @@ function PlaceOrder() {
             orderData,
             { withCredentials: true }
           );
-          console.log(result.data);
+          // console.log(result.data);
           if (result.data) {
             setCartItem({});
             toast.success("Order Placed");
             navigate("/order");
             setLoading(false);
           } else {
-            console.log(result.data.message);
+            // console.log(result.data.message);
             toast.error("Order Placed Error");
             setLoading(false);
           }

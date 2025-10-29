@@ -53,7 +53,9 @@ function Registeration() {
       // console.log(response.data.message);
     } catch (error) {
       console.log(error);
-      toast.error("User Registration Failed");
+      const errorMessage =
+        error.response?.data?.message || error.message || "signup Failed";
+      toast.error(errorMessage);
     }
   };
 
@@ -84,8 +86,9 @@ function Registeration() {
 
       console.log(result.data);
     } catch (error) {
-      console.log(error);
-      toast.error("User Registration Failed");
+      const errorMessage =
+        error.response?.data?.message || error.message || "Google Authentication Failed";
+      toast.error(errorMessage);
     }
   };
 

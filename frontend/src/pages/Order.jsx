@@ -26,18 +26,9 @@ function Order() {
       if (result?.data?.orders) {
         let allOrdersItem = [];
         result?.data?.orders.forEach((order, orderIndex) => {
-          console.log(`Processing order ${orderIndex} with id ${order._id}`);
+          // console.log(`Processing order ${orderIndex} with id ${order._id}`);
           order.items.forEach((item, itemIndex) => {
-            console.log(`Order ${orderIndex}, item ${itemIndex}:`, item);
-
-            // Debug image URL presence
-            if (!item.image1) {
-              console.warn(
-                `Image missing for item ${item.name} in order ${order._id}`
-              );
-            } else {
-              console.log(`Image URL for item ${item.name}:`, item.image1);
-            }
+            // console.log(`Order ${orderIndex}, item ${itemIndex}:`, item);
 
             // Attach order-level info to each item
             item.status = order.status;
@@ -50,7 +41,7 @@ function Order() {
         });
 
         // Debug the flattened list before setting state
-        console.log("Flattened all items:", allOrdersItem);
+        // console.log("Flattened all items:", allOrdersItem);
 
         setOrderData(allOrdersItem.reverse());
       }

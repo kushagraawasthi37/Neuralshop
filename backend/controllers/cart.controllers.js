@@ -31,7 +31,7 @@ export const addToCart = async (req, res) => {
     return res.status(201).json({ message: "Added to cart", token });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "addToCart error" });
+    return res.status(500).json({ message: "Add to cart failed" });
   }
 };
 
@@ -48,7 +48,7 @@ export const UpdateCart = async (req, res) => {
 
     return res.status(201).json({ message: "cart updated", token });
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     return res.status(500).json({ message: "updateCart error" });
   }
 };
@@ -65,7 +65,7 @@ export const getUserCart = async (req, res) => {
 
     return res.status(200).json({ cartData, token });
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     return res.status(500).json({ message: "getUserCart error" });
   }
 };
