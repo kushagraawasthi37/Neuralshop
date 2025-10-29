@@ -230,7 +230,7 @@ function PlaceOrder() {
           </div>
           <div className="w-[100%] h-12  sm:h-[65px] flex items-center justify-between px-[10px]">
             <input
-              type="text"
+              type="number"
               placeholder="Phone"
               className="w-[100%] h-10 sm:h-[50px] rounded-md bg-slate-700 shadow-sm shadow-[#343434] placeholder:text-[white] text-[18px] px-[20px]"
               required
@@ -250,7 +250,7 @@ function PlaceOrder() {
       border border-[#40f2f7]/60
       shadow-xl
       transition-all duration-300
-      absolute md:right-[1%] right-[30%] sm:right-[35%] bottom-[14.5%] sm:bottom-[10%] sm:ml-[30px] sm:mt-[20px]
+      absolute right-[30%] sm:right-[35%]  md:right-[15%] lg:right-[17.5%] bottom-[14.5%] sm:bottom-[10%] sm:ml-[30px] sm:mt-[20px]
       hover:scale-105 hover:shadow-[0_4px_30px_3px_rgba(44,245,229,0.16)]
       hover:border-[#78f8d9]
       hover:cursor-pointer
