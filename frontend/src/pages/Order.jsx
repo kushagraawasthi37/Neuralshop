@@ -63,7 +63,7 @@ function Order() {
     <div className="w-[99vw] min-h-[100vh] p-5 pb-[150px] overflow-hidden bg-gradient-to-l from-[#141414] to-[#0c2025] flex flex-col items-center">
       {loading ? (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3">
-          <p className="text-white text-lg">Loading your products</p>{" "}
+          <p className="text-white text-lg">Loading your orders</p>{" "}
           <Loading />
         </div>
       ) : (

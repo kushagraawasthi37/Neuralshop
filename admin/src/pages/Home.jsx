@@ -57,7 +57,7 @@ function Home() {
         <Sidebar />
         {loading ? (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3">
-            <p className="text-white text-lg">Loading your products</p>{" "}
+            <p className="text-white text-lg">Loading your Dashboard</p>{" "}
             <Loading />
           </div>
         ) : (

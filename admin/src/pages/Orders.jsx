@@ -71,7 +71,7 @@ function Orders() {
         <div className="lg:w-[85%] md:w-[70%] h-full lg:ml-[310px] md:ml-[250px] mt-[70px] flex flex-col gap-[30px] overflow-x-hidden py-[50px] ml-[100px]">
           {loading ? (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3">
-              <p className="text-white text-lg">Loading your products</p>{" "}
+              <p className="text-white text-lg">Loading your orders</p>{" "}
               <Loading />
             </div>
           ) : (
