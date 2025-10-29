@@ -26,8 +26,6 @@ dist-ssr
 
 
 # Extra files
-eslint.config.js
-vite.config.js
 node_modules/
 README.md
 .env
