@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import axios from "../context/axiosInstance.js";
 import { useContext } from "react";
-import { authDataContext } from "../context/authContext";
+import { authDataContext } from "../context/AuthContext.jsx";
 import { adminDataContext } from "../context/AdminContext";
 import { toast } from "react-toastify";
 

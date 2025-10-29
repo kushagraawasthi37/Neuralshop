@@ -3,7 +3,7 @@ import Logo from "../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { IoEyeOutline } from "react-icons/io5";
 import { IoEye } from "react-icons/io5";
-import { authDataContext } from "../context/authContext";
+import { authDataContext } from "../context/AuthContext";
 import axios from "../context/axiosInstance.js";
 import { adminDataContext } from "../context/AdminContext";
 import { toast } from "react-toastify";
