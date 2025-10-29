@@ -12,7 +12,7 @@ function Footer() {
             <img
               src={logo}
               alt="NeuralShop"
-              className="w-8 h-8 md:w-10 md:h-10"
+              className="w-15 h-15 md:w-20 md:h-20"
             />
             <p className="text-yellow-400 text-lg md:text-xl font-semibold select-text">
               NeuralShop

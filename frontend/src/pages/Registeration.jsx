@@ -87,7 +87,9 @@ function Registeration() {
       console.log(result.data);
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || error.message || "Google Authentication Failed";
+        error.response?.data?.message ||
+        error.message ||
+        "Google Authentication Failed";
       toast.error(errorMessage);
     }
   };
@@ -99,7 +101,7 @@ function Registeration() {
         <span className="flex items-center justify-center text-[1.5rem] md:text-[2.2rem] font-bold text-[#5796E3] gap-2">
           Join NeuralShop
           <img
-            className="w-6 md:w-10 hover:cursor-pointer"
+            className="w-12 md:w-17 hover:cursor-pointer"
             src={Logo}
             alt=""
             onClick={() => {

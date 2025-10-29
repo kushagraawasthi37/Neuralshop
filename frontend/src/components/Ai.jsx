@@ -189,8 +189,14 @@ function Ai() {
       window.location.href = adminURL;
     } else if (
       transcript.includes("men") ||
+      transcript.includes("man") ||
+      transcript.includes("woman") ||
       transcript.includes("women") ||
       transcript.includes("tshirt") ||
+      transcript.includes("tshit") ||
+      transcript.includes("tshat") ||
+      transcript.includes("shat") ||
+      transcript.includes("pent") ||
       transcript.includes("shirt") ||
       transcript.includes("kids") ||
       transcript.includes("jogger") ||
@@ -198,6 +204,7 @@ function Ai() {
       transcript.includes("jeans") ||
       transcript.includes("hoodie") ||
       transcript.includes("trowser") ||
+      transcript.includes("trouser") ||
       transcript.includes("lower") ||
       transcript.includes("upper") ||
       transcript.includes("child") ||
@@ -225,12 +232,14 @@ function Ai() {
       transcript.includes("woolen") ||
       transcript.includes("boolen") ||
       transcript.includes("summer") ||
+      transcript.includes("samar") ||
       transcript.includes("winter") ||
       transcript.includes("rainy") ||
       transcript.includes("thand") ||
       transcript.includes("garmi")
     ) {
       speak(transcript);
+      setShowSearch(true);
       setSearch(transcript);
     } else if (
       transcript.includes("contact") ||
@@ -269,10 +278,14 @@ function Ai() {
     } else if (
       transcript.includes("cart") ||
       transcript.includes("cartPage") ||
+      (transcript.includes("open") && transcript.includes("kite")) ||
       transcript.includes("mericart") ||
+      transcript.includes("kite") ||
       transcript.includes("meriKart") ||
       transcript.includes("meriKaat") ||
-      transcript.includes("mericaat") ||
+      transcript.includes("meriKaat") ||
+      transcript.includes("card") ||
+      (transcript.includes("open") && transcript.includes("card")) ||
       transcript.includes("cartpage") ||
       transcript.includes("cartkholo") ||
       transcript.includes("kaat") ||
@@ -280,6 +293,8 @@ function Ai() {
     ) {
       speak("Opening cart page");
       navigate("/cart");
+
+      setShowSearch(false);
     } else {
       speak("Try again");
       toast.error("Try Again");

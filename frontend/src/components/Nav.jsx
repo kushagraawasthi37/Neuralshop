@@ -48,7 +48,7 @@ function Nav() {
         <img
           src={logo}
           alt=""
-          className="w-[30px] cursor-pointer transition-transform duration-300 hover:scale-110"
+          className="w-[47px] md:w-15  aspect-square cursor-pointer transition-transform duration-300 hover:scale-110"
           onClick={() => navigate("/")}
         />
         <h1

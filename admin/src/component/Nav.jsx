@@ -38,7 +38,7 @@ function Nav() {
         className="w-[30%]  flex items-center justify-start gap-1  md:gap-2.5 cursor-pointer "
         onClick={() => navigate("/")}
       >
-        <img src={logo} alt="" className="w-8 md:w-[30px]" />
+        <img src={logo} alt="" className="w-[45px] md:w-17" />
         <h1
           className="text-5 font-bold md:text-[20px] font-sans select-none"
           style={{

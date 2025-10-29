@@ -56,10 +56,10 @@ function Login() {
     <div className="w-screen h-screen bg-linear-to-l from-[#141414] to-[#0c2025] text-[white] flex flex-col items-center justify-center">
       {/* Top of register page */}
       <div className="w-full h-[100px] flex items-center justify-center flex-col gap-1 md:gap-1.5">
-        <span className="flex items-center justify-center text-[2rem] md:text-[2.5rem] font-bold text-[#5796E3] gap-2">
+        <span className="flex items-center justify-center text-[2rem] md:text-[2.5rem] font-bold text-[#5796E3] ">
           Login
           <img
-            className="w-6 md:w-10 hover:cursor-pointer"
+            className="w-12 md:w-17 hover:cursor-pointer"
             src={Logo}
             alt=""
             onClick={() => {
