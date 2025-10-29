@@ -27,8 +27,6 @@ dist-ssr
 
 # Extra files
 eslint.config.js
-package.json
-package-lock.json
 vite.config.js
 node_modules/
 README.md
