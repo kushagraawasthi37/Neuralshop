@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { authDataContext } from "./authContext";
+import { authDataContext } from "./AuthContext.jsx";
 import axios from "../context/axiosInstance.js";
 import { toast } from "react-toastify";
 
