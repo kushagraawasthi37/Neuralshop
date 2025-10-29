@@ -5,14 +5,17 @@ import { authDataContext } from "../context/AuthContext";
 import axios from "../context/axiosInstance.js";
 import Ai from "../component/Ai.jsx";
 import { toast } from "react-toastify";
+import Loading from "../component/Loading.jsx";
 
 function Home() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
   const { serverUrl } = useContext(authDataContext);
+  const [loading, setLoading] = useState(false);
 
   const fetchCounts = async () => {
     try {
+      setLoading(true);
       const products = await axios.get(`${serverUrl}/api/product/admin/list`, {
         withCredentials: true,
       });
@@ -38,6 +41,8 @@ function Home() {
         "Something went wrong try again later";
       toast.error(errorMessage);
       // console.error("Failed to fetch counts", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,26 +60,32 @@ function Home() {
           <h1 className="text-2xl md:text-4xl text-[#afe2f2] font-semibold mb-10 select-none">
             NeuralShop Admin Dashboard
           </h1>
-
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-5xl">
-            <div className="bg-[#0000003a] w-[90%] sm:w-[300px] md:w-[350px] lg:w-[400px] h-[180px] flex flex-col items-center justify-center gap-4 rounded-xl shadow-lg shadow-black/40 backdrop-blur-lg border border-[#6b6b6b] hover:border-yellow-400 hover:scale-105 transition-all duration-300">
-              <p className="text-lg md:text-xl text-[#dcfafd] font-medium">
-                Total Products
-              </p>
-              <span className="px-6 py-3 bg-[#071418] rounded-lg border border-[#6b6b6b] text-[#8fe8f4] font-semibold text-xl">
-                {totalProducts}
-              </span>
+          {loading ? (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3">
+              <p className="text-white text-lg">Loading your products</p>{" "}
+              <Loading />
             </div>
+          ) : (
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-5xl">
+              <div className="bg-[#0000003a] w-[90%] sm:w-[300px] md:w-[350px] lg:w-[400px] h-[180px] flex flex-col items-center justify-center gap-4 rounded-xl shadow-lg shadow-black/40 backdrop-blur-lg border border-[#6b6b6b] hover:border-yellow-400 hover:scale-105 transition-all duration-300">
+                <p className="text-lg md:text-xl text-[#dcfafd] font-medium">
+                  Total Products
+                </p>
+                <span className="px-6 py-3 bg-[#071418] rounded-lg border border-[#6b6b6b] text-[#8fe8f4] font-semibold text-xl">
+                  {totalProducts}
+                </span>
+              </div>
 
-            <div className="bg-[#0000003a] w-[90%] sm:w-[300px] md:w-[350px] lg:w-[400px] h-[180px] flex flex-col items-center justify-center gap-4 rounded-xl shadow-lg shadow-black/40 backdrop-blur-lg border border-[#6b6b6b] hover:border-yellow-400 hover:scale-105 transition-all duration-300">
-              <p className="text-lg md:text-xl text-[#dcfafd] font-medium">
-                Total Orders
-              </p>
-              <span className="px-6 py-3 bg-[#071418] rounded-lg border border-[#6b6b6b] text-[#8fe8f4] font-semibold text-xl">
-                {totalOrders}
-              </span>
+              <div className="bg-[#0000003a] w-[90%] sm:w-[300px] md:w-[350px] lg:w-[400px] h-[180px] flex flex-col items-center justify-center gap-4 rounded-xl shadow-lg shadow-black/40 backdrop-blur-lg border border-[#6b6b6b] hover:border-yellow-400 hover:scale-105 transition-all duration-300">
+                <p className="text-lg md:text-xl text-[#dcfafd] font-medium">
+                  Total Orders
+                </p>
+                <span className="px-6 py-3 bg-[#071418] rounded-lg border border-[#6b6b6b] text-[#8fe8f4] font-semibold text-xl">
+                  {totalOrders}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </main>
       </div>
     </div>

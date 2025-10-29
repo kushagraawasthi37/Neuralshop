@@ -3,16 +3,18 @@ import Nav from "../component/Nav";
 import Sidebar from "../component/Sidebar";
 import { authDataContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
-
+import Loading from "../component/Loading.jsx";
 import axios from "../context/axiosInstance.js";
 import Ai from "../component/Ai.jsx";
 
 function Lists() {
   let [list, setList] = useState([]);
   let { serverUrl } = useContext(authDataContext);
+  const [loading, setLoading] = useState(true);
 
   const fetchList = async () => {
     try {
+      setLoading(true);
       const result = await axios.get(`${serverUrl}/api/product/admin/list`, {
         withCredentials: true,
       });
@@ -28,6 +30,8 @@ function Lists() {
         "Something went wrong try again later";
       toast.error(errorMessage);
       // console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,7 +51,7 @@ function Lists() {
         localStorage.setItem("authToken", result.data.token);
       }
 
-      toast.success(response?.data?.message);
+      toast.success(result?.data?.message);
     } catch (error) {
       // console.log(error);
 
@@ -75,7 +79,12 @@ function Lists() {
             All Listed Products
           </h2>
 
-          {list?.length > 0 ? (
+          {loading ? (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3">
+              <p className="text-white text-lg">Loading your products</p>{" "}
+              <Loading />
+            </div>
+          ) : list?.length > 0 ? (
             list.map((item, index) => (
               <article
                 key={index}

@@ -47,7 +47,7 @@ function Ai() {
       (transcript.includes("add") && transcript.includes("items")) ||
       transcript.includes("add")
     ) {
-      speak("opening search");
+      speak("Ok");
       navigate("/add");
     } else if (
       transcript.includes("order") ||
@@ -88,7 +88,7 @@ function Ai() {
       (transcript.includes("registeration") && transcript.includes("kardo")) ||
       (transcript.includes("registeration") && transcript.includes("page"))
     ) {
-      speak("opening registering page");
+      speak("opening signup page");
       navigate("/signup");
     } else if (
       (transcript.includes("open") && transcript.includes("home")) ||

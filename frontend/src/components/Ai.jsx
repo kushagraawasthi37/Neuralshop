@@ -71,9 +71,6 @@ function Ai() {
         transcript.includes("close") &&
         showSearch) ||
       (transcript.includes("search") &&
-        transcript.includes("kholo") &&
-        showSearch) ||
-      (transcript.includes("search") &&
         transcript.includes("band") &&
         showSearch)
     ) {
@@ -114,7 +111,7 @@ function Ai() {
       transcript.includes("mereorder") ||
       transcript.includes("meraorder")
     ) {
-      speak("opening order page");
+      speak("Your order");
       navigate("/order");
       setShowSearch(false);
     } else if (
@@ -152,7 +149,7 @@ function Ai() {
       (transcript.includes("registeration") && transcript.includes("kardo")) ||
       (transcript.includes("registeration") && transcript.includes("page"))
     ) {
-      speak("opening registering page");
+      speak("opening signup page");
       setShowSearch(false);
       navigate("/signup");
     } else if (
@@ -291,7 +288,7 @@ function Ai() {
       transcript.includes("kaat") ||
       transcript.includes("kart")
     ) {
-      speak("Opening cart page");
+      speak("Your cart");
       navigate("/cart");
 
       setShowSearch(false);
