@@ -6,6 +6,19 @@ import App from "./App.jsx";
 import AuthContext from "./context/AuthContext.jsx";
 import UserContext from "./context/UserContext.jsx";
 import ShopContext from "./context/ShopContext.jsx";
+import Lenis from "@studio-freight/lenis";
+
+const lenis = new Lenis({
+  duration: 1.2,
+  smooth: true,
+  easing: (x) => 1 - Math.pow(1 - x, 3),
+});
+
+function raf(time) {
+  lenis.raf(time);
+  requestAnimationFrame(raf);
+}
+requestAnimationFrame(raf);
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>

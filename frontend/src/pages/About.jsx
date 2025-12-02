@@ -2,52 +2,112 @@ import React from "react";
 import Title from "../components/Title";
 import about from "../assets/asset/about.jpg";
 import NewLetterBox from "../components/NewLetterBox";
+import { motion } from "framer-motion";
 
 function About() {
   return (
-    <div className="w-[99vw] min-h-screen flex flex-col items-center justify-center bg-gradient-to-l from-[#141414] to-[#0c2025] gap-12 pt-20 px-5 md:px-16 select-none">
-      <Title text1={"ABOUT"} text2={"US"} />
+    <div
+      className="w-[99vw] min-h-screen flex flex-col items-center justify-center 
+      bg-gradient-to-br from-[#020202] via-[#051619] to-[#000d11]
+      gap-24 pt-24 px-6 md:px-16 select-none relative overflow-hidden"
+    >
+      {/* Background floating lights */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-400/10 blur-[120px] rounded-full"></div>
+      <div className="absolute bottom-16 right-16 w-96 h-96 bg-teal-500/10 blur-[150px] rounded-full"></div>
 
-      <div className="w-full flex flex-col lg:flex-row items-center justify-center gap-10">
-        <div className="lg:w-1/2 w-full flex items-center justify-center">
-          <img
-            src={about}
-            alt="About Us"
-            className="
-             w-4/5 lg:w-2/3 shadow-lg rounded-sm transition-transform transition-shadow duration-500
-            hover:scale-105 hover:shadow-[0_0_15px_5px_rgba(45,212,191,0.8)] hover:ring-4 hover:ring-teal-400 hover:ring-opacity-50
-            "
-          />
-        </div>
+      {/* Title */}
+      <motion.div
+        initial={{ opacity: 0, y: -40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1 }}
+      >
+        <Title text1={"ABOUT"} text2={"US"} />
+      </motion.div>
 
-        <div className="lg:w-1/2 w-10/12 flex flex-col gap-5 mt-5 lg:mt-0">
-          <p className="lg:w-4/5 w-full text-white md:text-lg text-sm leading-relaxed">
+      {/* TOP SECTION */}
+      <div className="w-full flex flex-col lg:flex-row items-center justify-center gap-20">
+        {/* IMAGE WITH PARALLAX + 3D TILT */}
+        <motion.div
+          initial={{ opacity: 0, x: -80 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1 }}
+          className="lg:w-1/2 w-full flex items-center justify-center"
+        >
+          <motion.div
+            whileHover={{ scale: 1.08, rotateZ: 1 }}
+            transition={{ type: "spring", stiffness: 120 }}
+            className="relative group"
+          >
+            <div
+              className="absolute inset-0 bg-teal-300/30 blur-3xl opacity-0 group-hover:opacity-40 
+              transition-all duration-700 rounded-2xl"
+            ></div>
+
+            <motion.img
+              src={about}
+              alt="About Us"
+              initial={{ scale: 0.9, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 1 }}
+              className="w-4/5 lg:w-2/3 rounded-xl shadow-[0_0_30px_rgba(0,255,255,0.2)]
+                transition-all duration-700"
+            />
+
+            {/* Glow Accent */}
+            <div
+              className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-48 h-48 
+              bg-cyan-300/20 blur-3xl rounded-full group-hover:opacity-90 opacity-0 
+              transition-all duration-700"
+            ></div>
+          </motion.div>
+        </motion.div>
+
+        {/* TEXT */}
+        <motion.div
+          initial={{ opacity: 0, x: 80 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1 }}
+          className="
+            lg:w-1/2 w-11/12 flex flex-col gap-6 mt-5 lg:mt-0
+            p-6 rounded-xl bg-white/5 border border-white/10
+            backdrop-blur-xl shadow-[0_0_25px_rgba(0,255,255,0.08)]
+          "
+        >
+          <p className="text-gray-200 text-lg leading-relaxed">
             NeuralShop born for smart, seamless shopping—created to deliver
             quality products, trending styles, and everyday essentials in one
             place. With reliable service, fast delivery, and great value,
             NeuralShop makes your online shopping experience simple, satisfying,
             and stress-free.
           </p>
-          <p className="lg:w-4/5 w-full text-white md:text-lg text-sm leading-relaxed">
-            modern shoppers—combining style, convenience, and affordability.
+
+          <p className="text-gray-200 text-lg leading-relaxed">
+            Modern shoppers—combining style, convenience, and affordability.
             Whether it’s fashion, essentials, or trends, we bring everything you
-            need to one trusted platform with fast delivery, easy returns, and a
-            customer-first shopping experience you’ll love.
+            need with fast delivery, easy returns, and a customer-first shopping
+            experience you'll love.
           </p>
-          <p className="lg:w-4/5 w-full text-white md:text-xl text-base font-bold mt-3">
+
+          <p className="text-cyan-300 text-2xl font-bold mt-3 tracking-wide">
             Our Mission
           </p>
-          <p className="lg:w-4/5 w-full text-white md:text-lg text-sm leading-relaxed">
+
+          <p className="text-gray-200 text-lg leading-relaxed">
             Our mission is to redefine online shopping by delivering quality,
             affordability, and convenience. NeuralShop connects customers with
             trusted products and brands, offering a seamless, customer-focused
-            experience that saves time, adds value, and fits every lifestyle and
-            need.
+            experience that saves time and adds value.
           </p>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="w-full max-w-6xl flex flex-col md:flex-row justify-center gap-8 py-10">
+      {/* FEATURES SECTION */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1 }}
+        className="w-full max-w-7xl flex flex-col md:flex-row justify-center gap-10 py-16"
+      >
         {[
           {
             title: "Quality Assurance",
@@ -62,20 +122,31 @@ function About() {
             desc: "Our dedicated support team ensures quick responses, helpful solutions, and a smooth shopping experience every time.",
           },
         ].map(({ title, desc }, idx) => (
-          <div
+          <motion.div
             key={idx}
+            whileHover={{ scale: 1.07, y: -10 }}
+            transition={{ type: "spring", stiffness: 120 }}
             className="
-        w-11/12 sm:w-72 md:w-80 lg:w-1/3 h-60 border border-gray-200 rounded-xl backdrop-blur-[2px] bg-white/5
-        shadow-lg shadow-black/50 p-6 flex flex-col justify-center items-center gap-4
-        text-white text-center transition-all duration-500 ease-in-out transform
-        hover:scale-105 hover:shadow-[0_0_25px_8px_rgba(12,34,37,0.85)] cursor-pointer
-      "
+              relative w-11/12 sm:w-72 md:w-80 lg:w-1/3 h-64 
+              rounded-2xl p-6 flex flex-col justify-center items-center gap-4
+              text-white text-center bg-gradient-to-br from-white/10 to-white/5
+              border border-white/10 shadow-[0_0_25px_rgba(0,255,255,0.2)]
+              backdrop-blur-xl cursor-pointer overflow-hidden group
+            "
           >
-            <b className="text-xl font-semibold text-[#bff1f9]">{title}</b>
-            <p className="text-sm leading-relaxed">{desc}</p>
-          </div>
+            {/* Glow */}
+            <div
+              className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/20 blur-3xl 
+              rounded-full opacity-0 group-hover:opacity-80 transition-all duration-700"
+            ></div>
+
+            <b className="text-2xl font-semibold text-cyan-300 drop-shadow-[0_0_8px_cyan]">
+              {title}
+            </b>
+            <p className="text-gray-200 text-sm leading-relaxed">{desc}</p>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <NewLetterBox />
     </div>

@@ -1,8 +1,8 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import logo from "../assets/asset/logo.png";
 import { IoSearchCircleOutline, IoSearchCircleSharp } from "react-icons/io5";
 import { FaCircleUser } from "react-icons/fa6";
-import { MdOutlineShoppingCart, MdViewAgenda } from "react-icons/md";
+import { MdOutlineShoppingCart } from "react-icons/md";
 import { userDataContext } from "../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { IoMdHome } from "react-icons/io";
@@ -16,236 +16,277 @@ import { toast } from "react-toastify";
 function Nav() {
   let navigate = useNavigate();
   let adminURL = import.meta.env.VITE_ADMIN_URL;
-  let [showProfile, setShowProfile] = useState(false);
+
   let { search, setSearch, showSearch, setShowSearch, getCartCount } =
     useContext(shopDataContext);
+
   let { serverUrl } = useContext(authDataContext);
-  let { getCurrentUser } = useContext(userDataContext);
+  let { userData, getCurrentUser } = useContext(userDataContext);
 
-  if (!showSearch) {
-    setSearch("");
-  }
+  const [showProfile, setShowProfile] = useState(false);
 
-  const { userData } = useContext(userDataContext);
+  // Remove search text when closed
+  useEffect(() => {
+    if (!showSearch) setSearch("");
+  }, [showSearch]);
+
   const logout = async () => {
     try {
-      const respose = await axios.get(`${serverUrl}/api/auth/logout`, {
+      await axios.get(`${serverUrl}/api/auth/logout`, {
         withCredentials: true,
       });
-      console.log(respose.data);
-      toast.success("LogOut Successfully");
+      toast.success("Logged out");
       localStorage.removeItem("authToken");
-
       await getCurrentUser();
       navigate("/login");
     } catch (error) {
-      localStorage.removeItem("authToken");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Login Failed";
-      toast.error(errorMessage);
+      toast.error("Logout failed");
     }
   };
 
   return (
-    <div className="w-screen h-[45px] z-100 md:h-[70px] bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940]  fixed top-0 flex items-center justify-between px-[30px] shadow-md shadow-[#150822] select-none transition-colors duration-500 ease-in-out">
-      <div className="mr-14 w-[20%]  lg:w-[30%] lg:mr-4 flex items-center justify-start gap-2.5">
+    <nav
+      className="
+        w-full h-[70px] fixed top-0 left-0 z-50
+        px-6 md:px-14
+        flex items-center justify-between
+        bg-[#031013]
+        border-b border-[#0dd6d6]/40
+        shadow-[0_0_18px_rgba(0,255,255,0.12)]
+        select-none
+      "
+    >
+      {/* LOGO */}
+      <div className="flex items-center gap-3">
         <img
           src={logo}
-          alt=""
-          className="w-[47px] md:w-15  aspect-square cursor-pointer transition-transform duration-300 hover:scale-110"
+          className="
+            w-[45px] h-[45px] cursor-pointer
+            rounded-xl shadow-[0_0_18px_rgba(0,255,255,0.25)]
+            hover:scale-105 transition
+          "
           onClick={() => navigate("/")}
         />
         <h1
-          className="text-5 font-bold md:text-[20px] font-sans select-none"
-          style={{
-            background: "linear-gradient(90deg, #ffd43b, #ffea7f)", // warm yellow gradient
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
+          className="
+            text-xl font-semibold tracking-wide
+            bg-gradient-to-r from-cyan-300 to-teal-300
+            bg-clip-text text-transparent
+          "
         >
           NeuralShop
         </h1>
       </div>
-      <div className="w-[50%]  lg:w-[40%] hidden md:flex items-center ">
-        <ul className="flex items-center justify-center gap-3 lg:gap-[19px] text-yellow-400">
+
+      {/* DESKTOP NAVIGATION */}
+      <ul className="hidden md:flex items-center gap-6 text-white/80 font-medium">
+        {[
+          { name: "HOME", path: "/" },
+          { name: "COLLECTIONS", path: "/collection" },
+          { name: "ABOUT", path: "/about" },
+          { name: "CONTACT", path: "/contact" },
+        ].map((item, idx) => (
           <li
-            onClick={() => navigate("/")}
-            className=" text-3 lg:text-[15px] bg-white/10 hover:bg-yellow-500/50 cursor-pointer py-1 lg:py-2.5 px-3 lg:px-5 rounded-xl lg:rounded-2xl transition-colors duration-300"
+            key={idx}
+            onClick={() => navigate(item.path)}
+            className="
+              px-5 py-2 rounded-xl cursor-pointer
+              bg-[#072125]
+              border border-[#0dd6d6]/30
+              shadow-[0_0_12px_rgba(0,255,255,0.12)]
+              hover:bg-[#093035]
+              hover:border-[#00f5f5]/60
+              hover:text-[#00f5f5]
+              transition-all
+            "
           >
-            HOME
+            {item.name}
           </li>
-          <li
-            onClick={() => navigate("/collection")}
-            className="text-3 lg:text-[15px] bg-white/10 hover:bg-yellow-500/50 cursor-pointer py-1 lg:py-2.5 px-3 lg:px-5 rounded-xl lg:rounded-2xl transition-colors duration-300"
-          >
-            COLLECTIONS
-          </li>
-          <li
-            onClick={() => navigate("/about")}
-            className="text-3 lg:text-[15px] bg-white/10 hover:bg-yellow-500/50 cursor-pointer py-1 lg:py-2.5 px-3 lg:px-5 rounded-xl lg:rounded-2xl transition-colors duration-300"
-          >
-            ABOUT
-          </li>
-          <li
-            onClick={() => navigate("/contact")}
-            className="text-3 lg:text-[15px] bg-white/10 hover:bg-yellow-500/50 cursor-pointer py-1 lg:py-2.5 px-3 lg:px-5 rounded-xl lg:rounded-2xl transition-colors duration-300"
-          >
-            CONTACT
-          </li>
-        </ul>
-      </div>
-      <div className="w-[30%] flex items-center justify-end gap-1.5 md:gap-">
+        ))}
+      </ul>
+
+      {/* RIGHT ICONS */}
+      <div className="flex items-center gap-4 text-white">
         {/* Search icon */}
-        {!showSearch && (
+        {!showSearch ? (
           <IoSearchCircleOutline
             onClick={() => {
-              setShowSearch((prev) => !prev);
               navigate("/collection");
+              setShowSearch(true);
             }}
-            className="h-8.5 w-8.5 md:w-[38px] md:h-[38px] text-white cursor-pointer hover:text-yellow-300 transition-colors duration-300"
+            className="w-9 h-9 cursor-pointer hover:text-[#00f5f5] transition"
           />
-        )}
-        {showSearch && (
+        ) : (
           <IoSearchCircleSharp
-            onClick={() => setShowSearch((prev) => !prev)}
-            className="transition-all duration-300 ease w-8.5 h-8.5 md:w-[38px] md:h-[38px] text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors duration-300"
+            onClick={() => setShowSearch(false)}
+            className="w-9 h-9 cursor-pointer text-[#00f5f5] transition"
           />
         )}
 
-        {/* UserProfile */}
-        {!userData && (
+        {/* User icon */}
+        {!userData ? (
           <FaCircleUser
-            onClick={() => setShowProfile((prev) => !prev)}
-            className="w-7 h-7 md:w-[29px] md:h-[29px] text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors duration-300"
+            className="w-8 h-8 cursor-pointer hover:text-[#00f5f5] transition"
+            onClick={() => setShowProfile(!showProfile)}
           />
-        )}
-        {userData && (
+        ) : (
           <div
-            onClick={() => setShowProfile((prev) => !prev)}
-            className="h-6.5 w-6.5 md:w-[30px] md:h-[30px] bg-yellow-500 text-[#10121a] rounded-full flex items-center justify-center cursor-pointer hover:bg-yellow-400 transition-colors duration-300 select-none font-semibold"
+            onClick={() => setShowProfile(!showProfile)}
+            className="
+              w-9 h-9 rounded-full bg-cyan-300 text-black
+              flex items-center justify-center cursor-pointer
+              shadow-[0_0_15px_rgba(0,255,255,0.4)]
+              font-semibold
+            "
           >
-            {userData?.user?.name?.slice(0, 1)}
+            {userData?.user?.name?.charAt(0)}
           </div>
         )}
 
         {/* Cart */}
-        <MdOutlineShoppingCart
+        <div
           onClick={() => navigate("/cart")}
-          className="h-6 w-6 md:w-[30px] md:h-[30px] text-white cursor-pointer hover:text-yellow-300 transition-colors duration-300 hidden md:block"
-        />
-        <p className="absolute w-[14px] h-[14px] flex items-center justify-center bg-white text-black  rounded-full text-[11px] text-center font-bold select-none top-[15px] right-[27px] hidden md:block">
-          {getCartCount()}
-        </p>
+          className="relative cursor-pointer"
+        >
+          <MdOutlineShoppingCart className="w-8 h-8 hover:text-[#00f5f5] transition" />
+          <span
+            className="
+              absolute -top-1 -right-2 w-5 h-5 rounded-full bg-[#00eaea]
+              text-black flex items-center justify-center text-xs font-bold
+              shadow-[0_0_10px_rgba(0,255,255,0.4)]
+            "
+          >
+            {getCartCount()}
+          </span>
+        </div>
       </div>
 
-      {/* SearchBox */}
+      {/* SEARCH BAR UNDER NAV */}
       {showSearch && (
-        <div className="w-full h-[50px] md:h-20 bg-[#1a1f2e] absolute top-full left-0 right-0 flex items-center justify-center transition-colors duration-300">
+        <div
+          className="
+          absolute top-full left-0 w-full h-[55px]
+          bg-[#031013]
+          border-b border-[#0dd6d6]/40
+          shadow-[0_0_12px_rgba(0,255,255,0.1)]
+          flex items-center justify-center
+        "
+        >
           <input
             type="text"
-            className="lg:w-[50%] ease w-[80%] h-[70%] bg-[#252940] rounded-2xl md:rounded-[30px] px-[50px] placeholder-yellow-300 text-white text-4 md:text-4 focus:outline-yellow-400"
-            placeholder="Search Here"
-            onChange={(e) => {
-              setSearch(e.target.value);
-            }}
             value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search Here..."
+            className="
+              w-[80%] md:w-[55%] h-[70%]
+              rounded-xl
+              bg-[#072125]
+              border border-[#0dd6d6]/30
+              px-5 text-white
+              placeholder-cyan-200/40
+              focus:outline-none focus:ring-2 focus:ring-[#00eaea]/40
+            "
           />
         </div>
       )}
 
-      {/* Profile dropdown */}
+      {/* DROPDOWN PROFILE */}
       {showProfile && (
-        <div className="absolute w-52 md:w-[220px] md:h-[200px] bg-[#151414d7] top-[110%] right-[4%] border border-yellow-400 rounded-2xl z-10 transition-colors duration-300 overflow-x-hidden">
-          <ul className="w-full h-full flex flex-col items-start justify-around text-[17px] py-2.5 text-white">
-            {/* User not logged in, show login */}
-            {!userData && (
-              <li
-                onClick={() => {
-                  navigate("/login");
-                  setShowProfile(false);
-                }}
-                className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words"
-              >
-                Login
-              </li>
-            )}
-
-            {/* User logged in, show logout */}
-            {userData && (
-              <li
-                onClick={() => {
-                  logout();
-                  setShowProfile(false);
-                }}
-                className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words"
-              >
-                LogOut
-              </li>
-            )}
-
-            <li
-              onClick={() => navigate("/order")}
-              className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words"
+        <div
+          className="
+            absolute top-[105%] right-6 w-56
+            bg-[#031013]
+            border border-[#0dd6d6]/40
+            rounded-2xl p-4 text-white/80
+            shadow-[0_0_18px_rgba(0,255,255,0.18)]
+            flex flex-col gap-4
+          "
+        >
+          {!userData && (
+            <p
+              className="hover:text-[#00f5f5] cursor-pointer"
+              onClick={() => navigate("/login")}
             >
-              Orders
-            </li>
+              Login
+            </p>
+          )}
 
-            <li
-              onClick={() => navigate("/about")}
-              className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words"
-            >
-              About
-            </li>
+          {userData && (
+            <p className="hover:text-red-400 cursor-pointer" onClick={logout}>
+              Logout
+            </p>
+          )}
 
-            <li className="w-full hover:bg-yellow-600 px-4 py-2.5 cursor-pointer transition-colors duration-300 rounded break-words">
-              <a
-                className="block w-full text-inherit"
-                href={adminURL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Admin mode
-              </a>
-            </li>
-          </ul>
+          <p
+            onClick={() => navigate("/order")}
+            className="hover:text-[#00f5f5] cursor-pointer"
+          >
+            Orders
+          </p>
+
+          <p
+            onClick={() => navigate("/about")}
+            className="hover:text-[#00f5f5] cursor-pointer"
+          >
+            About
+          </p>
+
+          <a
+            className="hover:text-[#00f5f5] cursor-pointer"
+            href={adminURL}
+            target="_blank"
+          >
+            Admin Mode
+          </a>
         </div>
       )}
 
-      {/* Mobile bottom nav (unchanged) */}
-      <div className="w-full h-[45px]  md:h-[90px] flex items-center justify-between px-5 text-[12px] fixed -bottom-0.5 left-0 bg-gradient-to-r from-[#10121a] via-[#1a1f2e] to-[#252940] md:hidden">
+      {/* MOBILE NAV */}
+      <div
+        className="
+        md:hidden w-full h-[55px] fixed bottom-0 left-0
+        bg-[#031013]
+        border-t border-[#0dd6d6]/40
+        flex items-center justify-between px-6 text-white/80
+      "
+      >
         <button
           onClick={() => navigate("/")}
-          className="text-white flex items-center justify-center flex-col gap-0.5 hover:text-yellow-300 transition-colors duration-300"
+          className="flex flex-col items-center hover:text-[#00f5f5]"
         >
-          <IoMdHome className="w-[22px] h-[22px] md:w-7 md:h-7 hover:text-yellow-400 md:hidden" />{" "}
-          Home
+          <IoMdHome className="w-6 h-6" /> Home
         </button>
+
         <button
           onClick={() => navigate("/collection")}
-          className="text-white flex items-center justify-center flex-col gap-[2px] hover:text-yellow-300 transition-colors duration-300"
+          className="flex flex-col items-center hover:text-[#00f5f5]"
         >
-          <HiOutlineCollection className="w-[22px] h-[22px] md:w-7 md:h-7 hover:text-yellow-400 md:hidden" />{" "}
-          Collections
+          <HiOutlineCollection className="w-6 h-6" /> Collections
         </button>
+
         <button
           onClick={() => navigate("/contact")}
-          className="text-white flex items-center justify-center flex-col gap-[2px] hover:text-yellow-300 transition-colors duration-300"
+          className="flex flex-col items-center hover:text-[#00f5f5]"
         >
-          <MdContacts className="w-[22px] h-[22px] md:w-7 md:h-7 hover:text-yellow-400 md:hidden" />
-          Contact
+          <MdContacts className="w-6 h-6" /> Contact
         </button>
+
         <button
           onClick={() => navigate("/cart")}
-          className="text-white flex items-center justify-center flex-col gap-[2px] hover:text-yellow-300 transition-colors duration-300"
+          className="flex flex-col items-center hover:text-[#00f5f5] relative"
         >
-          <MdOutlineShoppingCart className="w-[22px] h-[22px] md:w-7 md:h-7 hover:text-yellow-400 md:hidden" />{" "}
-          Cart
+          <MdOutlineShoppingCart className="w-6 h-6" />
+          <span
+            className="
+            absolute -top-1 right-0 bg-[#00eaea] text-black 
+            w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold
+          "
+          >
+            {getCartCount()}
+          </span>
         </button>
-        <p className="absolute h-2.5 w-2.5 md:w-[18px] md:h-[18px] flex items-center justify-center bg-white px-[5px] py-0.5 text-[#10121a] rounded-full text-[10px] font-bold top-0 right-4.5 md:top-2  md:right-[18px]">
-          {getCartCount()}
-        </p>
       </div>
-    </div>
+    </nav>
   );
 }
 

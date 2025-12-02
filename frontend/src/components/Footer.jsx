@@ -1,74 +1,121 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import gsap from "gsap";
 import logo from "../assets/asset/logo.png";
 
 function Footer() {
+  const footerRef = useRef(null);
+
+  // Vision Pro GSAP Entrance Animation
+  useEffect(() => {
+    const el = footerRef.current;
+    gsap.fromTo(
+      el,
+      { opacity: 0, y: 40, filter: "blur(10px)" },
+      {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        duration: 1.2,
+        ease: "power3.out",
+      }
+    );
+  }, []);
+
   return (
-    <div className="w-full mb-[38px] md:mb-0 md:h-[36vh] h-[auto] mt-auto bg-gradient-to-l from-[#141414] to-[#0c2025] flex flex-col justify-between select-none">
-      <div className="w-full md:h-[30vh] h-auto bg-[#1a2733cc] flex flex-wrap md:flex-nowrap items-center justify-center md:justify-between px-6 md:px-16 py-6 md:py-0 gap-6 md:gap-0">
-        
-        {/* Logo and Info */}
-        <div className="md:w-1/3 w-full flex flex-col items-start justify-center gap-3">
+    <div
+      ref={footerRef}
+      className="
+        w-full mt-auto 
+        bg-gradient-to-b from-[#020b0d] via-[#051619] to-[#000d11]
+        border-t border-white/10
+        relative z-10
+        select-none
+      "
+      style={{ fontFamily: "Sora, sans-serif" }}
+    >
+      {/* Top Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-[120px] bg-cyan-400/10 blur-[120px] pointer-events-none"></div>
+
+      {/* Main Footer Grid */}
+      <div
+        className="w-full max-w-[1400px] mx-auto py-14 px-6 lg:px-16
+          grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 
+          text-white"
+      >
+        {/* Brand Section */}
+        <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="NeuralShop"
-              className="w-15 h-15 md:w-20 md:h-20"
-            />
-            <p className="text-yellow-400 text-lg md:text-xl font-semibold select-text">
+            <img src={logo} alt="NeuralShop" className="w-16 h-16" />
+            <p className="text-cyan-300 text-xl font-semibold tracking-wide">
               NeuralShop
             </p>
           </div>
-          <p className="hidden md:block text-gray-400 text-sm md:text-base leading-relaxed max-w-[20rem]">
-            NeuralShop is your all-in-one online shopping destination, offering
-            top-quality products, unbeatable deals, and fast delivery—all backed
-            by trusted service designed to make your life easier every day.
-          </p>
-          <p className="md:hidden text-gray-400 text-sm select-text">
-            Fast. Easy. Reliable. NeuralShop Shopping
+
+          <p className="text-gray-400 leading-relaxed text-sm md:text-base max-w-[260px]">
+            Where innovation meets shopping — fast delivery, premium products,
+            and a seamless experience built for the modern world.
           </p>
         </div>
 
-        {/* Company Links */}
-        <div className="md:w-1/4 w-1/2 flex flex-col items-center md:items-start justify-center gap-3">
-          <p className="text-teal-400 text-lg md:text-xl font-semibold">
-            COMPANY
-          </p>
-          <ul className="text-gray-400 text-sm space-y-1 text-center md:text-left w-full">
-            <li className="cursor-pointer hover:text-teal-400 transition-colors">
+        {/* Company */}
+        <div className="flex flex-col gap-4">
+          <h3 className="text-cyan-300 text-lg font-semibold">COMPANY</h3>
+          <ul className="space-y-2 text-gray-400">
+            <li className="hover:text-cyan-300 cursor-pointer transition">
               Home
             </li>
-            <li className="cursor-pointer hover:text-teal-400 transition-colors">
-              About us
+            <li className="hover:text-cyan-300 cursor-pointer transition">
+              About Us
             </li>
-            <li className="cursor-pointer hover:text-teal-400 transition-colors hidden md:block">
+            <li className="hover:text-cyan-300 cursor-pointer transition">
               Delivery
             </li>
-            <li className="cursor-pointer hover:text-teal-400 transition-colors">
+            <li className="hover:text-cyan-300 cursor-pointer transition">
               Privacy Policy
             </li>
           </ul>
         </div>
 
-        {/* Contact Info */}
-        <div className="md:w-1/4 w-1/2 flex flex-col items-center md:items-start justify-center gap-3">
-          <p className="text-teal-400 text-lg md:text-xl font-semibold">
-            GET IN TOUCH
-          </p>
-          <ul className="text-gray-400 text-sm space-y-1 text-center md:text-left w-full">
+        {/* Support */}
+        <div className="flex flex-col gap-4">
+          <h3 className="text-cyan-300 text-lg font-semibold">SUPPORT</h3>
+          <ul className="space-y-2 text-gray-400">
+            <li className="hover:text-cyan-300 cursor-pointer transition">
+              Contact
+            </li>
+            <li className="hover:text-cyan-300 cursor-pointer transition">
+              Payments
+            </li>
+            <li className="hover:text-cyan-300 cursor-pointer transition">
+              FAQ
+            </li>
+            <li className="hover:text-cyan-300 cursor-pointer transition">
+              Terms & Service
+            </li>
+          </ul>
+        </div>
+
+        {/* Get In Touch */}
+        <div className="flex flex-col gap-4">
+          <h3 className="text-cyan-300 text-lg font-semibold">GET IN TOUCH</h3>
+          <ul className="space-y-2 text-gray-400">
             <li>+91-9876543210</li>
-            <li>contact@NeuralShop.com</li>
-            <li className="hidden md:block">+1-123-456-7890</li>
-            <li className="hidden md:block">admin@NeuralShop.com</li>
+            <li>contact@neuralshop.com</li>
+            <li>+1-123-456-7890</li>
+            <li>support@neuralshop.com</li>
           </ul>
         </div>
       </div>
 
       {/* Divider */}
-      <div className="w-full h-[1px] bg-slate-600 opacity-40"></div>
+      <div className="w-full h-px bg-white/10"></div>
 
-      {/* Copyright */}
-      <div className="w-full h-[5vh] bg-[#1a2733cc] flex items-center justify-center text-gray-400 text-xs md:text-sm select-text">
-        © 2025 NeuralShop - All Rights Reserved
+      {/* Bottom Section */}
+      <div
+        className="w-full py-5 text-center text-gray-400 text-sm"
+        style={{ fontFamily: "Sora, sans-serif" }}
+      >
+        © {new Date().getFullYear()} NeuralShop — All Rights Reserved
       </div>
     </div>
   );
