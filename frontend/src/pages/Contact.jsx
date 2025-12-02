@@ -16,7 +16,7 @@ function Contact() {
             className="w-4/5 lg:w-7/10 rounded-sm shadow-lg shadow-black transition-transform duration-400 hover:scale-105 hover:shadow-[#21263A]"
           />
         </div>
-
+        {/* // Info Section */}
         <div className="lg:w-1/2 w-10/12 flex flex-col gap-5 mt-5 lg:mt-0">
           <p className="lg:w-4/5 w-full text-white font-bold lg:text-lg text-base leading-relaxed">
             Our Store

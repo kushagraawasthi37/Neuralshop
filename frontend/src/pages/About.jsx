@@ -7,9 +7,12 @@ import { motion } from "framer-motion";
 function About() {
   return (
     <div
-      className="w-[99vw] min-h-screen flex flex-col items-center justify-center 
-      bg-gradient-to-br from-[#020202] via-[#051619] to-[#000d11]
-      gap-24 pt-24 px-6 md:px-16 select-none relative overflow-hidden"
+      className="
+        w-full min-h-screen
+        flex flex-col items-center justify-start
+        bg-gradient-to-br from-[#020202] via-[#051619] to-[#000d11]
+        gap-24 pt-28 px-6 md:px-16 select-none relative overflow-hidden
+      "
     >
       {/* Background floating lights */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-400/10 blur-[120px] rounded-full"></div>
@@ -20,12 +23,20 @@ function About() {
         initial={{ opacity: 0, y: -40 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
+        className="mt-10"
       >
         <Title text1={"ABOUT"} text2={"US"} />
       </motion.div>
 
       {/* TOP SECTION */}
-      <div className="w-full flex flex-col lg:flex-row items-center justify-center gap-20">
+      <div
+        className="
+          w-full max-w-7xl 
+          flex flex-col lg:flex-row 
+          items-center justify-center
+          gap-20 mx-auto
+        "
+      >
         {/* IMAGE WITH PARALLAX + 3D TILT */}
         <motion.div
           initial={{ opacity: 0, x: -80 }}
@@ -39,8 +50,10 @@ function About() {
             className="relative group"
           >
             <div
-              className="absolute inset-0 bg-teal-300/30 blur-3xl opacity-0 group-hover:opacity-40 
-              transition-all duration-700 rounded-2xl"
+              className="
+                absolute inset-0 bg-teal-300/30 blur-3xl opacity-0 
+                group-hover:opacity-40 transition-all duration-700 rounded-2xl
+              "
             ></div>
 
             <motion.img
@@ -49,15 +62,20 @@ function About() {
               initial={{ scale: 0.9, opacity: 0 }}
               whileInView={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1 }}
-              className="w-4/5 lg:w-2/3 rounded-xl shadow-[0_0_30px_rgba(0,255,255,0.2)]
-                transition-all duration-700"
+              className="
+                w-4/5 lg:w-2/3 mx-auto 
+                rounded-xl shadow-[0_0_30px_rgba(0,255,255,0.2)]
+                transition-all duration-700
+              "
             />
 
             {/* Glow Accent */}
             <div
-              className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-48 h-48 
-              bg-cyan-300/20 blur-3xl rounded-full group-hover:opacity-90 opacity-0 
-              transition-all duration-700"
+              className="
+                absolute -bottom-10 left-1/2 -translate-x-1/2 
+                w-48 h-48 bg-cyan-300/20 blur-3xl rounded-full 
+                group-hover:opacity-90 opacity-0 transition-all duration-700
+              "
             ></div>
           </motion.div>
         </motion.div>
@@ -68,7 +86,8 @@ function About() {
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ duration: 1 }}
           className="
-            lg:w-1/2 w-11/12 flex flex-col gap-6 mt-5 lg:mt-0
+            lg:w-1/2 w-11/12 
+            flex flex-col gap-6
             p-6 rounded-xl bg-white/5 border border-white/10
             backdrop-blur-xl shadow-[0_0_25px_rgba(0,255,255,0.08)]
           "
@@ -106,7 +125,13 @@ function About() {
         initial={{ opacity: 0, scale: 0.9 }}
         whileInView={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1 }}
-        className="w-full max-w-7xl flex flex-col md:flex-row justify-center gap-10 py-16"
+        className="
+          w-full max-w-7xl 
+          flex flex-col md:flex-row 
+          justify-center lg:justify-between 
+          items-center lg:items-start 
+          gap-10 py-16 mx-auto
+        "
       >
         {[
           {
@@ -127,17 +152,19 @@ function About() {
             whileHover={{ scale: 1.07, y: -10 }}
             transition={{ type: "spring", stiffness: 120 }}
             className="
-              relative w-11/12 sm:w-72 md:w-80 lg:w-1/3 h-64 
+              relative w-11/12 sm:w-72 md:w-80 lg:w-1/3 h-64
               rounded-2xl p-6 flex flex-col justify-center items-center gap-4
               text-white text-center bg-gradient-to-br from-white/10 to-white/5
               border border-white/10 shadow-[0_0_25px_rgba(0,255,255,0.2)]
               backdrop-blur-xl cursor-pointer overflow-hidden group
             "
           >
-            {/* Glow */}
             <div
-              className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/20 blur-3xl 
-              rounded-full opacity-0 group-hover:opacity-80 transition-all duration-700"
+              className="
+                absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/20 
+                blur-3xl rounded-full opacity-0 group-hover:opacity-80 
+                transition-all duration-700
+              "
             ></div>
 
             <b className="text-2xl font-semibold text-cyan-300 drop-shadow-[0_0_8px_cyan]">

@@ -9,5 +9,5 @@ function Title({ text1, text2 }) {
     </div>
   );
 }
-
+// --- SAME LOGIC ---
 export default Title;

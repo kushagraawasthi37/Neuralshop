@@ -27,7 +27,7 @@ const App = () => {
 
   return (
     <>
-      <ToastContainer />
+      <ToastContainer position="bottom-center" />
       {isLoggedIn && <Nav />} {/* Render Nav once for logged-in users */}
       <Routes>
         <Route path="/signup" element={<Registeration />} />

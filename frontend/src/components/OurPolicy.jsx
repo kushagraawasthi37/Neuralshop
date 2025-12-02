@@ -9,52 +9,65 @@ function OurPolicy() {
     {
       icon: <RiExchangeFundsLine className="text-[#2dd4bf]" />,
       title: "Easy Exchange Policy",
-      description:
-        "Exchange Made Easy – Quick, Simple, and Customer-Friendly Process.",
+      description: "Quick and hassle-free exchange process.",
     },
     {
       icon: <TbRosetteDiscountCheckFilled className="text-[#2dd4bf]" />,
       title: "7 Days Return Policy",
-      description: "Shop with Confidence – 7 Days Easy Return Guarantee.",
+      description: "Shop with peace of mind — 7-day easy returns.",
     },
     {
       icon: <BiSupport className="text-[#2dd4bf]" />,
       title: "Best Customer Support",
-      description:
-        "Trusted Customer Support – Your Satisfaction Is Our Priority.",
+      description: "Always ready to help with any query.",
     },
   ];
 
   return (
-    <div className="w-screen min-h-[] flex flex-col items-center justify-start bg-gradient-to-l from-[#141414] to-[#0c2025] gap-12 py-20 px-4 md:px-16 select-none">
-      <div className="w-full max-w-5xl text-center">
+    <div
+      className="
+      w-full py-20 px-6 md:px-16 
+      bg-[#0c2025] select-none
+      flex flex-col items-center gap-12
+    "
+    >
+      <div className="text-center">
         <Title text1={"OUR"} text2={"POLICY"} />
         <p className="mt-2 text-sm md:text-lg text-blue-200 max-w-xl mx-auto">
-          Customer-Friendly Policies – Committed to Your Satisfaction and Safety.
+          Customer-friendly policies built to give you the best shopping
+          experience.
         </p>
       </div>
 
-      <div className="w-full max-w-5xl flex flex-wrap md:flex-nowrap justify-center gap-6 md:gap-8 lg:gap-10">
-        {policies.map(({ icon, title, description }, idx) => (
+      <div
+        className="
+        w-full max-w-6xl 
+        grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 
+        gap-6 md:gap-8
+        justify-center
+      "
+      >
+        {policies.map((p, idx) => (
           <div
             key={idx}
             className="
-              w-full max-w-sm md:w-1/3 lg:w-1/3 flex-shrink-0 flex-grow-0 box-border
-              flex flex-col items-center gap-2 p-4 md:p-6
-              h-[150px] md:h-[200px]
-              bg-[#141a26cc] backdrop-blur-lg rounded-xl border-[2.5px] border-[#1f2937]
-              shadow-lg shadow-black/60
-              transition-transform duration-300 hover:scale-105 hover:shadow-teal-500/70 hover:border-[#2dd4bf] cursor-pointer
+              w-full p-6 rounded-xl
+              bg-[#141a26] border border-[#1f2937]
+              shadow-[0_0_14px_rgba(0,0,0,0.5)]
+              hover:border-[#2dd4bf] hover:shadow-[0_0_18px_rgba(45,212,191,0.4)]
+              transition-all hover:-translate-y-1 cursor-pointer
+
+              flex flex-col items-center text-center gap-3
             "
           >
-            <div className="text-3xl md:text-6xl lg:text-7xl mb-1 md:mb-2 transition-transform duration-500 hover:rotate-12">
-              {icon}
-            </div>
-            <h3 className="text-base md:text-lg lg:text-2xl font-semibold text-[#afe2f2] text-center truncate w-full">
-              {title}
+            <div className="text-4xl md:text-6xl">{p.icon}</div>
+
+            <h3 className="text-lg md:text-xl text-[#a5faf7] font-semibold">
+              {p.title}
             </h3>
-            <p className="text-[10px] md:text-xs lg:text-sm text-[#c0d9ff] text-center leading-relaxed break-words w-full">
-              {description}
+
+            <p className="text-sm md:text-base text-blue-200 leading-relaxed">
+              {p.description}
             </p>
           </div>
         ))}

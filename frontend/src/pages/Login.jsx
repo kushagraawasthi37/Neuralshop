@@ -1,9 +1,8 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import Logo from "../assets/asset/logo.png";
 import { useNavigate } from "react-router-dom";
 import google from "../assets/asset/google.png";
-import { IoEyeOutline } from "react-icons/io5";
-import { IoEye } from "react-icons/io5";
+import { IoEyeOutline, IoEye } from "react-icons/io5";
 import { authDataContext } from "../context/AuthContext";
 import axios from "../context/axiosInstance.js";
 import { signInWithPopup } from "firebase/auth";
@@ -11,6 +10,7 @@ import { auth, provider } from "../utils/firebase";
 import { userDataContext } from "../context/UserContext";
 import { toast } from "react-toastify";
 import Loading from "../components/Loading";
+import gsap from "gsap";
 
 function Login() {
   const navigate = useNavigate();
@@ -19,35 +19,81 @@ function Login() {
   const [password, setPassword] = useState("");
   const { serverUrl } = useContext(authDataContext);
   const { getCurrentUser } = useContext(userDataContext);
-  let [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  // REFS
+  const cardRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // ----------- GSAP intro reveal ----------
+  useEffect(() => {
+    gsap.from(cardRef.current, {
+      y: 40,
+      opacity: 0,
+      duration: 1.2,
+      ease: "power3.out",
+    });
+  }, []);
+
+  // ----------- 3D tilt + parallax ----------
+  useEffect(() => {
+    const card = cardRef.current;
+
+    const handleMove = (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+
+      const accelX = (x / rect.width) * 20;
+      const accelY = (y / rect.height) * 20;
+
+      gsap.to(card, {
+        rotateY: accelX,
+        rotateX: -accelY,
+        transformPerspective: 900,
+        duration: 0.3,
+        ease: "power2.out",
+      });
+    };
+
+    const resetTilt = () => {
+      gsap.to(card, {
+        rotateY: 0,
+        rotateX: 0,
+        duration: 0.6,
+        ease: "power3.out",
+      });
+    };
+
+    card.addEventListener("mousemove", handleMove);
+    card.addEventListener("mouseleave", resetTilt);
+
+    return () => {
+      card.removeEventListener("mousemove", handleMove);
+      card.removeEventListener("mouseleave", resetTilt);
+    };
+  }, []);
+
+  // ------------------- Login Logic -------------------
   const loginHandler = async (e) => {
     try {
       e.preventDefault();
       const response = await axios.post(
         `${serverUrl}/api/auth/login`,
         { email, password },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
-      // console.log(response.data);
-      // console.log(response.data.token);
-      // Save token to localStorage
+
       if (response?.data?.token) {
         localStorage.setItem("authToken", response.data.token);
       }
-      setLoading(false);
 
+      setLoading(false);
       await getCurrentUser();
       navigate("/");
       toast.success("User Login Successful");
-
-      // console.log(response.data);
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message || error.message || "Login Failed";
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || "Login Failed");
     }
   };
 
@@ -55,120 +101,122 @@ function Login() {
     try {
       const response = await signInWithPopup(auth, provider);
       const user = response.user;
-      const name = user.displayName;
-      const email = user.email;
 
       const result = await axios.post(
         `${serverUrl}/api/auth/googlelogin`,
-        { email, name },
-        {
-          withCredentials: true,
-        }
+        { email: user.email, name: user.displayName },
+        { withCredentials: true }
       );
-      // Save token to localStorage
-      // console.log(result.data);
-      // console.log(result.data.token);
+
       if (result?.data?.token) {
-        localStorage.setItem("authToken", result?.data?.token);
+        localStorage.setItem("authToken", result.data.token);
       }
 
       await getCurrentUser();
       navigate("/");
       toast.success("User Login Successful");
-
-      // console.log(result.data);
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Goole Authentication failed";
-      toast.error(errorMessage);
+      toast.error(error.message || "Google Authentication failed");
     }
   };
 
   return (
-    <div className="w-screen h-screen bg-linear-to-l from-[#141414] to-[#0c2025] text-[white] flex flex-col items-center justify-center">
-      {/* Top of register page */}
-      <div className="w-full h-[100px] flex items-center justify-center flex-col gap-1 md:gap-2.5">
-        <span className="flex items-center justify-center text-[1.5rem] md:text-[2.2rem] font-bold text-[#5796E3] gap-2">
+    <div
+      ref={containerRef}
+      className="w-screen h-screen bg-linear-to-l from-[#141414] to-[#0c2025] text-white flex flex-col items-center justify-center overflow-hidden"
+    >
+      {/* Header */}
+      <div className="w-full h-[100px] flex flex-col items-center justify-center gap-2">
+        <span className="flex items-center justify-center text-[2rem] font-bold text-[#5796E3] gap-2">
           Login
           <img
-            className="w-12 md:w-17 hover:cursor-pointer"
+            className="w-12 cursor-pointer"
             src={Logo}
-            alt=""
-            onClick={() => {
-              navigate("/");
-            }}
+            alt="logo"
+            onClick={() => navigate("/")}
           />
         </span>
-        <span className="text-[12px] md:text-[16px] text-white/50 ">
+        <span className="text-white/50 text-[14px]">
           Log In for Deals Curated Just for You
         </span>
       </div>
 
-      {/* Register Page Card */}
-      <div className="max-w-[600px] w-[90%] h-[500px] bg-[#00000025] border border-[#96969635] backdrop:blur-2xl rounded-lg shadow-lg flex items-center justify-center ">
+      {/* Card */}
+      <div
+        ref={cardRef}
+        className="max-w-[600px] w-[90%] h-[500px] bg-[#ffffff10] border border-[#ffffff18]
+       rounded-xl shadow-breathe backdrop-blur-xl flex items-center justify-center 
+       transition-all duration-300 will-change-transform"
+      >
         <form
           onSubmit={loginHandler}
           className="w-[90%] h-[90%] flex flex-col items-center justify-start gap-5"
         >
+          {/* Google Button */}
           <div
             onClick={googleLogin}
-            className="w-[90%] h-[50px] bg-[#5796e3d6] rounded-lg flex items-center justify-center gap-2.5 py-5 cursor-pointer hover:bg-[#2f7eded6] hover:scale-95 transition-all duration-200 ease-in-out"
+            className="w-[90%] h-[50px] bg-[#5796e3d6] rounded-lg flex items-center justify-center
+            gap-3 cursor-pointer hover:bg-[#2f7eded6] hover:scale-[0.97]
+            transition-all duration-200"
           >
-            <img src={google} alt="" className="w-5" /> Continue with Google
+            <img src={google} className="w-5" /> Continue with Google
           </div>
-          <div className="w-full h-5 flex items-center justify-center gap-2.5">
-            <div className="w-[40%] h-px bg-[#96969635]"></div> OR{" "}
-            <div className="w-[40%] h-px bg-[#96969635]"></div>
+
+          <div className="flex w-full items-center justify-center gap-3 text-white/50">
+            <div className="w-[40%] h-px bg-white/20"></div> OR{" "}
+            <div className="w-[40%] h-px bg-white/20"></div>
           </div>
-          <div className="w-[90%] h-[400px] flex flex-col items-center justify-center gap-[15px]  relative">
+
+          {/* Inputs */}
+          <div className="w-[90%] flex flex-col items-center gap-4 relative">
             <input
               type="text"
-              className="w-full h-[50px] border-2 border-[#96969635] backdrop:blur-sm rounded-lg shadow-lg bg-transparent placeholder-[#ffffffc7] px-5 font-semibold"
+              required
               placeholder="Email"
-              required
               value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-              }}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full h-[50px] border-2 border-white/20 rounded-lg bg-transparent
+              placeholder-white/70 px-5 font-semibold shadow-breathe focus:border-[#5796E3]
+              transition-all duration-300"
             />
-            <input
-              type={show ? "text" : "password"}
-              className="w-full h-[50px] border-2 border-[#96969635] backdrop:blur-sm rounded-lg shadow-lg bg-transparent placeholder-[#ffffffc7] px-5 font-semibold"
-              placeholder="Password"
-              required
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-              }}
-            />
-            {/* Agar show nhi kiya hai to ye icon */}
-            {!show && (
-              <IoEyeOutline
-                className="w-5 h-5 cursor-pointer absolute bottom-[56%] right-[4%]"
-                onClick={() => {
-                  setShow((prev) => !prev);
-                }}
-              />
-            )}
-            {/* Agar show kiya hai to ye icon */}
 
-            {show && (
-              <IoEye
-                className="w-5 h-5 cursor-pointer absolute bottom-[56%] right-[4%]"
-                onClick={() => {
-                  setShow((prev) => !prev);
-                }}
+            <div className="relative w-full">
+              <input
+                type={show ? "text" : "password"}
+                required
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full h-[50px] border-2 border-white/20 rounded-lg bg-transparent
+                placeholder-white/70 px-5 font-semibold shadow-breathe focus:border-[#5796E3]
+                transition-all duration-300"
               />
-            )}
-            <button className=" w-full h-[50px] bg-[#5796e3d6] transition-all duration-200 ease-in-out rounded-lg flex items-center justify-center mt-5 text-[17px] font-semibold hover:scale-95 hover:bg-[#2f7eded6] hover:cursor-pointer">
+
+              {show ? (
+                <IoEye
+                  className="absolute top-1/2 right-4 -translate-y-1/2 cursor-pointer"
+                  onClick={() => setShow(false)}
+                />
+              ) : (
+                <IoEyeOutline
+                  className="absolute top-1/2 right-4 -translate-y-1/2 cursor-pointer"
+                  onClick={() => setShow(true)}
+                />
+              )}
+            </div>
+
+            {/* Button */}
+            <button
+              className="w-full h-[50px] bg-[#5796e3d6] rounded-lg text-[17px] font-semibold 
+              hover:scale-[0.97] hover:bg-[#2f7eded6] transition-all duration-200 mt-2"
+            >
               {loading ? <Loading /> : "Login"}
             </button>
-            <p className="flex gap-2.5 text-white/50">
-              Don't have an Account?{" "}
+
+            <p className="flex gap-2 text-white/50 text-[15px]">
+              Don't have an account?
               <span
-                className="text-[rgba(85,85,246,0.81)] text-[17px] font-semibold cursor-pointer"
+                className="text-[#5796E3] cursor-pointer font-semibold"
                 onClick={() => navigate("/signup")}
               >
                 Register

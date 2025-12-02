@@ -3,8 +3,115 @@
 
 * {
   font-family: 'Sora', sans-serif;
+
 }
 
-::-webkit-scrollbar {
-  display: none;
+* {
+  font-family: "Inter", sans-serif;
+}
+
+/* Always put toast above navbar */
+.Toastify__toast-container {
+  z-index: 999999 !important;
+}
+
+.Toastify__toast {
+  z-index: 999999 !important;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+  scroll-behavior: auto !important;
+  /* avoid conflicts */
+}
+
+@layer utilities {
+  .shadow-breathe {
+    animation: breatheShadow 3s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(87, 150, 227, 0.15);
+  }
+
+  @keyframes breatheShadow {
+    0% {
+      box-shadow: 0 0 20px rgba(87, 150, 227, 0.1);
+    }
+
+    50% {
+      box-shadow: 0 0 40px rgba(87, 150, 227, 0.25);
+    }
+
+    100% {
+      box-shadow: 0 0 20px rgba(87, 150, 227, 0.1);
+    }
+  }
+}
+
+/* FLOATING TOAST STYLE */
+.Toastify__toast {
+  background: rgba(30, 30, 30, 0.55) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 14px 18px !important;
+  box-shadow: 0 4px 25px rgba(0, 200, 255, 0.35) !important;
+  color: #fff !important;
+}
+
+/* Floating animation */
+.Toastify__toast--animate {
+  animation: floatingToast 0.6s ease-out;
+}
+
+@keyframes floatingToast {
+  0% {
+    opacity: 0;
+    transform: translateY(25px) scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+  }
+}
+
+/* Make container floating & centered */
+.Toastify__toast-container {
+  z-index: 999999 !important;
+  padding: 0 !important;
+}
+
+img {
+  transform-style: flat !important;
+  backface-visibility: hidden;
+}
+
+/* App.css (or global stylesheet) — emergency transform reset */
+.bs-card-wrap,
+.latest-card,
+.bs-card-wrap *,
+.latest-card * {
+  transform: none !important;
+  rotate: 0 !important;
+  /* just in case */
+  transition: none !important;
+  will-change: auto !important;
+}
+
+/* hide any floating spotlight overlays if still present */
+[data-spotlight],
+.spotlight,
+.__spotlight {
+  transform: translate(-9999px, -9999px) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* make sure parent sections don't have persistent 3d perspective/transform */
+section,
+.fade-section,
+.hero-root,
+.max-w-7xl {
+  transform: none !important;
 }
