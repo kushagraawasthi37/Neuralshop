@@ -1,131 +1,207 @@
-// BestSeller.jsx
 import React, { useContext, useEffect, useState, useRef } from "react";
-import Title from "./Title";
 import { shopDataContext } from "../context/ShopContext";
+import Title from "./Title";
 import Card3D from "./Card";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Draggable } from "gsap/Draggable";
+
+gsap.registerPlugin(ScrollTrigger, Draggable);
 
 function BestSeller() {
   const { products } = useContext(shopDataContext);
   const [bestSeller, setBestSeller] = useState([]);
-  const gridRef = useRef(null);
-  const spotlightRef = useRef(null);
 
+  const wrapperRef = useRef(null);
+  const trackRef = useRef(null);
+  const spotlightRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // Duplicate for infinite scrolling
   useEffect(() => {
-    const filtered = (products || []).filter((p) => p.bestseller);
-    setBestSeller(filtered.slice(0, 8));
+    const filtered = products?.filter((p) => p.bestseller) || [];
+    setBestSeller([...filtered, ...filtered, ...filtered]);
   }, [products]);
 
-  // Magnetic grid: cards move slightly based on cursor
+  // BORDER GLOW (Same as LatestCollection but GREEN)
   useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
+    const box = containerRef.current;
 
-    const cards = () => Array.from(grid.querySelectorAll(".bs-card-wrap"));
+    gsap.set(box, { borderColor: "rgba(50,255,180,0.10)" }); // initial faint green
 
-    const handleMove = (e) => {
-      const rect = grid.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-
-      // Move spotlight
-      if (spotlightRef.current) {
-        spotlightRef.current.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
-      }
-
-      cards().forEach((c) => {
-        const r = c.getBoundingClientRect();
-        const dx = mouseX - (r.left + r.width / 2);
-        const dy = mouseY - (r.top + r.height / 2);
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const force = Math.max(0, 1 - dist / 800); // falloff
-        gsap.to(c, {
-          x: (dx / 20) * force,
-          y: (dy / 30) * force,
-          rotateX: (dy / r.height) * 2 * force,
-          rotateY: -(dx / r.width) * 2 * force,
-          duration: 0.6,
-          ease: "power3.out",
-        });
+    const enter = () =>
+      gsap.to(box, {
+        borderColor: "#11ff88",
+        duration: 0.12,
+        ease: "power2.out",
       });
-    };
 
-    const handleLeave = () => {
-      cards().forEach((c) => {
-        gsap.to(c, {
-          x: 0,
-          y: 0,
-          rotateX: 0,
-          rotateY: 0,
-          duration: 0.8,
-          ease: "power3.out",
-        });
+    const leave = () =>
+      gsap.to(box, {
+        borderColor: "rgba(50,255,180,0.01)",
+        duration: 0.2,
+        ease: "power2.out",
       });
-      if (spotlightRef.current) {
-        spotlightRef.current.style.transform = `translate(-9999px,-9999px)`;
-      }
-    };
 
-    grid.addEventListener("mousemove", handleMove);
-    grid.addEventListener("mouseleave", handleLeave);
+    box.addEventListener("mouseenter", enter);
+    box.addEventListener("mouseleave", leave);
 
     return () => {
-      grid.removeEventListener("mousemove", handleMove);
-      grid.removeEventListener("mouseleave", handleLeave);
+      box.removeEventListener("mouseenter", enter);
+      box.removeEventListener("mouseleave", leave);
     };
   }, []);
 
+  // SPOTLIGHT (same behavior as LatestCollection)
+  useEffect(() => {
+    const box = containerRef.current;
+    const spot = spotlightRef.current;
+
+    const move = (e) => {
+      const r = box.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+
+      if (x >= 0 && x <= r.width && y >= 0 && y <= r.height) {
+        spot.style.opacity = 1;
+        spot.style.transform = `translate(${x - 250}px, ${y - 250}px)`;
+      } else spot.style.opacity = 0;
+    };
+
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+
+  // Infinite Smooth Auto Scroll (Lag Fixed)
+  useEffect(() => {
+    const track = trackRef.current;
+    const wrapper = wrapperRef.current;
+    if (!track || !wrapper) return;
+
+    let totalWidth = 0;
+    let resizeObserver;
+
+    const calculateWidth = () => {
+      gsap.set(track, { x: 0 });
+
+      const minTrackWidth = wrapper.offsetWidth * 1.5;
+      if (track.scrollWidth < minTrackWidth) {
+        track.style.minWidth = `${minTrackWidth}px`;
+      }
+
+      totalWidth = track.scrollWidth / 3;
+    };
+
+    calculateWidth();
+    setTimeout(() => calculateWidth(), 150);
+
+    const loop = gsap.to(track, {
+      x: () => `-${totalWidth}`,
+      duration: 18,
+      ease: "none",
+      repeat: -1,
+      modifiers: {
+        x: (x) => `${parseFloat(x) % -totalWidth}px`,
+      },
+    });
+
+    wrapper.addEventListener("mouseenter", () => loop.timeScale(0.35));
+    wrapper.addEventListener("mouseleave", () => loop.timeScale(1));
+
+    resizeObserver = new ResizeObserver(() => calculateWidth());
+    resizeObserver.observe(wrapper);
+
+    return () => {
+      loop.kill();
+      resizeObserver.disconnect();
+    };
+  }, [bestSeller]);
+
+  // Draggable Track (same as LatestCollection)
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    let totalWidth = track.scrollWidth / 3;
+
+    setTimeout(() => (totalWidth = track.scrollWidth / 3), 150);
+
+    Draggable.create(track, {
+      type: "x",
+      inertia: true,
+      edgeResistance: 0.8,
+      onDrag() {
+        const x = gsap.getProperty(track, "x");
+        if (x <= -totalWidth) gsap.set(track, { x: x + totalWidth });
+        if (x > 0) gsap.set(track, { x: x - totalWidth });
+      },
+      onThrowUpdate() {
+        const x = gsap.getProperty(track, "x");
+        if (x <= -totalWidth) gsap.set(track, { x: x + totalWidth });
+        if (x > 0) gsap.set(track, { x: x - totalWidth });
+      },
+    });
+  }, [bestSeller]);
+
   return (
-    <section
-      ref={gridRef}
-      className="relative w-full min-h-screen py-20 px-6 bg-gradient-to-br from-[#020202] via-[#051619] to-[#000d11] overflow-visible"
-    >
-      {/* glowing blobs (same vibe as About) */}
-      <div className="pointer-events-none absolute top-12 left-10 w-72 h-72 bg-cyan-400/10 blur-[120px] rounded-full"></div>
-      <div className="pointer-events-none absolute bottom-16 right-16 w-96 h-96 bg-teal-500/10 blur-[150px] rounded-full"></div>
-
-      {/* title */}
-      <div className="text-center mb-8">
-        <Title text1={"BEST"} text2={"SELLER"} />
-        <p className="mt-2 text-blue-100 text-sm md:text-lg max-w-2xl mx-auto">
-          Tried, Tested, Loved — Discover Our All-Time Best Sellers.
-        </p>
-      </div>
-
-      {/* cursor spotlight (DOM overlay) */}
+    <section className="relative py-12 px-4 flex justify-center">
       <div
-        ref={spotlightRef}
-        style={{
-          position: "fixed",
-          top: -9999,
-          left: -9999,
-          width: 300,
-          height: 300,
-          pointerEvents: "none",
-          transform: "translate(-9999px,-9999px)",
-          transition: "transform 0.12s linear",
-          zIndex: 60,
-          mixBlendMode: "screen",
-        }}
-        className="rounded-full bg-[radial-gradient(closest-side,rgba(0,255,255,0.10),transparent)]"
-      />
+        ref={containerRef}
+        className="
+          w-full max-w-[1400px] relative overflow-hidden
+          border rounded-3xl 
+bg-[#101B1E]          transition-all duration-500
+        "
+      >
+        {/* SPOTLIGHT */}
+        <div
+          ref={spotlightRef}
+          className="
+            absolute w-[500px] h-[500px] rounded-full opacity-0 pointer-events-none
+            bg-[radial-gradient(circle,rgba(0,255,150,0.45),rgba(0,255,150,0.15),transparent)]
+            blur-[140px]
+          "
+          style={{ top: 0, left: 0, transition: "opacity 0.12s linear" }}
+        />
 
-      {/* grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
-        {bestSeller.map((p, i) => (
-          <div key={p._id || i} className="bs-card-wrap will-change-transform">
-            <Card3D
-              name={p.name}
-              id={p._id}
-              price={p.price}
-              image={p.image1}
-              modelUrl={p.modelUrl} // optional GLTF/GLB url if available
-            />
+        {/* Title */}
+        <div className="text-center pt-10">
+          <Title text1="BEST" text2="SELLER" />
+          <p className="text-blue-100 mt-2 max-w-2xl mx-auto">
+            Tried, Tested, Loved — Discover Our All-Time Best Sellers.
+          </p>
+        </div>
+
+        {/* Horizontal Scroll */}
+        <div ref={wrapperRef} className="overflow-hidden py-16 cursor-grab">
+          <div
+            ref={trackRef}
+            className="flex gap-10 w-max min-w-[150%] select-none relative z-20"
+          >
+            {bestSeller.map((p, i) => (
+              <div
+                key={i}
+                className="relative min-w-[300px] rounded-3xl overflow-hidden"
+              >
+                {/* Reflection */}
+                <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.22),transparent)] opacity-40" />
+
+                {/* Glow under card */}
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[70%] h-10 bg-[radial-gradient(circle,rgba(0,255,150,0.25),transparent)] blur-2xl" />
+
+                <Card3D
+                  id={p._id}
+                  name={p.name}
+                  price={p.price}
+                  image={p.image1}
+                />
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
+
+      <style>{`::-webkit-scrollbar { display: none }`}</style>
     </section>
   );
 }

@@ -88,30 +88,30 @@ img {
 }
 
 /* App.css (or global stylesheet) — emergency transform reset */
-.bs-card-wrap,
+/* .bs-card-wrap,
 .latest-card,
 .bs-card-wrap *,
 .latest-card * {
   transform: none !important;
-  rotate: 0 !important;
-  /* just in case */
-  transition: none !important;
+  rotate: 0 !important; */
+/* just in case */
+/* transition: none !important;
   will-change: auto !important;
-}
+} */
 
 /* hide any floating spotlight overlays if still present */
-[data-spotlight],
+/* [data-spotlight],
 .spotlight,
 .__spotlight {
   transform: translate(-9999px, -9999px) !important;
   opacity: 0 !important;
   pointer-events: none !important;
-}
+} */
 
 /* make sure parent sections don't have persistent 3d perspective/transform */
-section,
+/* section,
 .fade-section,
 .hero-root,
 .max-w-7xl {
   transform: none !important;
-}
+} */

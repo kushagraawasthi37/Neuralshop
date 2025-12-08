@@ -25,10 +25,7 @@ function Product() {
         pt-[20px] px-2 md:px-6
       "
     >
-      <div
-        ref={contentRef}
-        className="w-full flex flex-col gap-16 md:gap-24 select-none"
-      >
+      <div ref={contentRef} className="w-full flex flex-col  select-none">
         {/* Latest Collection Section */}
         <div className="w-full flex items-center justify-center">
           <LatestCollection />
