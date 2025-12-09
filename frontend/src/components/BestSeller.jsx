@@ -142,7 +142,7 @@ function BestSeller() {
       },
     });
   }, [bestSeller]);
-
+//
   return (
     <section className="relative py-12 px-4 flex justify-center">
       <div

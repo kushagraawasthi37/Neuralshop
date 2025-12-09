@@ -37,7 +37,7 @@ function Product() {
         </div>
       </div>
     </div>
-  );
+  );//
 }
 
 export default Product;

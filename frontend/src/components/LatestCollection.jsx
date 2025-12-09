@@ -229,7 +229,7 @@ function LatestCollection() {
 
       <style>{`::-webkit-scrollbar { display:none }`}</style>
     </section>
-  );
+  );//
 }
 
 export default LatestCollection;

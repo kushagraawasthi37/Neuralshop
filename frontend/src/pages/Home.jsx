@@ -64,7 +64,7 @@ function Home() {
     // Fade-in scroll sections
     const sections = containerRef.current.querySelectorAll(".fade-section");
     sections.forEach((sec) => {
-      gsap.fromTo(
+      gsap.fromTo(//
         sec,
         { opacity: 0, y: 70 },
         {

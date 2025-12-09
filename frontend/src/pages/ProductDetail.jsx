@@ -95,7 +95,7 @@ useEffect(() => {
         if (inside) {
           spot.style.transform = `translate(${x - 250}px, ${y - 250}px)`;
         }
-      };
+      };//
 
       window.addEventListener("mousemove", move);
       return () => window.removeEventListener("mousemove", move);
