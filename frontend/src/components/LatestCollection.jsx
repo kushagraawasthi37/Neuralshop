@@ -3,10 +3,9 @@ import Title from "./Title";
 import { shopDataContext } from "../context/ShopContext";
 import Card from "./Card";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Draggable } from "gsap/Draggable";
 
-gsap.registerPlugin(ScrollTrigger, Draggable);
+gsap.registerPlugin(Draggable);
 
 function LatestCollection() {
   const { products } = useContext(shopDataContext);
@@ -14,37 +13,38 @@ function LatestCollection() {
 
   const wrapperRef = useRef(null);
   const trackRef = useRef(null);
-  const spotlightRef = useRef(null);
   const containerRef = useRef(null);
+  const spotlightRef = useRef(null);
 
-  // ---------------------------------------
-  // Duplicate products for infinite loop
-  // ---------------------------------------
+  const xRef = useRef(0);
+  const totalWidthRef = useRef(0);
+  const pausedRef = useRef(false);
+
+  /* ================= DATA ================= */
   useEffect(() => {
     const slice = (products || []).slice(0, 8);
     setItems([...slice, ...slice, ...slice]);
   }, [products]);
 
-  // ---------------------------------------
-  // Smooth border glow on hover (FIX)
-  // ---------------------------------------
+  /* ================= BORDER GLOW ================= */
   useEffect(() => {
     const box = containerRef.current;
+    if (!box) return;
 
     gsap.set(box, { borderColor: "rgba(255,150,40,0.15)" });
 
     const enter = () =>
       gsap.to(box, {
         borderColor: "#e0953e",
-        duration: 0.1,
-        ease: "power2.out",
+        duration: 0.15,
+        overwrite: "auto",
       });
 
     const leave = () =>
       gsap.to(box, {
-        borderColor: "rgba(255,150,40,0.01)",
-        duration: 0.1,
-        ease: "power2.out",
+        borderColor: "rgba(255,150,40,0.05)",
+        duration: 0.25,
+        overwrite: "auto",
       });
 
     box.addEventListener("mouseenter", enter);
@@ -56,141 +56,125 @@ function LatestCollection() {
     };
   }, []);
 
-  // ---------------------------------------
-  // Spotlight Movement
-  // ---------------------------------------
+  /* ================= SPOTLIGHT (GPU ONLY) ================= */
   useEffect(() => {
     const box = containerRef.current;
     const spot = spotlightRef.current;
+    if (!box || !spot) return;
+
+    const setX = gsap.quickSetter(spot, "x", "px");
+    const setY = gsap.quickSetter(spot, "y", "px");
+    const setOpacity = gsap.quickSetter(spot, "opacity");
 
     const move = (e) => {
       const r = box.getBoundingClientRect();
       const x = e.clientX - r.left;
       const y = e.clientY - r.top;
 
-      if (x >= 0 && x <= r.width && y >= 0 && y <= r.height) {
-        spot.style.opacity = 1;
-        spot.style.transform = `translate(${x - 250}px, ${y - 250}px)`;
+      if (x > 0 && x < r.width && y > 0 && y < r.height) {
+        setOpacity(1);
+        setX(x - 250);
+        setY(y - 250);
       } else {
-        spot.style.opacity = 0;
+        setOpacity(0);
       }
     };
 
-    window.addEventListener("mousemove", move);
-    return () => window.removeEventListener("mousemove", move);
+    box.addEventListener("mousemove", move);
+    box.addEventListener("mouseleave", () => setOpacity(0));
+
+    return () => box.removeEventListener("mousemove", move);
   }, []);
 
-  // ---------------------------------------
-  // Infinite Horizontal Auto Scroll (LAG FIXED)
-  // ---------------------------------------
+  /* ================= AUTO SCROLL (RAF / TICKER) ================= */
   useEffect(() => {
     const track = trackRef.current;
     const wrapper = wrapperRef.current;
-    if (!track || !wrapper) return;
+    if (!track || !wrapper || items.length === 0) return;
 
-    let totalWidth = 0;
-    let resizeObserver;
+    xRef.current = 0;
+    pausedRef.current = false;
+    totalWidthRef.current = track.scrollWidth / 3;
 
-    const calculateWidth = () => {
-      // Make sure browser has fully painted the DOM
-      gsap.set(track, { x: 0 });
+    const tick = () => {
+      if (pausedRef.current) return;
 
-      // Force track to expand on small screens
-      const minTrackWidth = wrapper.offsetWidth * 1.5;
-      if (track.scrollWidth < minTrackWidth) {
-        track.style.minWidth = `${minTrackWidth}px`;
+      xRef.current -= 0.45; // speed
+      if (xRef.current <= -totalWidthRef.current) {
+        xRef.current += totalWidthRef.current;
       }
 
-      totalWidth = track.scrollWidth / 3;
+      gsap.set(track, { x: xRef.current });
     };
 
-    // FIRST calculation after render
-    calculateWidth();
+    gsap.ticker.add(tick);
 
-    // SECOND calculation after slight delay → FIXES LAG
-    setTimeout(() => calculateWidth(), 150);
+    const pause = () => (pausedRef.current = true);
+    const resume = () => (pausedRef.current = false);
 
-    // Auto-scroll loop
-    const loop = gsap.to(track, {
-      x: () => `-${totalWidth}`,
-      duration: 18,
-      ease: "none",
-      repeat: -1,
-      modifiers: {
-        x: (x) => `${parseFloat(x) % -totalWidth}px`,
-      },
-    });
-
-    // Slow on hover
-    wrapper.addEventListener("mouseenter", () => loop.timeScale(0.35));
-    wrapper.addEventListener("mouseleave", () => loop.timeScale(1));
-
-    // Recalculate on window resize (SOLVES SMALL SCREEN issue)
-    resizeObserver = new ResizeObserver(() => {
-      calculateWidth();
-    });
-    resizeObserver.observe(wrapper);
+    wrapper.addEventListener("mouseenter", pause);
+    wrapper.addEventListener("mouseleave", resume);
 
     return () => {
-      loop.kill();
-      resizeObserver.disconnect();
+      gsap.ticker.remove(tick);
+      wrapper.removeEventListener("mouseenter", pause);
+      wrapper.removeEventListener("mouseleave", resume);
     };
   }, [items]);
 
-  // ---------------------------------------
-  // Draggable Track (Small Screen SAFE)
-  // ---------------------------------------
+  /* ================= DRAG (SYNCED) ================= */
   useEffect(() => {
     const track = trackRef.current;
-    const wrapper = wrapperRef.current;
-    if (!track || !wrapper) return;
-
-    let totalWidth = track.scrollWidth / 3;
-
-    setTimeout(() => {
-      totalWidth = track.scrollWidth / 3;
-    }, 150);
+    if (!track) return;
 
     Draggable.create(track, {
       type: "x",
       inertia: true,
-      edgeResistance: 0.8,
+      onPress() {
+        pausedRef.current = true;
+      },
+      onRelease() {
+        pausedRef.current = false;
+      },
       onDrag() {
-        let x = gsap.getProperty(track, "x");
-        if (x <= -totalWidth) gsap.set(track, { x: x + totalWidth });
-        if (x > 0) gsap.set(track, { x: x - totalWidth });
+        let x = this.x;
+        const total = totalWidthRef.current;
+
+        if (x <= -total) x += total;
+        if (x > 0) x -= total;
+
+        xRef.current = x;
+        gsap.set(track, { x });
       },
       onThrowUpdate() {
-        let x = gsap.getProperty(track, "x");
-        if (x <= -totalWidth) gsap.set(track, { x: x + totalWidth });
-        if (x > 0) gsap.set(track, { x: x - totalWidth });
+        let x = this.x;
+        const total = totalWidthRef.current;
+
+        if (x <= -total) x += total;
+        if (x > 0) x -= total;
+
+        xRef.current = x;
+        gsap.set(track, { x });
       },
     });
   }, [items]);
 
+  /* ================= UI ================= */
   return (
     <section className="relative py-12 px-4 flex justify-center">
       <div
         ref={containerRef}
-        className="
-          w-full max-w-[1400px] relative overflow-hidden
-          border rounded-3xl 
-          bg-[#111B1D]
-          transition-all duration-500
-        "
+        className="w-full max-w-[1400px] relative overflow-hidden border rounded-3xl bg-[#111B1D]"
       >
-        {/* Spotlight */}
+        {/* SPOTLIGHT */}
         <div
           ref={spotlightRef}
-          className="
-            absolute w-[500px] h-[500px] rounded-full opacity-0 pointer-events-none
-            bg-[radial-gradient(circle,rgba(255,160,50,0.5),rgba(255,120,20,0.2),transparent)]
-            blur-[140px]
-          "
-          style={{ top: 0, left: 0, transition: "opacity 0.1s linear" }}
+          className="absolute w-[500px] h-[500px] rounded-full opacity-0 pointer-events-none
+          bg-[radial-gradient(circle,rgba(255,160,50,0.45),rgba(255,120,20,0.2),transparent)]
+          blur-[90px]"
         />
 
-        {/* Title */}
+        {/* TITLE */}
         <div className="text-center pt-10">
           <Title text1="LATEST" text2="COLLECTION" />
           <p className="text-orange-200 mt-2 max-w-2xl mx-auto">
@@ -198,21 +182,18 @@ function LatestCollection() {
           </p>
         </div>
 
-        {/* Scroll Track */}
+        {/* SCROLLER */}
         <div ref={wrapperRef} className="overflow-hidden py-16 cursor-grab">
           <div
             ref={trackRef}
-            className="flex gap-10 w-max min-w-[150%] select-none"
+            className="flex gap-10 w-max min-w-[150%] will-change-transform select-none"
           >
             {items.map((p, idx) => (
               <div
                 key={idx}
                 className="relative min-w-[300px] rounded-3xl overflow-hidden"
               >
-                {/* Reflection */}
                 <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.22),transparent)] opacity-40 pointer-events-none" />
-
-                {/* Glow */}
                 <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[70%] h-10 bg-[radial-gradient(circle,rgba(255,160,40,0.25),transparent)] blur-2xl" />
 
                 <Card
@@ -229,7 +210,7 @@ function LatestCollection() {
 
       <style>{`::-webkit-scrollbar { display:none }`}</style>
     </section>
-  );//
+  );
 }
 
 export default LatestCollection;

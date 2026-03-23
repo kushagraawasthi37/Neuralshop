@@ -3,10 +3,9 @@ import { shopDataContext } from "../context/ShopContext";
 import Title from "./Title";
 import Card3D from "./Card";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Draggable } from "gsap/Draggable";
 
-gsap.registerPlugin(ScrollTrigger, Draggable);
+gsap.registerPlugin(Draggable);
 
 function BestSeller() {
   const { products } = useContext(shopDataContext);
@@ -14,33 +13,39 @@ function BestSeller() {
 
   const wrapperRef = useRef(null);
   const trackRef = useRef(null);
-  const spotlightRef = useRef(null);
   const containerRef = useRef(null);
+  const spotlightRef = useRef(null);
 
-  // Duplicate for infinite scrolling
+  const tickerRef = useRef(null);
+  const pausedRef = useRef(false);
+  const xRef = useRef(0);
+  const totalWidthRef = useRef(0);
+
+  /* ===================== DATA ===================== */
   useEffect(() => {
     const filtered = products?.filter((p) => p.bestseller) || [];
     setBestSeller([...filtered, ...filtered, ...filtered]);
   }, [products]);
 
-  // BORDER GLOW (Same as LatestCollection but GREEN)
+  /* ===================== BORDER GLOW ===================== */
   useEffect(() => {
     const box = containerRef.current;
+    if (!box) return;
 
-    gsap.set(box, { borderColor: "rgba(50,255,180,0.10)" }); // initial faint green
+    gsap.set(box, { borderColor: "rgba(50,255,180,0.1)" });
 
     const enter = () =>
       gsap.to(box, {
         borderColor: "#11ff88",
-        duration: 0.12,
-        ease: "power2.out",
+        duration: 0.15,
+        overwrite: "auto",
       });
 
     const leave = () =>
       gsap.to(box, {
-        borderColor: "rgba(50,255,180,0.01)",
-        duration: 0.2,
-        ease: "power2.out",
+        borderColor: "rgba(50,255,180,0.05)",
+        duration: 0.25,
+        overwrite: "auto",
       });
 
     box.addEventListener("mouseenter", enter);
@@ -52,119 +57,123 @@ function BestSeller() {
     };
   }, []);
 
-  // SPOTLIGHT (same behavior as LatestCollection)
+  /* ===================== SPOTLIGHT (GPU ONLY) ===================== */
   useEffect(() => {
     const box = containerRef.current;
     const spot = spotlightRef.current;
+    if (!box || !spot) return;
+
+    const setX = gsap.quickSetter(spot, "x", "px");
+    const setY = gsap.quickSetter(spot, "y", "px");
+    const setOpacity = gsap.quickSetter(spot, "opacity");
 
     const move = (e) => {
       const r = box.getBoundingClientRect();
       const x = e.clientX - r.left;
       const y = e.clientY - r.top;
 
-      if (x >= 0 && x <= r.width && y >= 0 && y <= r.height) {
-        spot.style.opacity = 1;
-        spot.style.transform = `translate(${x - 250}px, ${y - 250}px)`;
-      } else spot.style.opacity = 0;
+      if (x > 0 && x < r.width && y > 0 && y < r.height) {
+        setOpacity(1);
+        setX(x - 250);
+        setY(y - 250);
+      } else {
+        setOpacity(0);
+      }
     };
 
-    window.addEventListener("mousemove", move);
-    return () => window.removeEventListener("mousemove", move);
+    box.addEventListener("mousemove", move);
+    box.addEventListener("mouseleave", () => setOpacity(0));
+
+    return () => box.removeEventListener("mousemove", move);
   }, []);
 
-  // Infinite Smooth Auto Scroll (Lag Fixed)
+  /* ===================== AUTO SCROLL (RAF / TICKER) ===================== */
   useEffect(() => {
     const track = trackRef.current;
     const wrapper = wrapperRef.current;
-    if (!track || !wrapper) return;
+    if (!track || !wrapper || bestSeller.length === 0) return;
 
-    let totalWidth = 0;
-    let resizeObserver;
+    xRef.current = 0;
+    pausedRef.current = false;
 
-    const calculateWidth = () => {
-      gsap.set(track, { x: 0 });
+    totalWidthRef.current = track.scrollWidth / 3;
 
-      const minTrackWidth = wrapper.offsetWidth * 1.5;
-      if (track.scrollWidth < minTrackWidth) {
-        track.style.minWidth = `${minTrackWidth}px`;
+    const tick = () => {
+      if (pausedRef.current) return;
+
+      xRef.current -= 1; // speed
+      if (xRef.current <= -totalWidthRef.current) {
+        xRef.current += totalWidthRef.current;
       }
 
-      totalWidth = track.scrollWidth / 3;
+      gsap.set(track, { x: xRef.current });
     };
 
-    calculateWidth();
-    setTimeout(() => calculateWidth(), 150);
+    tickerRef.current = tick;
+    gsap.ticker.add(tick);
 
-    const loop = gsap.to(track, {
-      x: () => `-${totalWidth}`,
-      duration: 18,
-      ease: "none",
-      repeat: -1,
-      modifiers: {
-        x: (x) => `${parseFloat(x) % -totalWidth}px`,
-      },
-    });
+    const pause = () => (pausedRef.current = true);
+    const resume = () => (pausedRef.current = false);
 
-    wrapper.addEventListener("mouseenter", () => loop.timeScale(0.35));
-    wrapper.addEventListener("mouseleave", () => loop.timeScale(1));
-
-    resizeObserver = new ResizeObserver(() => calculateWidth());
-    resizeObserver.observe(wrapper);
+    wrapper.addEventListener("mouseenter", pause);
+    wrapper.addEventListener("mouseleave", resume);
 
     return () => {
-      loop.kill();
-      resizeObserver.disconnect();
+      gsap.ticker.remove(tick);
+      wrapper.removeEventListener("mouseenter", pause);
+      wrapper.removeEventListener("mouseleave", resume);
     };
   }, [bestSeller]);
 
-  // Draggable Track (same as LatestCollection)
+  /* ===================== DRAG (SYNCED) ===================== */
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
 
-    let totalWidth = track.scrollWidth / 3;
-
-    setTimeout(() => (totalWidth = track.scrollWidth / 3), 150);
+    const total = totalWidthRef.current;
 
     Draggable.create(track, {
       type: "x",
       inertia: true,
-      edgeResistance: 0.8,
+      onPress() {
+        pausedRef.current = true;
+      },
+      onRelease() {
+        pausedRef.current = false;
+      },
       onDrag() {
-        const x = gsap.getProperty(track, "x");
-        if (x <= -totalWidth) gsap.set(track, { x: x + totalWidth });
-        if (x > 0) gsap.set(track, { x: x - totalWidth });
+        let x = this.x;
+        if (x <= -total) x += total;
+        if (x > 0) x -= total;
+        xRef.current = x;
+        gsap.set(track, { x });
       },
       onThrowUpdate() {
-        const x = gsap.getProperty(track, "x");
-        if (x <= -totalWidth) gsap.set(track, { x: x + totalWidth });
-        if (x > 0) gsap.set(track, { x: x - totalWidth });
+        let x = this.x;
+        if (x <= -total) x += total;
+        if (x > 0) x -= total;
+        xRef.current = x;
+        gsap.set(track, { x });
       },
     });
   }, [bestSeller]);
-//
+
+  /* ===================== UI ===================== */
   return (
     <section className="relative py-12 px-4 flex justify-center">
       <div
         ref={containerRef}
-        className="
-          w-full max-w-[1400px] relative overflow-hidden
-          border rounded-3xl 
-bg-[#101B1E]          transition-all duration-500
-        "
+        className="w-full max-w-[1400px] relative overflow-hidden border rounded-3xl bg-[#101B1E]"
       >
         {/* SPOTLIGHT */}
         <div
           ref={spotlightRef}
-          className="
-            absolute w-[500px] h-[500px] rounded-full opacity-0 pointer-events-none
-            bg-[radial-gradient(circle,rgba(0,255,150,0.45),rgba(0,255,150,0.15),transparent)]
-            blur-[140px]
-          "
-          style={{ top: 0, left: 0, transition: "opacity 0.12s linear" }}
+          className="absolute w-[500px] h-[500px] rounded-full opacity-0 pointer-events-none
+          bg-[radial-gradient(circle,rgba(0,255,150,0.45),rgba(0,255,150,0.15),transparent)]
+          blur-[90px]"
         />
 
-        {/* Title */}
+        {/* TITLE */}
         <div className="text-center pt-10">
           <Title text1="BEST" text2="SELLER" />
           <p className="text-blue-100 mt-2 max-w-2xl mx-auto">
@@ -172,21 +181,18 @@ bg-[#101B1E]          transition-all duration-500
           </p>
         </div>
 
-        {/* Horizontal Scroll */}
+        {/* SCROLLER */}
         <div ref={wrapperRef} className="overflow-hidden py-16 cursor-grab">
           <div
             ref={trackRef}
-            className="flex gap-10 w-max min-w-[150%] select-none relative z-20"
+            className="flex gap-10 w-max min-w-[150%] will-change-transform select-none"
           >
             {bestSeller.map((p, i) => (
               <div
                 key={i}
                 className="relative min-w-[300px] rounded-3xl overflow-hidden"
               >
-                {/* Reflection */}
                 <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.22),transparent)] opacity-40" />
-
-                {/* Glow under card */}
                 <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[70%] h-10 bg-[radial-gradient(circle,rgba(0,255,150,0.25),transparent)] blur-2xl" />
 
                 <Card3D

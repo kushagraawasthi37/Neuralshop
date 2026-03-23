@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 
-
 const adminSchema = new mongoose.Schema(
   {
     name: {
@@ -17,7 +16,7 @@ const adminSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true, minimize: false }
+  { timestamps: true, minimize: false },
 );
 
 const Admin = mongoose.model("Admin", adminSchema);
