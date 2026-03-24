@@ -1,0 +1,113 @@
+// ============================================
+// NeuralShop - PostgreSQL Schema (Prisma)
+// ============================================
+// Purpose: Orders, Payments, Inventory, Idempotency
+// MongoDB: Product, User
+// Redis: Cart, Locks, Cache
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // URL is now in prisma.config.ts
+}
+
+// ============================================
+// ORDER MODELS
+// ============================================
+
+/// Main order record
+model Order {
+  id          String   @id @default(uuid())
+  userId      String // Reference to MongoDB User
+  status      String   @default("pending") // pending, processing, completed, cancelled
+  totalAmount Float
+  address     Json // Shipping address
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  items   OrderItem[]
+  payment Payment?
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// Individual items in order
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String
+  productId String // Reference to MongoDB Product
+  quantity  Int
+  price     Float // Price at purchase time
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, productId])
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ============================================
+// PAYMENT MODEL
+// ============================================
+
+/// Payment tracking for orders
+model Payment {
+  id                String   @id @default(uuid())
+  orderId           String   @unique
+  status            String   @default("pending") // pending, success, failed, refunded
+  amount            Float
+  provider          String // razorpay, stripe, etc
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================
+// INVENTORY MODEL
+// ============================================
+
+/// Stock management for products
+model Inventory {
+  productId      String   @id // Reference to MongoDB Product
+  totalStock     Int
+  reservedStock  Int // Reserved during checkout
+  availableStock Int // totalStock - reservedStock
+  updatedAt      DateTime @updatedAt
+
+  @@index([productId])
+}
+
+// ============================================
+// IDEMPOTENCY MODEL (Critical for Payment)
+// ============================================
+
+/// Prevents duplicate API requests
+model IdempotencyKey {
+  key       String   @id
+  userId    String
+  method    String // POST, GET, etc
+  endpoint  String
+  response  Json // Response to return
+  status    String   @default("pending") // pending, completed, failed
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([expiresAt])
+}

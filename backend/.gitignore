@@ -3,3 +3,9 @@ package-lock.json
 package.json
 .env
 
+
+/generated/prisma
+
+/src/generated/prisma
+
+/src/generated/prisma
