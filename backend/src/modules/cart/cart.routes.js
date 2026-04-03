@@ -1,5 +1,6 @@
 import express from "express";
 import isAuth from "../../middlewares/auth.middleware.js";
+import checkIdempotency from "../../utils/idempotency-util.js";
 import {
   getCart,
   addItem,
@@ -27,6 +28,7 @@ cartRoutes.get("/summary", isAuth, summary);
 cartRoutes.post(
   "/items",
   isAuth,
+  checkIdempotency,
   cartValidations.addItem,
   validationErrorHandler,
   addItem,

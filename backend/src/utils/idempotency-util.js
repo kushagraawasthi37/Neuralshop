@@ -1,36 +1,48 @@
-// Idempotency utilities for preventing duplicate requests
-const idempotencyMap = new Map();
+// Idempotency utilities for preventing duplicate requests using Redis
+import redisClient from "../config/redis.js";
 
-export const checkIdempotency = (req, res, next) => {
+const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60; // 24 hours
+
+export const checkIdempotency = async (req, res, next) => {
   const idempotencyKey = req.headers["idempotency-key"];
 
   if (!idempotencyKey) {
     return next();
   }
 
-  if (idempotencyMap.has(idempotencyKey)) {
-    const cachedResponse = idempotencyMap.get(idempotencyKey);
-    return res.status(cachedResponse.statusCode).json(cachedResponse.data);
+  const redisKey = `idempotency:${idempotencyKey}`;
+
+  try {
+    // Check if response is already cached
+    const cachedResponse = await redisClient.get(redisKey);
+    if (cachedResponse) {
+      const { statusCode, data } = JSON.parse(cachedResponse);
+      return res.status(statusCode).json(data);
+    }
+
+    // Store original send method
+    const originalSend = res.send;
+    res.send = function (data) {
+      // Cache the response in Redis
+      redisClient.set(
+        redisKey,
+        JSON.stringify({
+          statusCode: res.statusCode,
+          data: JSON.parse(data),
+        }),
+        "EX",
+        IDEMPOTENCY_TTL_SECONDS,
+      );
+
+      return originalSend.call(this, data);
+    };
+
+    next();
+  } catch (error) {
+    // If Redis fails, continue without idempotency
+    console.error("Idempotency check failed:", error);
+    next();
   }
-
-  // Store original send method
-  const originalSend = res.send;
-  res.send = function (data) {
-    idempotencyMap.set(idempotencyKey, {
-      statusCode: res.statusCode,
-      data: JSON.parse(data),
-    });
-
-    // Clean up after 24 hours
-    setTimeout(
-      () => idempotencyMap.delete(idempotencyKey),
-      24 * 60 * 60 * 1000,
-    );
-
-    return originalSend.call(this, data);
-  };
-
-  next();
 };
 
 export default checkIdempotency;

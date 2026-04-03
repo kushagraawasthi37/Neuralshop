@@ -101,20 +101,64 @@ export const addItemToCartService = async (userId, item) => {
   if (!Number.isFinite(priceAtAdd) || priceAtAdd < 0)
     throw new Error("priceAtAdd must be a non-negative number");
 
-  const cart = await getCartService(userId);
+  const redisKey = getRedisKey(userId);
+  const itemData = { productId, size, quantity, priceAtAdd, name, image };
 
-  const existing = cart.items.find(
-    (x) => x.productId === productId && x.size === size,
-  );
-  if (existing) {
-    existing.quantity += quantity;
-  } else {
-    cart.items.push({ productId, size, quantity, priceAtAdd, name, image });
+  // Use Redis transactions for atomicity
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      await redisClient.watch(redisKey);
+
+      // Get current cart
+      let cartJson = await redisClient.get(redisKey);
+      let cart;
+
+      if (cartJson) {
+        cart = parseRedisCart(cartJson);
+      } else {
+        cart = buildEmptyCart(userId);
+      }
+
+      // Find existing item
+      const existing = cart.items.find(
+        (x) => x.productId === productId && x.size === size,
+      );
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        cart.items.push(itemData);
+      }
+
+      cart.updatedAt = new Date();
+
+      // Start transaction
+      const multi = redisClient.multi();
+      multi.set(redisKey, JSON.stringify(cart), "EX", CART_TTL_SECONDS);
+      const results = await multi.exec();
+
+      if (results) {
+        // Success
+        // Persist to Mongo in background
+        persistCartToMongo(userId, cart).catch((err) =>
+          console.error("Failed to persist cart to Mongo:", err),
+        );
+        return cart;
+      } else {
+        // Transaction failed, retry
+        continue;
+      }
+    } catch (error) {
+      console.error(`Attempt ${attempt + 1} failed:`, error);
+      if (attempt === maxRetries - 1) {
+        throw error;
+      }
+    } finally {
+      redisClient.unwatch();
+    }
   }
 
-  cart.updatedAt = new Date();
-  await cacheCart(userId, cart);
-  return cart;
+  throw new Error("Failed to add item to cart after retries");
 };
 
 //Checked
