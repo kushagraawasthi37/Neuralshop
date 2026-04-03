@@ -40,6 +40,82 @@ const cacheCart = async (userId, cart) => {
   return cart;
 };
 
+const _modifyCartWithTransaction = async (userId, modifierFn) => {
+  if (!userId) throw new Error("userId is required");
+  if (typeof modifierFn !== "function")
+    throw new Error("modifierFn must be a function");
+
+  const redisKey = getRedisKey(userId);
+  const maxRetries = 3;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      // Redis bol raha:
+      // “Agar is key ko kisi ne change kiya → mujhe batana”
+      // Ye optimistic locking hai
+      await redisClient.watch(redisKey);
+
+      let cart = await getRedisCart(userId);
+      if (!cart) cart = buildEmptyCart(userId);
+
+      const modifiedCart = await modifierFn(cart);
+
+      if (!modifiedCart || !modifiedCart.items) {
+        throw new Error("Invalid cart returned from modifierFn");
+      }
+
+      modifiedCart.updatedAt = new Date();
+
+      // Main ab ek atomic transaction start kar raha hoon
+      // Ye ek command queue banata hai
+      const multi = redisClient.multi();
+
+      // Agar cart khali hai, to us key ko Redis se hata do (taaki unnecessary keys na bane)
+      if (modifiedCart.items.length === 0) {
+        multi.del(redisKey);
+      } else {
+        multi.set(
+          redisKey,
+          JSON.stringify(modifiedCart),
+          "EX",
+          CART_TTL_SECONDS,
+        );
+
+        // Abhi Redis me kuch execute nahi hua ❌
+        // Bas queue me add hua hai
+        // Commands tab tak run nahi honge jab tak exec() nahi aata
+      }
+
+      const results = await multi.exec();
+      //  Redis internally check karta hai:
+      // "Jab se WATCH laga tha, kya redisKey change hua?"
+
+      // Case 1: NO CHANGE → SUCCESS
+      // Kisi ne cart modify nahi kiya
+      if (results) {
+        await persistCartToMongo(userId, modifiedCart).catch((err) =>
+          console.error("Failed to persist cart to Mongo:", err),
+        );
+        return modifiedCart;
+      }
+
+      // transaction failed due to concurrent change, retry
+      // Kisi aur ne cart update kar diya
+    } catch (error) {
+      if (attempt === maxRetries - 1) throw error;
+      // otherwise, loop and retry
+    } finally {
+      try {
+        await redisClient.unwatch(); //exec() already clears WATCH
+      } catch (e) {
+        // best-effort
+      }
+    }
+  }
+
+  throw new Error(`Cart update failed after ${maxRetries} retries`);
+};
+
 const persistCartToMongo = async (userId, cart) => {
   if (!userId || !cart) return null;
   const updated = {
@@ -101,81 +177,21 @@ export const addItemToCartService = async (userId, item) => {
   if (!Number.isFinite(priceAtAdd) || priceAtAdd < 0)
     throw new Error("priceAtAdd must be a non-negative number");
 
-  const redisKey = getRedisKey(userId);
   const itemData = { productId, size, quantity, priceAtAdd, name, image };
 
-  //Concurrency Handling: Multiple requests trying to modify the cart at the same
-  // Use Redis transactions for atomicity
-  const maxRetries = 3;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      //  Redis bol raha:
-      // “Agar is key ko kisi ne change kiya → mujhe batana”
-      // Ye optimistic locking hai
-      await redisClient.watch(redisKey);
+  return _modifyCartWithTransaction(userId, (cart) => {
+    const existing = cart.items.find(
+      (x) => x.productId === productId && x.size === size,
+    );
 
-      // Get current cart
-      let cartJson = await redisClient.get(redisKey);
-      let cart;
-
-      if (cartJson) {
-        cart = parseRedisCart(cartJson);
-      } else {
-        cart = buildEmptyCart(userId);
-      }
-
-      // Find existing item
-      const existing = cart.items.find(
-        (x) => x.productId === productId && x.size === size,
-      );
-      if (existing) {
-        existing.quantity += quantity;
-      } else {
-        cart.items.push(itemData);
-      }
-
-      cart.updatedAt = new Date();
-
-      // Start transaction
-
-      // “Main ab ek atomic transaction start kar raha hoon”
-      // Ye ek command queue banata hai
-      const multi = redisClient.multi();
-      multi.set(redisKey, JSON.stringify(cart), "EX", CART_TTL_SECONDS);
-      // Abhi Redis me kuch execute nahi hua ❌
-      // Bas queue me add hua hai
-
-      // Commands tab tak run nahi honge jab tak exec() nahi aata
-
-      const results = await multi.exec();
-
-      //  Redis internally check karta hai:
-      // "Jab se WATCH laga tha, kya redisKey change hua?"
-
-      // Case 1: NO CHANGE → SUCCESS
-      if (results) {
-        // Success
-        // Persist to Mongo in background
-        persistCartToMongo(userId, cart).catch((err) =>
-          console.error("Failed to persist cart to Mongo:", err),
-        );
-        return cart;
-      } else {
-        // Transaction failed, retry
-        continue;
-        //Retry with latest data
-      }
-    } catch (error) {
-      console.error(`Attempt ${attempt + 1} failed:`, error);
-      if (attempt === maxRetries - 1) {
-        throw error;
-      }
-    } finally {
-      redisClient.unwatch();
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      cart.items.push(itemData);
     }
-  }
 
-  throw new Error("Failed to add item to cart after retries");
+    return cart;
+  });
 };
 
 //Checked
@@ -192,22 +208,21 @@ export const updateCartItemService = async (
   if (!Number.isFinite(quantity) || quantity < 0)
     throw new Error("quantity must be zero or a positive number");
 
-  const cart = await getCartService(userId);
-  const index = cart.items.findIndex(
-    (x) => x.productId === productId && x.size === size,
-  );
+  return _modifyCartWithTransaction(userId, (cart) => {
+    const index = cart.items.findIndex(
+      (x) => x.productId === productId && x.size === size,
+    );
 
-  if (index === -1) throw new Error("Item not found in cart");
+    if (index === -1) throw new Error("Item not found in cart");
 
-  if (quantity === 0) {
-    cart.items.splice(index, 1);
-  } else {
-    cart.items[index].quantity = quantity;
-  }
+    if (quantity === 0) {
+      cart.items.splice(index, 1);
+    } else {
+      cart.items[index].quantity = quantity;
+    }
 
-  cart.updatedAt = new Date();
-  await cacheCart(userId, cart);
-  return cart;
+    return cart;
+  });
 };
 
 //Checked
@@ -217,26 +232,26 @@ export const removeCartItemService = async (userId, productId, size) => {
   if (!["XS", "S", "M", "L", "XL", "XXL"].includes(size))
     throw new Error("size must be one of: XS, S, M, L, XL, XXL");
 
-  const cart = await getCartService(userId);
-  const filtered = cart.items.filter(
-    (x) => !(x.productId === productId && x.size === size),
-  );
+  return _modifyCartWithTransaction(userId, (cart) => {
+    const filtered = cart.items.filter(
+      (x) => !(x.productId === productId && x.size === size),
+    );
 
-  if (filtered.length === cart.items.length) {
-    throw new Error("Item not found in cart");
-  }
+    if (filtered.length === cart.items.length) {
+      throw new Error("Item not found in cart");
+    }
 
-  cart.items = filtered;
-  cart.updatedAt = new Date();
-  await cacheCart(userId, cart);
-  return cart;
+    cart.items = filtered;
+    return cart;
+  });
 };
 
 //Checked
 export const clearCartService = async (userId) => {
-  const cart = buildEmptyCart(userId);
-  await cacheCart(userId, cart);
-  return cart;
+  return _modifyCartWithTransaction(userId, (cart) => {
+    cart.items = [];
+    return cart;
+  });
 };
 
 //Checked

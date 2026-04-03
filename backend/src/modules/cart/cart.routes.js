@@ -58,7 +58,7 @@ cartRoutes.delete("/clear-cart", isAuth, clearCart);
 //Checked
 cartRoutes.post("/validate", isAuth, validateCart);
 //Checked
-cartRoutes.post("/checkout", isAuth, checkout);
+cartRoutes.post("/checkout", isAuth, checkIdempotency, checkout);
 //Checked
 cartRoutes.post("/sync", isAuth, syncCart);
 
