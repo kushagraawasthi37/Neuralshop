@@ -1,58 +1,343 @@
-import { User } from "../user/user.model.js";
+import redisClient from "../../config/redis.js";
+import { Cart } from "./cart.model.js";
+import { Product } from "../product/product.model.js";
+import mongoose from "mongoose";
 
-export const addToCartService = async (userId, itemId, size) => {
+const CART_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
+const getRedisKey = (userId) => `cart:${userId}`;
+
+const buildEmptyCart = (userId) => ({
+  userId,
+  items: [],
+  updatedAt: new Date(),
+});
+
+//Redis se aayi string data ko safe object me convert karta hai
+const parseRedisCart = (payload) => {
   try {
-    const userData = await User.findById(userId);
-    if (!userData) {
-      throw new Error("User not found");
+    const parsed = JSON.parse(payload);
+    if (!parsed || typeof parsed !== "object") return null;
+    if (!Array.isArray(parsed.items)) parsed.items = [];
+    parsed.updatedAt = parsed.updatedAt
+      ? new Date(parsed.updatedAt)
+      : new Date();
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const cacheCart = async (userId, cart) => {
+  if (!userId || !cart)
+    throw new Error("Cannot cache cart; missing userId or cart");
+  cart.updatedAt = new Date();
+  await redisClient.set(
+    getRedisKey(userId),
+    JSON.stringify(cart),
+    "EX",
+    CART_TTL_SECONDS,
+  );
+  return cart;
+};
+
+const persistCartToMongo = async (userId, cart) => {
+  if (!userId || !cart) return null;
+  const updated = {
+    items: cart.items,
+    updatedAt: cart.updatedAt || new Date(),
+  };
+
+  return Cart.findOneAndUpdate(
+    { userId },
+    { ...updated, userId },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  ).lean();
+};
+
+const getRedisCart = async (userId) => {
+  const payload = await redisClient.get(getRedisKey(userId));
+  if (!payload) return null;
+  return parseRedisCart(payload);
+};
+
+const getMongoCart = async (userId) => {
+  if (!userId) return null;
+  return Cart.findOne({ userId }).lean();
+};
+
+//Checked
+export const getCartService = async (userId) => {
+  if (!userId) throw new Error("userId is required");
+
+  let cart = await getRedisCart(userId);
+  if (cart) return cart;
+
+  const dbCart = await getMongoCart(userId);
+  if (dbCart) {
+    cart = {
+      userId,
+      items: dbCart.items || [],
+      updatedAt: dbCart.updatedAt || new Date(),
+    };
+    await cacheCart(userId, cart);
+    return cart;
+  }
+
+  cart = buildEmptyCart(userId);
+  await cacheCart(userId, cart);
+  return cart;
+};
+
+//Checked
+export const addItemToCartService = async (userId, item) => {
+  const { productId, size, quantity, priceAtAdd, name, image } = item || {};
+
+  if (!productId) throw new Error("productId is required");
+  if (!size) throw new Error("size is required");
+  if (!["XS", "S", "M", "L", "XL", "XXL"].includes(size))
+    throw new Error("size must be one of: XS, S, M, L, XL, XXL");
+  if (!Number.isFinite(quantity) || quantity <= 0)
+    throw new Error("quantity must be a positive number");
+  if (!Number.isFinite(priceAtAdd) || priceAtAdd < 0)
+    throw new Error("priceAtAdd must be a non-negative number");
+
+  const cart = await getCartService(userId);
+
+  const existing = cart.items.find(
+    (x) => x.productId === productId && x.size === size,
+  );
+  if (existing) {
+    existing.quantity += quantity;
+  } else {
+    cart.items.push({ productId, size, quantity, priceAtAdd, name, image });
+  }
+
+  cart.updatedAt = new Date();
+  await cacheCart(userId, cart);
+  return cart;
+};
+
+//Checked
+export const updateCartItemService = async (
+  userId,
+  productId,
+  size,
+  quantity,
+) => {
+  if (!productId) throw new Error("productId is required");
+  if (!size) throw new Error("size is required");
+  if (!["XS", "S", "M", "L", "XL", "XXL"].includes(size))
+    throw new Error("size must be one of: XS, S, M, L, XL, XXL");
+  if (!Number.isFinite(quantity) || quantity < 0)
+    throw new Error("quantity must be zero or a positive number");
+
+  const cart = await getCartService(userId);
+  const index = cart.items.findIndex(
+    (x) => x.productId === productId && x.size === size,
+  );
+
+  if (index === -1) throw new Error("Item not found in cart");
+
+  if (quantity === 0) {
+    cart.items.splice(index, 1);
+  } else {
+    cart.items[index].quantity = quantity;
+  }
+
+  cart.updatedAt = new Date();
+  await cacheCart(userId, cart);
+  return cart;
+};
+
+//Checked
+export const removeCartItemService = async (userId, productId, size) => {
+  if (!productId) throw new Error("productId is required");
+  if (!size) throw new Error("size is required");
+  if (!["XS", "S", "M", "L", "XL", "XXL"].includes(size))
+    throw new Error("size must be one of: XS, S, M, L, XL, XXL");
+
+  const cart = await getCartService(userId);
+  const filtered = cart.items.filter(
+    (x) => !(x.productId === productId && x.size === size),
+  );
+
+  if (filtered.length === cart.items.length) {
+    throw new Error("Item not found in cart");
+  }
+
+  cart.items = filtered;
+  cart.updatedAt = new Date();
+  await cacheCart(userId, cart);
+  return cart;
+};
+
+//Checked
+export const clearCartService = async (userId) => {
+  const cart = buildEmptyCart(userId);
+  await cacheCart(userId, cart);
+  return cart;
+};
+
+//Checked
+export const validateCartService = async (userId) => {
+  const cart = await getCartService(userId);
+  const issues = [];
+
+  if (!cart.items.length) {
+    issues.push("Cart is empty");
+  }
+
+  for (let idx = 0; idx < cart.items.length; idx++) {
+    const item = cart.items[idx];
+
+    // 🔥 FIX: sanitize productId
+    if (!item.productId) {
+      issues.push(`item[${idx}] missing productId`);
+      continue;
     }
 
-    let cartData = userData.cartData || {};
+    const cleanProductId = item.productId.trim();
 
-    if (cartData[itemId]) {
-      if (cartData[itemId][size]) {
-        cartData[itemId][size] += 1;
-      } else {
-        cartData[itemId][size] = 1;
+    if (!mongoose.Types.ObjectId.isValid(cleanProductId)) {
+      issues.push(`item[${idx}] invalid productId`);
+      continue;
+    }
+
+    if (!item.size) {
+      issues.push(`item[${idx}] missing size`);
+      continue;
+    }
+
+    if (!["XS", "S", "M", "L", "XL", "XXL"].includes(item.size)) {
+      issues.push(`item[${idx}] invalid size`);
+      continue;
+    }
+
+    if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
+      issues.push(`item[${idx}] invalid quantity`);
+      continue;
+    }
+
+    if (!Number.isFinite(item.priceAtAdd) || item.priceAtAdd < 0) {
+      issues.push(`item[${idx}] invalid priceAtAdd`);
+      continue;
+    }
+
+    try {
+      const product = await Product.findById(cleanProductId);
+
+      if (!product) {
+        issues.push(`item[${idx}] product not found`);
+        continue;
       }
+
+      const sizeEntry = product.sizes.find((s) => s.size === item.size);
+
+      if (!sizeEntry) {
+        issues.push(
+          `item[${idx}] size ${item.size} not available for this product`,
+        );
+        continue;
+      }
+
+      if (item.quantity > sizeEntry.stock) {
+        issues.push(
+          `item[${idx}] requested quantity (${item.quantity}) exceeds available stock (${sizeEntry.stock}) for size ${item.size}`,
+        );
+      }
+    } catch (error) {
+      issues.push(`item[${idx}] error checking stock: ${error.message}`);
+    }
+  }
+
+  return { valid: issues.length === 0, issues, cart };
+};
+
+//Checked
+export const checkoutCartService = async (userId) => {
+  const { valid, issues, cart } = await validateCartService(userId);
+  if (!valid) {
+    throw new Error(`Cart validation failed: ${issues.join(", ")}`);
+  }
+
+  const totalItems = cart.items.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = cart.items.reduce(
+    (acc, item) => acc + item.quantity * item.priceAtAdd,
+    0,
+  );
+
+  const payload = {
+    userId,
+    items: cart.items,
+    totalItems,
+    totalPrice,
+    currency: "USD",
+    createdAt: new Date(),
+  };
+
+  // Constraint from requirement: Clear Redis cart after checkout to avoid duplicate flows.
+  await clearCartService(userId);
+
+  return payload;
+};
+
+//Checked
+export const syncCartService = async (userId) => {
+  const cart = await getCartService(userId);
+  await persistCartToMongo(userId, cart);
+  return cart;
+};
+
+//Checked
+export const getCartSummaryService = async (userId) => {
+  const cart = await getCartService(userId);
+  const totalItems = cart.items.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = cart.items.reduce(
+    (acc, item) => acc + item.quantity * item.priceAtAdd,
+    0,
+  );
+
+  return { userId, totalItems, totalPrice, itemCount: cart.items.length };
+};
+
+export const mergeCartService = async (userId, guestCartPayload) => {
+  const userCart = await getCartService(userId);
+
+  if (!guestCartPayload || !Array.isArray(guestCartPayload.items)) {
+    return userCart;
+  }
+
+  guestCartPayload.items.forEach((guestItem) => {
+    if (
+      !guestItem.productId ||
+      !guestItem.size ||
+      !Number.isFinite(guestItem.quantity)
+    )
+      return;
+
+    const existing = userCart.items.find(
+      (item) =>
+        item.productId === guestItem.productId && item.size === guestItem.size,
+    );
+
+    if (existing) {
+      existing.quantity += guestItem.quantity;
+      existing.priceAtAdd = guestItem.priceAtAdd || existing.priceAtAdd;
+      existing.name = guestItem.name || existing.name;
+      existing.image = guestItem.image || existing.image;
     } else {
-      cartData[itemId] = {};
-      cartData[itemId][size] = 1;
+      userCart.items.push({
+        productId: guestItem.productId,
+        size: guestItem.size,
+        quantity: guestItem.quantity,
+        priceAtAdd: guestItem.priceAtAdd ?? 0,
+        name: guestItem.name,
+        image: guestItem.image,
+      });
     }
+  });
 
-    await User.findByIdAndUpdate(userId, { cartData });
-    return { message: "Added to cart" };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const updateCartService = async (userId, itemId, size, quantity) => {
-  try {
-    const userData = await User.findById(userId);
-    if (!userData) {
-      throw new Error("User not found");
-    }
-
-    let cartData = userData.cartData;
-    cartData[itemId][size] = quantity;
-
-    await User.findByIdAndUpdate(userId, { cartData });
-    return { message: "Cart updated" };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const getUserCartService = async (userId) => {
-  try {
-    const userData = await User.findById(userId);
-    if (!userData) {
-      throw new Error("User not found");
-    }
-    const cartData = userData.cartData;
-    return { cartData };
-  } catch (error) {
-    throw error;
-  }
+  userCart.updatedAt = new Date();
+  await cacheCart(userId, userCart);
+  return userCart;
 };

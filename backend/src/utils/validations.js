@@ -299,35 +299,67 @@ export const productValidations = {
 
 // ========== CART VALIDATIONS ==========
 export const cartValidations = {
-  addToCart: [
-    body("itemId")
+  addItem: [
+    body("productId")
       .notEmpty()
-      .withMessage("Item ID is required")
-      .isMongoId()
-      .withMessage("Invalid item ID"),
+      .withMessage("productId is required")
+      .isString()
+      .withMessage("productId must be a string"),
 
     body("size")
-      .trim()
       .notEmpty()
-      .withMessage("Size is required")
-      .isLength({ min: 1 })
-      .withMessage("Size cannot be empty"),
-  ],
-
-  updateCart: [
-    body("itemId")
-      .notEmpty()
-      .withMessage("Item ID is required")
-      .isMongoId()
-      .withMessage("Invalid item ID"),
-
-    body("size").trim().notEmpty().withMessage("Size is required"),
+      .withMessage("size is required")
+      .isIn(["XS", "S", "M", "L", "XL", "XXL"])
+      .withMessage("size must be one of: XS, S, M, L, XL, XXL"),
 
     body("quantity")
       .notEmpty()
-      .withMessage("Quantity is required")
+      .withMessage("quantity is required")
+      .isInt({ min: 1 })
+      .withMessage("quantity must be a positive integer"),
+
+    body("priceAtAdd")
+      .notEmpty()
+      .withMessage("priceAtAdd is required")
+      .isFloat({ min: 0 })
+      .withMessage("priceAtAdd must be a non-negative number"),
+
+    body("name").optional().isString().withMessage("name must be a string"),
+    body("image").optional().isString().withMessage("image must be a string"),
+  ],
+
+  updateItem: [
+    body("productId")
+      .notEmpty()
+      .withMessage("productId is required")
+      .isString()
+      .withMessage("productId must be a string"),
+
+    body("size")
+      .notEmpty()
+      .withMessage("size is required")
+      .isIn(["XS", "S", "M", "L", "XL", "XXL"])
+      .withMessage("size must be one of: XS, S, M, L, XL, XXL"),
+
+    body("quantity")
+      .notEmpty()
+      .withMessage("quantity is required")
       .isInt({ min: 0 })
-      .withMessage("Quantity must be a non-negative integer"),
+      .withMessage("quantity must be zero or a positive integer"),
+  ],
+
+  removeItem: [
+    body("productId")
+      .notEmpty()
+      .withMessage("productId is required")
+      .isString()
+      .withMessage("productId must be a string"),
+
+    body("size")
+      .notEmpty()
+      .withMessage("size is required")
+      .isIn(["XS", "S", "M", "L", "XL", "XXL"])
+      .withMessage("size must be one of: XS, S, M, L, XL, XXL"),
   ],
 };
 
