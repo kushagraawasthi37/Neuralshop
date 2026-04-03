@@ -1,6 +1,6 @@
-import Order from "./order.model.js";
-import User from "../user/user.model.js";
-import Product from "../product/product.model.js";
+import { Order } from "./order.model.js";
+import { User } from "../user/user.model.js";
+import { Product } from "../product/product.model.js";
 import razorpay from "razorpay";
 import mongoose from "mongoose";
 import config from "../../config/environment.config.js";

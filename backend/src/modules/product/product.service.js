@@ -1,5 +1,5 @@
-import Product from "./product.model.js";
-import Admin from "../auth/auth.model.js";
+import { Product } from "./product.model.js";
+import { Admin } from "../auth/auth.model.js";
 import uploadOnCloudinary from "../../config/cloudinary.js";
 
 export const addProductService = async (productData, adminEmail, files) => {

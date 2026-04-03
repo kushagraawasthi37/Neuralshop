@@ -1,22 +1,22 @@
-// Inventory Consumer - Consumes inventory events from Kafka
-// TODO: Implement inventory consumer
-// - Listen to stock update events
-// - Update product inventory
+// // Inventory Consumer - Consumes inventory events from Kafka
+// // TODO: Implement inventory consumer
+// // - Listen to stock update events
+// // - Update product inventory
 
-import { kafkaConsumer } from "../../config/kafka.js";
+// import { kafkaConsumer } from "../../config/kafka.js";
 
-export const startInventoryConsumer = async () => {
-  try {
-    await kafkaConsumer.subscribe({ topic: "inventory" });
+// export const startInventoryConsumer = async () => {
+//   try {
+//     await kafkaConsumer.subscribe({ topic: "inventory" });
 
-    await kafkaConsumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        const event = JSON.parse(message.value.toString());
-        console.log("Inventory event consumed:", event);
-        // TODO: Handle inventory events
-      },
-    });
-  } catch (error) {
-    console.error("Error starting inventory consumer:", error);
-  }
-};
+//     await kafkaConsumer.run({
+//       eachMessage: async ({ topic, partition, message }) => {
+//         const event = JSON.parse(message.value.toString());
+//         console.log("Inventory event consumed:", event);
+//         // TODO: Handle inventory events
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error starting inventory consumer:", error);
+//   }
+// };

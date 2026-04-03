@@ -4,13 +4,14 @@ const adminSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Admin name is required"],
+      required: [true, "Name is required"],
       trim: true,
+      minlength: [2, "Name must be at least 2 characters"],
     },
 
     email: {
       type: String,
-      required: [true, "Admin email is required"],
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       match: [
@@ -22,16 +23,13 @@ const adminSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, "Password is required"],
-      minlength: [8, "Password must be at least 8 characters"],
+      minlength: [6, "Password must be at least 6 characters"],
       select: false, // Don't return password by default
     },
 
     role: {
       type: String,
-      enum: {
-        values: ["admin", "super_admin"],
-        message: "Role must be admin or super_admin",
-      },
+      enum: ["admin"],
       default: "admin",
     },
 
@@ -40,16 +38,17 @@ const adminSchema = new mongoose.Schema(
       default: true,
     },
 
-    permissions: [String], // Fine-grained permission control
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
 
-// 🔥 Indexes
-adminSchema.index({ email: 1 });
+// Indexes
+// adminSchema.index({ email: 1 });
 adminSchema.index({ role: 1 });
 adminSchema.index({ createdAt: -1 });
 
-const Admin = mongoose.model("Admin", adminSchema);
-
-export default Admin;
+export const Admin = mongoose.model("Admin", adminSchema);

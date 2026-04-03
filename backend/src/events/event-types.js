@@ -15,3 +15,8 @@ export const inventoryEvents = {
   STOCK_UPDATED: "inventory.stock_updated",
   STOCK_LOW: "inventory.stock_low",
 };
+
+export const mailEvents = {
+  EMAIL_VERIFICATION: "mail.verification",
+  PASSWORD_RESET: "mail.reset",
+};

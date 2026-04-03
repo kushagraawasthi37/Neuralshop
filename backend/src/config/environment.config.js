@@ -50,7 +50,7 @@ export const config = {
   redis: {
     host: getEnvVariable("REDIS_HOST", "localhost"),
     port: parseInt(getEnvVariable("REDIS_PORT", "6379")),
-    password: getEnvVariable("REDIS_PASSWORD", null),
+    password: getEnvVariable("REDIS_PASS", null),
   },
 
   // Kafka Config
@@ -64,6 +64,12 @@ export const config = {
   razorpay: {
     keyId: getEnvVariable("RAZORPAY_KEY_ID"),
     keySecret: getEnvVariable("RAZORPAY_KEY_SECRET"),
+  },
+
+  // SendGrid Config
+  sendgrid: {
+    apiKey: getEnvVariable("SENDGRID_API_KEY"),
+    fromEmail: getEnvVariable("SENDGRID_FROM_EMAIL"),
   },
 
   // Logging Config
