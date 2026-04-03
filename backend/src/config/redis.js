@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import Redis from "ioredis";
 import { logger } from "../utils/logger.js";
 
@@ -24,22 +23,5 @@ if (!global._redisClient) {
 } else {
   redisClient = global._redisClient;
 }
-=======
-import redis from "redis";
-import config from "./environment.config.js";
-
-const redisClient = redis.createClient({
-  host: config.redis.host,
-  port: config.redis.port,
-});
-
-redisClient.on("error", (err) => {
-  console.log("Redis error:", err);
-});
-
-redisClient.on("connect", () => {
-  console.log("Redis connected");
-});
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 
 export default redisClient;

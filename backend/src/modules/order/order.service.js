@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 import { Order } from "./order.model.js";
 import { User } from "../user/user.model.js";
 import { Product } from "../product/product.model.js";
-=======
-import Order from "./order.model.js";
-import User from "../user/user.model.js";
-import Product from "../product/product.model.js";
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 import razorpay from "razorpay";
 import mongoose from "mongoose";
 import config from "../../config/environment.config.js";

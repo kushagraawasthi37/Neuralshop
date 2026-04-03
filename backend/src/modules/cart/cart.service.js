@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { User } from "../user/user.model.js";
-=======
-import User from "../user/user.model.js";
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 
 export const addToCartService = async (userId, itemId, size) => {
   try {

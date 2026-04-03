@@ -48,7 +48,6 @@ export const authValidations = {
       .isEmail()
       .withMessage("Invalid email format"),
   ],
-<<<<<<< HEAD
 
   verifyEmail: [
     body("email")
@@ -74,8 +73,6 @@ export const authValidations = {
       .withMessage("Email is required")
       .isEmail()
       .withMessage("Invalid email format"),
-
-      
   ],
 
   resetPassword: [
@@ -102,8 +99,6 @@ export const authValidations = {
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
       .withMessage("Password must contain uppercase, lowercase, and number"),
   ],
-=======
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 };
 
 // ========== PRODUCT VALIDATIONS ==========
@@ -172,6 +167,133 @@ export const productValidations = {
       .optional()
       .isInt({ min: 1, max: 100 })
       .withMessage("Limit must be between 1 and 100"),
+
+    query("search")
+      .optional()
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage("Search query cannot be empty"),
+
+    query("category")
+      .optional()
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage("Category cannot be empty"),
+
+    query("subCategory")
+      .optional()
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage("Sub-category cannot be empty"),
+
+    query("priceMin")
+      .optional()
+      .isFloat({ min: 0 })
+      .withMessage("Price min must be a positive number"),
+
+    query("priceMax")
+      .optional()
+      .isFloat({ min: 0 })
+      .withMessage("Price max must be a positive number"),
+
+    query("ratingMin")
+      .optional()
+      .isFloat({ min: 0, max: 5 })
+      .withMessage("Rating min must be between 0 and 5"),
+
+    query("bestseller")
+      .optional()
+      .isBoolean()
+      .withMessage("Bestseller must be a boolean"),
+
+    query("sort")
+      .optional()
+      .isIn(["price_asc", "price_desc", "newest", "rating"])
+      .withMessage(
+        "Sort must be one of: price_asc, price_desc, newest, rating",
+      ),
+  ],
+
+  getProductById: [
+    param("id")
+      .notEmpty()
+      .withMessage("Product ID is required")
+      .isMongoId()
+      .withMessage("Invalid product ID"),
+  ],
+
+  updateProduct: [
+    param("id")
+      .notEmpty()
+      .withMessage("Product ID is required")
+      .isMongoId()
+      .withMessage("Invalid product ID"),
+
+    body("name")
+      .optional()
+      .trim()
+      .isLength({ min: 3 })
+      .withMessage("Product name must be at least 3 characters"),
+
+    body("description")
+      .optional()
+      .trim()
+      .isLength({ min: 10 })
+      .withMessage("Description must be at least 10 characters"),
+
+    body("price")
+      .optional()
+      .isFloat({ min: 0 })
+      .withMessage("Price must be a positive number"),
+
+    body("category")
+      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage("Category is required"),
+
+    body("subCategory")
+      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage("Sub-category is required"),
+
+    body("sizes")
+      .optional()
+      .custom((value) => {
+        if (!value) return true;
+        try {
+          JSON.parse(value);
+          return true;
+        } catch {
+          throw new Error("Sizes must be valid JSON");
+        }
+      }),
+
+    body("bestseller")
+      .optional()
+      .isBoolean()
+      .withMessage("Bestseller must be a boolean"),
+  ],
+
+  updateStock: [
+    param("id")
+      .notEmpty()
+      .withMessage("Product ID is required")
+      .isMongoId()
+      .withMessage("Invalid product ID"),
+
+    body("size")
+      .notEmpty()
+      .withMessage("Size is required")
+      .isIn(["XS", "S", "M", "L", "XL", "XXL"])
+      .withMessage("Invalid size"),
+
+    body("stockChange")
+      .notEmpty()
+      .withMessage("Stock change is required")
+      .isInt()
+      .withMessage("Stock change must be an integer"),
   ],
 };
 

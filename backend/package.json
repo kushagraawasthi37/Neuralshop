@@ -11,11 +11,9 @@
     "start": "node src/server.js"
   },
   "dependencies": {
+    "@elastic/elasticsearch": "^9.3.4",
     "@prisma/client": "^7.5.0",
-<<<<<<< HEAD
     "@sendgrid/mail": "^8.1.6",
-=======
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.8.0",
     "cookie-parser": "^1.4.7",
@@ -25,10 +23,7 @@
     "express-validator": "^7.3.1",
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3",
-<<<<<<< HEAD
     "kafkajs": "^2.2.4",
-=======
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
     "mongoose": "^8.19.2",
     "multer": "^2.1.1",
     "nodemon": "^3.1.10",

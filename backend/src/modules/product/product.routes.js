@@ -4,19 +4,21 @@ import {
   AdminlistProduct,
   listProduct,
   removeProduct,
+  getProductById,
+  updateProduct,
+  updateStock,
 } from "./product.controller.js";
 import upload from "../../middlewares/multer.middleware.js";
-import isAuth from "../../middlewares/auth.middleware.js";
-import isAdmin from "../../middlewares/admin.middleware.js";
+import isAuth, { isAuthAdmin } from "../../middlewares/auth.middleware.js";
 import validationErrorHandler from "../../middlewares/validation.middleware.js";
 import { productValidations } from "../../utils/validations.js";
 
 const productRoutes = express.Router();
 
+//Checked
 productRoutes.post(
   "/addproduct",
-  isAuth,
-  isAdmin,
+  isAuthAdmin,
   upload.fields([
     { name: "image1", maxCount: 1 },
     { name: "image2", maxCount: 1 },
@@ -28,22 +30,61 @@ productRoutes.post(
   addProduct,
 );
 
-productRoutes.get("/admin/list", isAuth, isAdmin, AdminlistProduct);
+//Checked
+productRoutes.get("/admin/list", isAuthAdmin, AdminlistProduct);
 
+
+//Checked
 productRoutes.get(
   "/list",
+  isAuth,
   productValidations.listProduct,
   validationErrorHandler,
   listProduct,
 );
 
+//Checked
 productRoutes.post(
   "/remove/:id",
-  isAuth,
-  isAdmin,
+  isAuthAdmin,
   productValidations.removeProduct,
   validationErrorHandler,
   removeProduct,
+);
+
+//Checked
+productRoutes.get(
+  "/:id",
+  isAuth,
+  productValidations.getProductById,
+  validationErrorHandler,
+  getProductById,
+);
+
+
+//Checked
+productRoutes.put(
+  "/update/:id",
+  isAuthAdmin,
+  upload.fields([
+    { name: "image1", maxCount: 1 },
+    { name: "image2", maxCount: 1 },
+    { name: "image3", maxCount: 1 },
+    { name: "image4", maxCount: 1 },
+  ]),
+  productValidations.updateProduct,
+  validationErrorHandler,
+  updateProduct,
+);
+
+
+//Checked
+productRoutes.put(
+  "/update-stock/:id",
+  isAuthAdmin,
+  productValidations.updateStock,
+  validationErrorHandler,
+  updateStock,
 );
 
 export default productRoutes;

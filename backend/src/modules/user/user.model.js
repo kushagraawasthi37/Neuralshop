@@ -83,12 +83,6 @@ const userSchema = new mongoose.Schema(
 );
 
 // 🔥 Indexes for optimal performance
-<<<<<<< HEAD
-// userSchema.index({ email: 1 });
-=======
-userSchema.index({ email: 1 });
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
-userSchema.index({ authProvider: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ isActive: 1 });

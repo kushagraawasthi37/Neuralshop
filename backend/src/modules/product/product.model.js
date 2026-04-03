@@ -108,3 +108,4 @@ productSchema.index({ "sizes.size": 1 });
 productSchema.index({ sku: 1 });
 
 export const Product = mongoose.model("Product", productSchema);
+

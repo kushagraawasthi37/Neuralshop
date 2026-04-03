@@ -44,7 +44,6 @@ services:
 
   # ------------------ REDIS ------------------
   redis:
-<<<<<<< HEAD
     image: redis/redis-stack:latest
     container_name: redis
     restart: always
@@ -53,38 +52,23 @@ services:
     ports:
       - "6379:6379"
       - "8003:8003"
-=======
-    image: redis:7
-    container_name: redis_server
-    restart: always
-    ports:
-      - "6379:6379"
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
     volumes:
       - redis_data:/data
     networks:
       - neural_net
 
-<<<<<<< HEAD
   # ✅ ------------------ REDIS INSIGHT ------------------
-=======
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
   redis-insight:
     image: redis/redisinsight:latest
     container_name: redis_insight
     restart: always
     ports:
-<<<<<<< HEAD
       - "8001:5540"
-=======
-      - "8001:8001"
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
     depends_on:
       - redis
     networks:
       - neural_net
 
-<<<<<<< HEAD
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
@@ -116,8 +100,6 @@ services:
     networks:
       - neural_net
 
-=======
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
   # ------------------ POSTGRES ------------------
   postgres:
     image: postgres:16
@@ -131,6 +113,22 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - neural_net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
       - neural_net
 
@@ -153,6 +151,7 @@ volumes:
   mongo_data:
   postgres_data:
   redis_data:
+  elasticsearch_data:
 
 # ------------------ NETWORK ------------------
 networks:
