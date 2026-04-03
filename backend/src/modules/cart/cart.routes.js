@@ -38,6 +38,7 @@ cartRoutes.post(
 cartRoutes.patch(
   "/items",
   isAuth,
+  checkIdempotency,
   cartValidations.updateItem,
   validationErrorHandler,
   updateItem,

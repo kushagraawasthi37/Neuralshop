@@ -20,15 +20,19 @@ export const checkIdempotency = async (req, res, next) => {
       return res.status(statusCode).json(data);
     }
 
-    // Store original send method
+    // Express ka original response function store kar liya
     const originalSend = res.send;
+
+    // Ab jab bhi controller res.send() call karega:
+    // Ye custom function chalega
+    // Ye ek hook/interceptor hai
     res.send = function (data) {
       // Cache the response in Redis
       redisClient.set(
         redisKey,
         JSON.stringify({
           statusCode: res.statusCode,
-          data: JSON.parse(data),
+          data: typeof data === "string" ? JSON.parse(data) : data,
         }),
         "EX",
         IDEMPOTENCY_TTL_SECONDS,

@@ -104,10 +104,14 @@ export const addItemToCartService = async (userId, item) => {
   const redisKey = getRedisKey(userId);
   const itemData = { productId, size, quantity, priceAtAdd, name, image };
 
+  //Concurrency Handling: Multiple requests trying to modify the cart at the same
   // Use Redis transactions for atomicity
   const maxRetries = 3;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      //  Redis bol raha:
+      // “Agar is key ko kisi ne change kiya → mujhe batana”
+      // Ye optimistic locking hai
       await redisClient.watch(redisKey);
 
       // Get current cart
@@ -133,10 +137,22 @@ export const addItemToCartService = async (userId, item) => {
       cart.updatedAt = new Date();
 
       // Start transaction
+
+      // “Main ab ek atomic transaction start kar raha hoon”
+      // Ye ek command queue banata hai
       const multi = redisClient.multi();
       multi.set(redisKey, JSON.stringify(cart), "EX", CART_TTL_SECONDS);
+      // Abhi Redis me kuch execute nahi hua ❌
+      // Bas queue me add hua hai
+
+      // Commands tab tak run nahi honge jab tak exec() nahi aata
+
       const results = await multi.exec();
 
+      //  Redis internally check karta hai:
+      // "Jab se WATCH laga tha, kya redisKey change hua?"
+
+      // Case 1: NO CHANGE → SUCCESS
       if (results) {
         // Success
         // Persist to Mongo in background
@@ -147,6 +163,7 @@ export const addItemToCartService = async (userId, item) => {
       } else {
         // Transaction failed, retry
         continue;
+        //Retry with latest data
       }
     } catch (error) {
       console.error(`Attempt ${attempt + 1} failed:`, error);
