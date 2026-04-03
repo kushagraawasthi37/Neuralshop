@@ -63,3 +63,5 @@ cartRoutes.post("/sync", isAuth, syncCart);
 cartRoutes.post("/merge", isAuth, mergeCart);
 
 export default cartRoutes;
+
+//Cart Service Done
