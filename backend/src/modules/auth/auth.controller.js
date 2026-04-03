@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 import jwt from "jsonwebtoken";
 import redisClient from "../../config/redis.js";
+=======
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 import {
   registerUserService,
   loginUserService,
@@ -7,6 +10,7 @@ import {
   registerAdminService,
   loginAdminService,
   getCurrentAdminService,
+<<<<<<< HEAD
   verifyEmailService,
   requestPasswordResetService,
   resetPasswordService,
@@ -16,6 +20,10 @@ import {
 } from "./auth.service.js";
 import config from "../../config/environment.config.js";
 import { OTP_TYPES, ROLES } from "./otp.service.js";
+=======
+} from "./auth.service.js";
+import config from "../../config/environment.config.js";
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 
 const isProd = config.app.isProduction;
 
@@ -28,18 +36,25 @@ const setCookie = (res, token) => {
   });
 };
 
+<<<<<<< HEAD
 //Checked
+=======
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 export const registration = async (req, res) => {
   try {
     const { name, email, password } = req.body;
     const { user, token } = await registerUserService(name, email, password);
 
     setCookie(res, token);
+<<<<<<< HEAD
     return res.status(201).json({
       user,
       token,
       message: "Verification OTP has been sent on Email",
     });
+=======
+    return res.status(201).json({ user, token });
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
   } catch (error) {
     return res
       .status(400)
@@ -47,6 +62,7 @@ export const registration = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 //Checked
 export const verifyEmail = async (req, res) => {
   try {
@@ -112,20 +128,27 @@ export const verifyAdminEmail = async (req, res) => {
 };
 
 //Checked
+=======
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const { user, token } = await loginUserService(email, password);
 
     setCookie(res, token);
+<<<<<<< HEAD
     return res
       .status(200)
       .json({ user, token, message: "User Logged in Successfully" });
+=======
+    return res.status(200).json({ user, token });
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
   } catch (error) {
     return res.status(400).json({ message: error.message || "Login error" });
   }
 };
 
+<<<<<<< HEAD
 //Checked
 export const logOut = async (req, res) => {
   try {
@@ -160,6 +183,13 @@ export const logOut = async (req, res) => {
     return res.status(200).json({ message: "logout successful" });
   } catch (error) {
     console.error("Logout error:", error);
+=======
+export const logOut = async (req, res) => {
+  try {
+    res.clearCookie("token");
+    return res.status(200).json({ message: "logout successful" });
+  } catch (error) {
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
     return res.status(500).json({ message: "Logout error" });
   }
 };
@@ -178,18 +208,25 @@ export const googleLogin = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 //Checked
+=======
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 export const adminRegistration = async (req, res) => {
   try {
     const { name, email, password } = req.body;
     const { admin, token } = await registerAdminService(name, email, password);
 
     setCookie(res, token);
+<<<<<<< HEAD
     return res.status(201).json({
       admin,
       token,
       message: "Email Verification code is sent successfully",
     });
+=======
+    return res.status(201).json({ admin, token });
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
   } catch (error) {
     return res
       .status(400)
@@ -197,7 +234,10 @@ export const adminRegistration = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 //Checked
+=======
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 export const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -210,6 +250,7 @@ export const adminLogin = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 //Checked
 export const requestPasswordReset = async (req, res) => {
   try {
@@ -232,6 +273,8 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+=======
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 export const getCurrentAdmin = async (req, res) => {
   try {
     const admin = await getCurrentAdminService(req.email);
@@ -247,6 +290,7 @@ export const getCurrentAdmin = async (req, res) => {
       .json({ message: "Something went wrong.Login again" });
   }
 };
+<<<<<<< HEAD
 
 export const getCurrentUser = async (req, res) => {
   try {
@@ -263,3 +307,5 @@ export const getCurrentUser = async (req, res) => {
       .json({ message: "Something went wrong.Login again" });
   }
 };
+=======
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567

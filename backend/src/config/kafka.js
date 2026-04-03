@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // config/kafka.js
 import { Kafka } from "kafkajs";
 import config from "./environment.config.js";
@@ -63,3 +64,19 @@ export const kafkaProducer = {
 export const kafkaConsumer = kafkaInstance.consumer;
 
 export default kafkaInstance;
+=======
+import { Kafka } from "kafkajs";
+import config from "./environment.config.js";
+
+const kafka = new Kafka({
+  clientId: config.kafka.clientId,
+  brokers: config.kafka.brokers,
+});
+
+export const kafkaProducer = kafka.producer();
+export const kafkaConsumer = kafka.consumer({
+  groupId: config.kafka.groupId,
+});
+
+export default kafka;
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567

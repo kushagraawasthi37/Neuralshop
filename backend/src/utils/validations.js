@@ -48,6 +48,7 @@ export const authValidations = {
       .isEmail()
       .withMessage("Invalid email format"),
   ],
+<<<<<<< HEAD
 
   verifyEmail: [
     body("email")
@@ -101,6 +102,8 @@ export const authValidations = {
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
       .withMessage("Password must contain uppercase, lowercase, and number"),
   ],
+=======
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 };
 
 // ========== PRODUCT VALIDATIONS ==========

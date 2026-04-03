@@ -1,8 +1,12 @@
 import jwt from "jsonwebtoken";
 import config from "../config/environment.config.js";
+<<<<<<< HEAD
 import redisClient from "../config/redis.js";
 
 //User
+=======
+
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 const isAuth = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
@@ -16,6 +20,7 @@ const isAuth = async (req, res, next) => {
       return res.status(400).json({ message: "user does not have token" });
     }
 
+<<<<<<< HEAD
     // blacklist lookup
     const blacklisted = await redisClient.get(`blacklisted_token:${token}`);
     if (blacklisted) {
@@ -62,11 +67,17 @@ const isAuthAdmin = async (req, res, next) => {
 
     try {
       const verifyToken = jwt.verify(token, config.jwt.secret);
+=======
+    try {
+      const verifyToken = jwt.verify(token, config.jwt.secret);
+      req.userId = verifyToken?.userId;
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
       req.email = verifyToken?.email;
       req.token = token;
       next();
     } catch (error) {
       console.log("JWT error:", error.message);
+<<<<<<< HEAD
       return res
         .status(401)
         .json({ message: `isAuthAdmin error ${error.message}` });
@@ -78,4 +89,14 @@ const isAuthAdmin = async (req, res, next) => {
 };
 
 export { isAuthAdmin };
+=======
+      return res.status(500).json({ message: `isAuth error ${error.message}` });
+    }
+  } catch (error) {
+    console.log("isAuth error");
+    return res.status(500).json({ message: `isAuth error ${error}` });
+  }
+};
+
+>>>>>>> e46555d8f8e41a1394076e4977938949b8144567
 export default isAuth;
