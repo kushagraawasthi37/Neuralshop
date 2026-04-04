@@ -33,7 +33,6 @@ productRoutes.post(
 //Checked
 productRoutes.get("/admin/list", isAuthAdmin, AdminlistProduct);
 
-
 //Checked
 productRoutes.get(
   "/list",
@@ -55,12 +54,10 @@ productRoutes.post(
 //Checked
 productRoutes.get(
   "/:id",
-  isAuth,
   productValidations.getProductById,
   validationErrorHandler,
   getProductById,
 );
-
 
 //Checked
 productRoutes.put(
@@ -76,7 +73,6 @@ productRoutes.put(
   validationErrorHandler,
   updateProduct,
 );
-
 
 //Checked
 productRoutes.put(

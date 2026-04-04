@@ -1,82 +1,70 @@
+import { ApiError } from "../../utils/api-error.js";
+import ApiResponse from "../../utils/api-response.js";
+import { asyncHandler } from "../../utils/async-handler.js";
 import {
-  placeOrderService,
-  placeOrderRazorpayService,
-  verifyRazorpayService,
-  getUserOrdersService,
-  getAllOrdersService,
-  updateOrderStatusService,
+  createOrderService,
+  getOrdersService,
+  getOrderByIdService,
+  cancelOrderService,
 } from "./order.service.js";
 
-export const placeOrder = async (req, res) => {
-  try {
-    const token = req.token;
-    const { amount, address } = req.body;
+/**
+ * POST /orders - Create new order
+ * ♻️ Idempotency protected via header
+ */
 
-    const result = await placeOrderService(req.userId, amount, address);
-    return res.status(201).json({ message: result.message, token });
-  } catch (error) {
-    return res
-      .status(400)
-      .json({ message: error.message || "Order Can't placed" });
+export const createOrder = asyncHandler(async (req, res) => {
+  const { addressId } = req.body;
+  const idempotencyKey = req.headers["idempotency-key"];
+
+  if (!addressId) {
+    throw new ApiError(400, "Address ID is required", [], "order");
   }
-};
 
-export const placeOrderRazorpay = async (req, res) => {
-  try {
-    const token = req.token;
-    const { amount, address } = req.body;
+  const result = await createOrderService(
+    req.userId,
+    addressId,
+    idempotencyKey,
+  );
 
-    const order = await placeOrderRazorpayService(req.userId, amount, address);
-    return res.status(200).json(order);
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
+  res
+    .status(201)
+    .json(new ApiResponse(201, result, "Order created successfully"));
+});
 
-export const verifyRazorpay = async (req, res) => {
-  try {
-    const { razorpay_order_id } = req.body;
-    const result = await verifyRazorpayService(req.userId, razorpay_order_id);
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
+/**
+ * GET /orders - Get user's orders
+ */
+export const getOrders = asyncHandler(async (req, res) => {
+  const orders = await getOrdersService(req.userId);
 
-export const userOrders = async (req, res) => {
-  try {
-    const token = req.token;
-    const { orders } = await getUserOrdersService(req.userId);
-    return res.status(200).json({ orders, token });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ message: error.message || "Cant fetch orders" });
-  }
-};
+  res
+    .status(200)
+    .json(new ApiResponse(200, orders, "Orders retrieved successfully"));
+});
 
-export const allOrders = async (req, res) => {
-  try {
-    const token = req.token;
-    const { orders } = await getAllOrdersService(req.adminId);
-    return res.status(200).json({ orders, token });
-  } catch (error) {
-    return res
-      .status(404)
-      .json({ message: error.message || "No orders found" });
-  }
-};
+/**
+ * GET /orders/:orderId - Get specific order
+ */
+export const getOrderById = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
 
-export const updateStatus = async (req, res) => {
-  try {
-    const { orderId, status } = req.body;
-    const token = req.token;
+  const order = await getOrderByIdService(req.userId, orderId);
 
-    const result = await updateOrderStatusService(orderId, status, req.adminId);
-    return res.status(200).json({ message: result.message, token });
-  } catch (error) {
-    return res
-      .status(400)
-      .json({ message: error.message || "Order Status update failed" });
-  }
-};
+  res
+    .status(200)
+    .json(new ApiResponse(200, order, "Order retrieved successfully"));
+});
+
+/**
+ * PATCH /orders/:orderId/cancel - Cancel order
+ */
+export const cancelOrder = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+
+  const result = await cancelOrderService(req.userId, orderId);
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, result, "Order cancelled successfully"));
+});

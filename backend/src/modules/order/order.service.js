@@ -1,259 +1,588 @@
-import { Order } from "./order.model.js";
-import { User } from "../user/user.model.js";
+import prisma from "../../prisma/client.js";
+import { ApiError } from "../../utils/api-error.js";
+import { getCartService, clearCartService } from "../cart/cart.service.js";
+import {
+  reserveStockService,
+  deductStockService,
+  releaseStockService,
+} from "../inventory/inventory.service.js";
 import { Product } from "../product/product.model.js";
-import razorpay from "razorpay";
-import mongoose from "mongoose";
-import config from "../../config/environment.config.js";
+import { produceOrderEvent } from "../../events/producers/order.producer.js";
+import { orderEvents } from "../../events/event-types.js";
 
-const currency = "inr";
-
-// Initialize Razorpay only if credentials are provided
-let razorpayInstance = null;
-if (config.razorpay.keyId && config.razorpay.keySecret) {
-  razorpayInstance = new razorpay({
-    key_id: config.razorpay.keyId,
-    key_secret: config.razorpay.keySecret,
+/*
+ * ♻️ Idempotency-protected order creation service
+ * 🔒 Uses transactions for order + orderItems creation
+ * 🔁 Reserves stock atomically to prevent overselling
+ */
+export const createOrderService = async (userId, addressId, idempotencyKey) => {
+  // Validate address belongs to user
+  const address = await prisma.address.findFirst({
+    where: { id: addressId, userId },
   });
-}
 
-export const placeOrderService = async (userId, amount, address) => {
-  try {
-    const user = await User.findById(userId);
-    if (!user || !user.cartData || Object.keys(user.cartData).length === 0) {
-      throw new Error("Cart empty");
-    }
-
-    const cartData = user.cartData;
-    const items = [];
-    const productIdSet = new Set();
-
-    for (const productId in cartData) {
-      for (const size in cartData[productId]) {
-        const quantity = cartData[productId][size];
-        if (quantity > 0) {
-          const product = await Product.findById(productId);
-          if (!product) continue;
-
-          items.push({
-            id: product._id,
-            name: product.name,
-            size,
-            quantity,
-            price: product.price,
-            image1: product.image1,
-          });
-
-          productIdSet.add(product._id.toString());
-        }
-      }
-    }
-
-    if (items.length === 0) {
-      throw new Error("Cart empty");
-    }
-
-    const products = Array.from(productIdSet).map((id) => ({ id }));
-
-    const orderData = {
-      items,
-      products,
-      amount,
-      userId,
-      address,
-      paymentMethod: "COD",
-      payment: false,
-      date: Date.now(),
-    };
-
-    const newOrder = new Order(orderData);
-    await newOrder.save();
-
-    await User.findByIdAndUpdate(userId, { cartData: {} });
-
-    return { message: "Order placed successfully", order: newOrder };
-  } catch (error) {
-    throw error;
+  if (!address) {
+    throw new ApiError(400, "Invalid address", [], "order");
   }
-};
-
-export const placeOrderRazorpayService = async (userId, amount, address) => {
-  try {
-    const user = await User.findById(userId);
-    if (!user || !user.cartData || Object.keys(user.cartData).length === 0) {
-      throw new Error("Cart empty");
-    }
-
-    const cartData = user.cartData;
-    const items = [];
-    const productIdSet = new Set();
-
-    for (const productId in cartData) {
-      for (const size in cartData[productId]) {
-        const quantity = cartData[productId][size];
-        if (quantity > 0) {
-          const product = await Product.findById(productId);
-          if (!product) continue;
-
-          items.push({
-            id: product._id,
-            name: product.name,
-            size,
-            quantity,
-            price: product.price,
-            image1: product.image1,
-          });
-
-          productIdSet.add(product._id.toString());
-        }
-      }
-    }
-
-    if (items.length === 0) {
-      throw new Error("Empty Cart");
-    }
-
-    const products = Array.from(productIdSet).map((id) => ({
-      id,
-      status: "Order Placed",
-    }));
-
-    const orderData = {
-      items,
-      products,
-      amount,
-      userId,
-      address,
-      paymentMethod: "Razorpay",
-      payment: false,
-      date: Date.now(),
-    };
-
-    const newOrder = new Order(orderData);
-    await newOrder.save();
-
-    const options = {
-      amount: amount * 100,
-      currency: currency.toUpperCase(),
-      receipt: newOrder._id.toString(),
-    };
-
-    return new Promise((resolve, reject) => {
-      if (!razorpayInstance) {
-        reject(
-          new Error(
-            "Razorpay is not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET",
-          ),
-        );
-        return;
-      }
-      razorpayInstance.orders.create(options, (error, order) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(order);
-        }
-      });
+  // ♻️ Reserve idempotency entry early to guard against duplicate requests
+  let idempotencyRecord = null;
+  if (idempotencyKey) {
+    idempotencyRecord = await prisma.idempotencyKey.findUnique({
+      where: { key: idempotencyKey },
     });
-  } catch (error) {
-    throw error;
-  }
-};
 
-export const verifyRazorpayService = async (userId, razorpayOrderId) => {
-  try {
-    if (!razorpayInstance) {
-      throw new Error(
-        "Razorpay is not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET",
+    if (idempotencyRecord) {
+      if (idempotencyRecord.status === "completed") {
+        return idempotencyRecord.response;
+      }
+
+      throw new ApiError(
+        409,
+        "Duplicate order request in progress or already created",
+        [],
+        "order",
       );
     }
-    const orderInfo = await razorpayInstance.orders.fetch(razorpayOrderId);
 
-    if (orderInfo.status === "paid") {
-      const order = await Order.findById(orderInfo.receipt);
-      if (order) {
-        order.payment = true;
-        await order.save();
+    try {
+      await prisma.idempotencyKey.create({
+        data: {
+          key: idempotencyKey,
+          userId,
+          method: "POST",
+          endpoint: "/orders",
+          response: {},
+          status: "pending",
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+    } catch (error) {
+      if (error?.code === "P2002") {
+        const existing = await prisma.idempotencyKey.findUnique({
+          where: { key: idempotencyKey },
+        });
+        if (existing?.status === "completed") {
+          return existing.response;
+        }
       }
-      await User.findByIdAndUpdate(userId, { cartData: {} });
-      return { message: "Payment Successful" };
-    } else {
-      return { message: "Payment Failed" };
+      throw error;
+    }
+  }
+
+  // Validate cart
+  const cart = await getCartService(userId);
+  if (!cart || !cart.items.length) {
+    throw new ApiError(400, "Cart is empty", [], "order");
+  }
+
+  // Validate cart items and calculate total
+  let totalAmount = 0;
+  const orderItems = [];
+
+  //Create order items and calculate total amount
+  for (const item of cart.items) {
+    // Validate product exists in MongoDB
+    const product = await Product.findById(item.productId);
+    if (!product) {
+      throw new ApiError(
+        400,
+        `Product ${item.productId} not found`,
+        [],
+        "order",
+      );
+    }
+
+    const sizeEntry = product.sizes.find((s) => s.size === item.size);
+    if (!sizeEntry) {
+      throw new ApiError(
+        400,
+        `Size ${item.size} not available for product ${item.productId}`,
+        [],
+        "order",
+      );
+    }
+
+    if (item.quantity > sizeEntry.stock) {
+      throw new ApiError(
+        400,
+        `Insufficient stock for ${item.productId} size ${item.size}`,
+        [],
+        "order",
+      );
+    }
+
+    totalAmount += item.quantity * item.priceAtAdd;
+    orderItems.push({
+      productId: item.productId,
+      sellerId: product.sellerId, // 🔥 NEW: Add sellerId from product
+      quantity: item.quantity,
+      price: item.priceAtAdd,
+    });
+  }
+
+  // 🔒 Reserve stock atomically for all items
+  const reservedItems = [];
+  try {
+    for (const item of orderItems) {
+      await reserveStockService(item.productId, item.quantity);
+      reservedItems.push(item);
     }
   } catch (error) {
+    // Release any reserved stock on failure
+    for (const item of reservedItems) {
+      await releaseStockService(item.productId, item.quantity).catch(() => {});
+    }
     throw error;
   }
-};
 
-export const getUserOrdersService = async (userId) => {
+  // 🔒 Create order in transaction
   try {
-    const orders = await Order.find({ userId });
-    return { orders };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const getAllOrdersService = async (adminId) => {
-  try {
-    const orders = await Order.aggregate([
-      {
-        $lookup: {
-          from: "products",
-          localField: "products.id",
-          foreignField: "_id",
-          as: "productDetails",
+    const result = await prisma.$transaction(async (tx) => {
+      // Create order
+      const order = await tx.order.create({
+        data: {
+          userId,
+          totalAmount,
+          addressId,
+          status: "PENDING", // 🔥 UPDATED: Use uppercase as per schema
         },
-      },
-      {
-        $addFields: {
-          productDetails: {
-            $filter: {
-              input: "$productDetails",
-              as: "pd",
-              cond: {
-                $eq: ["$$pd.owner", new mongoose.Types.ObjectId(adminId)],
-              },
-            },
+      });
+
+      // Create order items
+      await tx.orderItem.createMany({
+        data: orderItems.map((item) => ({
+          orderId: order.id,
+          productId: item.productId,
+          sellerId: item.sellerId, // 🔥 NEW: Include sellerId
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      });
+
+      // ♻️ Store idempotency response
+      if (idempotencyKey) {
+        await tx.idempotencyKey.upsert({
+          where: { key: idempotencyKey },
+          update: {
+            response: { orderId: order.id, status: "PENDING" },
+            status: "completed",
           },
-        },
-      },
-      {
-        $match: {
-          "productDetails.0": { $exists: true },
-        },
-      },
-    ]);
+          create: {
+            key: idempotencyKey,
+            userId,
+            method: "POST",
+            endpoint: "/orders",
+            response: { orderId: order.id, status: "PENDING" },
+            status: "completed",
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+          },
+        });
+      }
 
-    if (!orders.length) {
-      throw new Error("No orders found for this admin");
+      return order;
+    });
+
+    const payload = { orderId: result.id, status: "PENDING", totalAmount };
+
+    try {
+      await produceOrderEvent(orderEvents.ORDER_CREATED, {
+        orderId: result.id,
+        userId,
+        totalAmount,
+        status: "PENDING",
+        items: orderItems,
+      });
+    } catch (error) {
+      console.error("Failed to produce order.created event:", error);
     }
 
-    return { orders };
+    return payload;
   } catch (error) {
+    if (idempotencyKey) {
+      await prisma.idempotencyKey.updateMany({
+        where: { key: idempotencyKey, status: "pending" },
+        data: { status: "failed" },
+      });
+    }
     throw error;
   }
 };
 
-export const updateOrderStatusService = async (orderId, status, adminId) => {
-  try {
-    const order = await Order.findById(orderId).populate("products.id");
+/*
+ * Get orders for a user
+ */
+export const getOrdersService = async (userId) => {
+  const orders = await prisma.order.findMany({
+    where: { userId },
+    include: {
+      items: true,
+      payment: true,
+      address: true, // Include address information
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-    if (!order) {
-      throw new Error("Order not found");
+  return orders;
+};
+
+/*
+ * Get order by ID
+ */
+export const getOrderByIdService = async (userId, orderId) => {
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      userId, // Ensure user can only access their own orders
+    },
+    include: {
+      items: true,
+      payment: true,
+      address: true, // Include address information
+    },
+  });
+
+  if (!order) {
+    throw new ApiError(404, "Order not found", [], "order");
+  }
+
+  return order;
+};
+
+/*
+ * Cancel order service
+ * 🔁 Only allows cancellation if payment not completed
+ */
+export const cancelOrderService = async (userId, orderId) => {
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      userId,
+    },
+    include: {
+      items: true,
+      payment: true,
+    },
+  });
+
+  if (!order) {
+    throw new ApiError(404, "Order not found", [], "order");
+  }
+
+  if (order.status !== "PENDING") {
+    throw new ApiError(400, "Order cannot be cancelled", [], "order");
+  }
+
+  if (order.payment && order.payment.status === "success") {
+    throw new ApiError(400, "Cannot cancel paid order", [], "order");
+  }
+
+  // 🔒 Cancel order and release reserved stock in the same transaction
+  await prisma.$transaction(async (tx) => {
+    // Update order status
+    await tx.order.update({
+      where: { id: orderId },
+      data: { status: "CANCELLED" },
+    });
+
+    for (const item of order.items) {
+      //Direct SQL query run karo (Prisma bypass)
+      await tx.$executeRaw`
+        UPDATE "Inventory"
+        SET "reservedStock" = GREATEST("reservedStock" - ${item.quantity}, 0)
+        WHERE "productId" = ${item.productId}
+      `;
+    }
+  });
+
+  // Produce Kafka event for order cancellation
+  try {
+    await produceOrderEvent(orderEvents.ORDER_CANCELLED, {
+      orderId,
+      userId,
+      reason: "user_cancelled",
+    });
+  } catch (error) {
+    console.error("Failed to produce order cancelled event:", error);
+    // Don't fail the cancellation if event production fails
+  }
+
+  return { orderId, status: "CANCELLED" };
+};
+
+// ============================================
+// SELLER ORDER QUERIES (Admin)
+// ============================================
+
+/**
+ * Get all orders for a seller (grouped by orderId, showing only seller's items)
+ */
+export const getSellerOrdersService = async (sellerId) => {
+  const orderItems = await prisma.orderItem.findMany({
+    where: { sellerId },
+    include: {
+      order: {
+        include: { payment: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Group by orderId
+  const ordersMap = new Map();
+  for (const item of orderItems) {
+    if (!ordersMap.has(item.orderId)) {
+      ordersMap.set(item.orderId, {
+        ...item.order,
+        items: [],
+      });
+    }
+    ordersMap.get(item.orderId).items.push(item);
+  }
+
+  return Array.from(ordersMap.values());
+};
+
+/**
+ * Get specific order for a seller (with seller validation)
+ */
+export const getSellerOrderByIdService = async (sellerId, orderId) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: true,
+      payment: true,
+    },
+  });
+
+  if (!order) {
+    throw new ApiError(404, "Order not found", [], "order");
+  }
+
+  // Validate seller owns at least one item in this order
+  const sellerItems = order.items.filter((item) => item.sellerId === sellerId);
+  if (sellerItems.length === 0) {
+    throw new ApiError(
+      403,
+      "You do not have access to this order",
+      [],
+      "order",
+    );
+  }
+
+  // Return order but filter items to only seller's items
+  return {
+    ...order,
+    items: sellerItems,
+  };
+};
+
+// ============================================
+// ORDER ITEM STATUS MANAGEMENT
+// ============================================
+
+/**
+ * 🔄 Update OrderItem status with seller validation and order status derivation
+ * Status flow: PENDING → PROCESSING → SHIPPED → DELIVERED → CANCELLED
+ */
+export const updateOrderItemStatusService = async (
+  sellerId,
+  itemId,
+  newStatus,
+) => {
+  // Validate status
+  const validStatuses = [
+    "PENDING",
+    "PROCESSING",
+    "SHIPPED",
+    "DELIVERED",
+    "CANCELLED",
+  ];
+  if (!validStatuses.includes(newStatus)) {
+    throw new ApiError(
+      400,
+      `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+      [],
+      "order",
+    );
+  }
+
+  // 🔒 Transaction: Update item and derive order status
+  const result = await prisma.$transaction(async (tx) => {
+    // Get current item with order
+    const item = await tx.orderItem.findUnique({
+      where: { id: itemId },
+      include: { order: { include: { items: true } } },
+    });
+
+    if (!item) {
+      throw new ApiError(404, "Order item not found", [], "order");
     }
 
-    const ownsProduct = order.products.some(
-      (p) => p.id.owner.toString() === adminId.toString(),
+    // 🔐 Seller validation
+    if (item.sellerId !== sellerId) {
+      throw new ApiError(
+        403,
+        "You do not have permission to update this item",
+        [],
+        "order",
+      );
+    }
+
+    const oldStatus = item.status;
+
+    // Update item status
+    const updatedItem = await tx.orderItem.update({
+      where: { id: itemId },
+      data: { status: newStatus },
+    });
+
+    // 🔄 Derive new order status from all items
+    const allItems = item.order.items.map((i) =>
+      i.id === itemId ? { ...i, status: newStatus } : i,
     );
 
-    if (!ownsProduct) {
-      throw new Error("Not authorized to update this order");
+    const derivedOrderStatus = deriveOrderStatus(allItems);
+
+    // Update order status
+    const updatedOrder = await tx.order.update({
+      where: { id: item.orderId },
+      data: { status: derivedOrderStatus },
+      include: { items: true, payment: true },
+    });
+
+    return {
+      item: updatedItem,
+      order: updatedOrder,
+      oldStatus,
+    };
+  });
+
+  // 📢 Produce events for SHIPPED and DELIVERED
+  if (result.item.status === "SHIPPED") {
+    try {
+      await produceOrderEvent(orderEvents.ORDER_SHIPPED, {
+        orderId: result.order.id,
+        itemId: result.item.id,
+        sellerId,
+        productId: result.item.productId,
+        quantity: result.item.quantity,
+        status: "SHIPPED",
+      });
+    } catch (error) {
+      console.error("Failed to produce ORDER_SHIPPED event:", error);
     }
-
-    await Order.findByIdAndUpdate(orderId, { status });
-
-    return { message: "Status Updated" };
-  } catch (error) {
-    throw error;
   }
+
+  if (result.item.status === "DELIVERED") {
+    try {
+      await produceOrderEvent(orderEvents.ORDER_DELIVERED, {
+        orderId: result.order.id,
+        itemId: result.item.id,
+        sellerId,
+        productId: result.item.productId,
+        quantity: result.item.quantity,
+        status: "DELIVERED",
+      });
+    } catch (error) {
+      console.error("Failed to produce ORDER_DELIVERED event:", error);
+    }
+  }
+
+  return result;
+};
+
+// ============================================
+// ORDER STATUS DERIVATION (Business Logic)
+// ============================================
+
+/**
+ * 🔄 Derive order status from all OrderItems
+ * - All DELIVERED → COMPLETED
+ * - All CANCELLED → CANCELLED
+ * - Some SHIPPED → PARTIALLY_SHIPPED
+ * - All PENDING → PENDING
+ * - Otherwise → Processing based on mix
+ */
+export const deriveOrderStatus = (orderItems) => {
+  if (!orderItems || orderItems.length === 0) {
+    return "PENDING";
+  }
+
+  const statuses = orderItems.map((item) => item.status);
+  const uniqueStatuses = new Set(statuses);
+
+  // All same status checks
+  if (uniqueStatuses.size === 1) {
+    const status = statuses[0];
+    if (status === "DELIVERED") return "COMPLETED";
+    if (status === "CANCELLED") return "CANCELLED";
+    if (status === "PENDING") return "PENDING";
+    if (status === "PROCESSING") return "PROCESSING";
+    if (status === "SHIPPED") return "SHIPPED";
+  }
+
+  // Mixed statuses
+  const hasDelivered = statuses.includes("DELIVERED");
+  const hasShipped = statuses.includes("SHIPPED");
+  const hasProcessing = statuses.includes("PROCESSING");
+  const hasPending = statuses.includes("PENDING");
+  const hasCancelled = statuses.includes("CANCELLED");
+
+  // Partial completion scenarios
+  if (hasDelivered && !hasShipped && !hasProcessing && !hasPending) {
+    // Some delivered, rest cancelled
+    return "COMPLETED";
+  }
+
+  if (hasShipped && !hasDelivered && !hasProcessing && !hasPending) {
+    // Some shipped, rest cancelled
+    return "PARTIALLY_SHIPPED";
+  }
+
+  if (hasDelivered || hasShipped) {
+    // Mix of statuses with some progress
+    return "PARTIALLY_SHIPPED";
+  }
+
+  if (hasProcessing) {
+    return "PROCESSING";
+  }
+
+  return "PENDING";
+};
+
+// ============================================
+// BULK STATUS UPDATE (Admin)
+// ============================================
+
+/**
+ * Bulk update multiple items' status (for sellers)
+ */
+export const bulkUpdateOrderItemStatusService = async (sellerId, updates) => {
+  // updates = [ { itemId: "...", status: "SHIPPED" }, ... ]
+  const results = [];
+  const errors = [];
+
+  for (const update of updates) {
+    try {
+      const result = await updateOrderItemStatusService(
+        sellerId,
+        update.itemId,
+        update.status,
+      );
+      results.push(result);
+    } catch (error) {
+      errors.push({
+        itemId: update.itemId,
+        error: error.message,
+      });
+    }
+  }
+
+  return {
+    successful: results.length,
+    failed: errors.length,
+    results,
+    errors,
+  };
 };

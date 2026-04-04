@@ -11,46 +11,80 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // URL is now in prisma.config.ts
 }
 
 // ============================================
-// ORDER MODELS
+// ADDRESS MODEL (User Addresses)
 // ============================================
 
-/// Main order record
+/// User saved addresses for shipping
+model Address {
+  id        String  @id @default(uuid())
+  userId    String // Reference to MongoDB User
+  label     String // Home, Work, etc.
+  street    String
+  city      String
+  state     String
+  zipCode   String
+  country   String
+  phone     String? // Contact phone for this address
+  isDefault Boolean @default(false) // Only one default per user
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders Order[]
+
+  @@unique([userId, isDefault]) // Ensure only one default per user
+  @@index([userId])
+  @@index([isDefault])
+}
+
+// ============================================
+// ORDER MODELS (Multi-Vendor)
+// ============================================
+
+/// Main order record (status is derived from OrderItems)
 model Order {
   id          String   @id @default(uuid())
   userId      String // Reference to MongoDB User
-  status      String   @default("pending") // pending, processing, completed, cancelled
+  status      String   @default("PENDING") // PENDING, PARTIALLY_SHIPPED, SHIPPED, DELIVERED, COMPLETED, CANCELLED (derived)
   totalAmount Float
-  address     Json // Shipping address
+  addressId   String // Reference to saved Address
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   items   OrderItem[]
   payment Payment?
+  address Address     @relation(fields: [addressId], references: [id])
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
 }
 
-/// Individual items in order
+/// Individual items in order (per seller)
 model OrderItem {
   id        String @id @default(uuid())
   orderId   String
   productId String // Reference to MongoDB Product
+  sellerId  String // 🔥 Reference to seller (admin user)
   quantity  Int
   price     Float // Price at purchase time
+  status    String @default("PENDING") // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  @@unique([orderId, productId])
   @@index([orderId])
   @@index([productId])
+  @@index([sellerId])
+  @@index([status])
 }
 
 // ============================================

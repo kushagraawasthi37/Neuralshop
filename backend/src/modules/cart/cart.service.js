@@ -352,8 +352,6 @@ export const checkoutCartService = async (userId) => {
   };
 
   // Constraint from requirement: Clear Redis cart after checkout to avoid duplicate flows.
-  await clearCartService(userId);
-
   return payload;
 };
 

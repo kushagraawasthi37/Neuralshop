@@ -11,12 +11,8 @@ class KafkaSingleton {
       });
 
       this._producer = this.kafka.producer();
-      this._consumer = this.kafka.consumer({
-        groupId: config.kafka.groupId,
-      });
 
       this.producerConnected = false;
-      this.consumerConnected = false;
 
       KafkaSingleton.instance = this;
     }
@@ -28,15 +24,7 @@ class KafkaSingleton {
     if (!this.producerConnected) {
       await this._producer.connect();
       this.producerConnected = true;
-      console.log("✅ Kafka Producer Connected");
-    }
-  }
-
-  async connectConsumer() {
-    if (!this.consumerConnected) {
-      await this._consumer.connect();
-      this.consumerConnected = true;
-      console.log("✅ Kafka Consumer Connected");
+      // console.log("✅ Kafka Producer Connected");
     }
   }
 
@@ -44,8 +32,8 @@ class KafkaSingleton {
     return this._producer;
   }
 
-  get consumer() {
-    return this._consumer;
+  createConsumer(groupId = config.kafka.groupId) {
+    return this.kafka.consumer({ groupId });
   }
 }
 
@@ -60,6 +48,7 @@ export const kafkaProducer = {
   },
 };
 
-export const kafkaConsumer = kafkaInstance.consumer;
+export const createKafkaConsumer = (groupId) =>
+  kafkaInstance.createConsumer(groupId);
 
 export default kafkaInstance;

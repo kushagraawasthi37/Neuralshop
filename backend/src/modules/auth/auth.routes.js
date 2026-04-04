@@ -11,11 +11,10 @@ import {
   requestPasswordReset,
   resetPassword,
   resendOtp,
-  getCurrentAdmin,
 } from "./auth.controller.js";
-import isAuth, { isAuthAdmin } from "../../middlewares/auth.middleware.js";
 import validationErrorHandler from "../../middlewares/validation.middleware.js";
 import { authValidations } from "../../utils/validations.js";
+import isAuth, { isAuthAdmin } from "../../middlewares/auth.middleware.js";
 
 const authRoutes = express.Router();
 
@@ -28,7 +27,8 @@ authRoutes.post(
 
 authRoutes.post("/login", authValidations.login, validationErrorHandler, login);
 
-authRoutes.get("/logout", logOut);
+authRoutes.get("/user/logout", isAuth, logOut);
+authRoutes.get("/admin/logout", isAuthAdmin, logOut);
 
 authRoutes.post(
   "/adminregister",
@@ -73,8 +73,6 @@ authRoutes.post(
   validationErrorHandler,
   resetPassword,
 );
-
-authRoutes.get("/get-current-admin", isAuthAdmin, getCurrentAdmin);
 
 authRoutes.post(
   "/googlelogin",

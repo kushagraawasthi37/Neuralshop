@@ -366,36 +366,11 @@ export const cartValidations = {
 // ========== ORDER VALIDATIONS ==========
 export const orderValidations = {
   placeOrder: [
-    body("amount")
+    body("addressId")
       .notEmpty()
-      .withMessage("Amount is required")
-      .isFloat({ min: 0 })
-      .withMessage("Amount must be a positive number"),
-
-    body("address")
-      .notEmpty()
-      .withMessage("Address is required")
-      .isObject()
-      .withMessage("Address must be an object"),
-
-    body("address.street")
-      .trim()
-      .notEmpty()
-      .withMessage("Street address is required"),
-
-    body("address.city").trim().notEmpty().withMessage("City is required"),
-
-    body("address.state").trim().notEmpty().withMessage("State is required"),
-
-    body("address.zipCode")
-      .trim()
-      .notEmpty()
-      .withMessage("Zip code is required"),
-
-    body("address.country")
-      .trim()
-      .notEmpty()
-      .withMessage("Country is required"),
+      .withMessage("Address ID is required")
+      .isUUID()
+      .withMessage("Invalid address ID"),
   ],
 
   updateStatus: [
@@ -416,6 +391,11 @@ export const orderValidations = {
 
 // ========== USER VALIDATIONS ==========
 export const userValidations = {
+  // ========== PROFILE VALIDATIONS ==========
+  getUserProfile: [
+    // No validation needed for GET request
+  ],
+
   updateProfile: [
     body("name")
       .optional()
@@ -423,16 +403,143 @@ export const userValidations = {
       .isLength({ min: 2 })
       .withMessage("Name must be at least 2 characters"),
 
-    body("email")
+    body("phone")
       .optional()
       .trim()
-      .isEmail()
-      .withMessage("Invalid email format"),
+      .isMobilePhone()
+      .withMessage("Invalid phone number"),
+
+    body("profilePicture")
+      .optional()
+      .trim()
+      .isURL()
+      .withMessage("Profile picture must be a valid URL"),
+  ],
+
+  // ========== ADDRESS VALIDATIONS ==========
+  getUserAddresses: [
+    // No validation needed for GET request
+  ],
+
+  createAddress: [
+    body("label")
+      .trim()
+      .notEmpty()
+      .withMessage("Label is required")
+      .isLength({ min: 2, max: 50 })
+      .withMessage("Label must be between 2 and 50 characters"),
+
+    body("street")
+      .trim()
+      .notEmpty()
+      .withMessage("Street is required")
+      .isLength({ min: 5, max: 100 })
+      .withMessage("Street must be between 5 and 100 characters"),
+
+    body("city")
+      .trim()
+      .notEmpty()
+      .withMessage("City is required")
+      .isLength({ min: 2, max: 50 })
+      .withMessage("City must be between 2 and 50 characters"),
+
+    body("state")
+      .trim()
+      .notEmpty()
+      .withMessage("State is required")
+      .isLength({ min: 2, max: 50 })
+      .withMessage("State must be between 2 and 50 characters"),
+
+    body("zipCode")
+      .trim()
+      .notEmpty()
+      .withMessage("Zip code is required")
+      .matches(/^\d{5,6}$/)
+      .withMessage("Zip code must be 5-6 digits"),
+
+    body("country")
+      .trim()
+      .notEmpty()
+      .withMessage("Country is required")
+      .isLength({ min: 2, max: 50 })
+      .withMessage("Country must be between 2 and 50 characters"),
 
     body("phone")
       .optional()
       .trim()
       .isMobilePhone()
       .withMessage("Invalid phone number"),
+
+    body("isDefault")
+      .optional()
+      .isBoolean()
+      .withMessage("isDefault must be a boolean"),
+  ],
+
+  updateAddress: [
+    param("addressId")
+      .notEmpty()
+      .withMessage("Address ID is required")
+      .isUUID()
+      .withMessage("Invalid address ID"),
+
+    body("label")
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage("Label must be between 2 and 50 characters"),
+
+    body("street")
+      .optional()
+      .trim()
+      .isLength({ min: 5, max: 100 })
+      .withMessage("Street must be between 5 and 100 characters"),
+
+    body("city")
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage("City must be between 2 and 50 characters"),
+
+    body("state")
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage("State must be between 2 and 50 characters"),
+
+    body("zipCode")
+      .optional()
+      .trim()
+      .matches(/^\d{5,6}$/)
+      .withMessage("Zip code must be 5-6 digits"),
+
+    body("country")
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage("Country must be between 2 and 50 characters"),
+
+    body("phone")
+      .optional()
+      .trim()
+      .isMobilePhone()
+      .withMessage("Invalid phone number"),
+
+    body("isDefault")
+      .optional()
+      .isBoolean()
+      .withMessage("isDefault must be a boolean"),
+  ],
+
+  deleteAddress: [
+    param("addressId")
+      .notEmpty()
+      .withMessage("Address ID is required")
+      .isUUID()
+      .withMessage("Invalid address ID"),
+  ],
+
+  getUserDefaultAddress: [
+    // No validation needed for GET request
   ],
 };

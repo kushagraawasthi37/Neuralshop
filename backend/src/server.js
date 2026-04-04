@@ -16,10 +16,9 @@ import redisClient from "./config/redis.js";
 // Kafka
 import { kafkaProducer } from "./config/kafka.js";
 import { startMailConsumer } from "./events/consumers/mail.consumer.js";
-
-// ⚠️ KEEP THESE (for future use)
-// import { startPaymentConsumer } from "./events/consumers/payment.consumer.js";
-// import { startInventoryConsumer } from "./events/consumers/inventory.consumer.js";
+import { startOrderConsumer } from "./events/consumers/order.consumer.js";
+import { startPaymentConsumer } from "./events/consumers/payment.consumer.js";
+import { startInventoryConsumer } from "./events/consumers/inventory.consumer.js";
 
 //Elastic Search
 import createElasticsearchClient from "./config/elasticsearch.js";
@@ -79,10 +78,9 @@ app.listen(PORT, async () => {
   // ==========================
   try {
     await startMailConsumer();
-
-    // 🔒 KEEP FOR FUTURE (do not delete)
-    // await startPaymentConsumer();
-    // await startInventoryConsumer();
+    await startOrderConsumer();
+    await startPaymentConsumer();
+    await startInventoryConsumer();
 
     logStartup("Kafka consumers started");
   } catch (error) {

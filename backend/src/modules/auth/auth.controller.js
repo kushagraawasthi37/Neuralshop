@@ -128,6 +128,8 @@ export const login = async (req, res) => {
 //Checked
 export const logOut = async (req, res) => {
   try {
+    console.log("Logging out user:", req.userId);
+
     const authHeader = req.header("Authorization");
     const token =
       req.cookies?.token ||
@@ -136,29 +138,39 @@ export const logOut = async (req, res) => {
         : null);
 
     if (token) {
-      const decoded = jwt.decode(token);
-      const expiresAt = decoded?.exp ? decoded.exp * 1000 : null;
-      let ttlSeconds = 60 * 60; // default to 1 hour
+      try {
+        const decoded = jwt.decode(token);
+        const expiresAt = decoded?.exp ? decoded.exp * 1000 : null;
 
-      if (expiresAt) {
-        const remainingMs = expiresAt - Date.now();
-        if (remainingMs > 0) {
-          ttlSeconds = Math.ceil(remainingMs / 1000);
+        let ttlSeconds = 60 * 60;
+
+        if (expiresAt) {
+          const remainingMs = expiresAt - Date.now();
+          if (remainingMs > 0) {
+            ttlSeconds = Math.ceil(remainingMs / 1000);
+          }
         }
-      }
 
-      await redisClient.set(
-        `blacklisted_token:${token}`,
-        "1",
-        "EX",
-        ttlSeconds,
-      );
+        console.log("Before Redis");
+
+        await redisClient.set(
+          `blacklisted_token:${token}`,
+          "1",
+          "EX",
+          ttlSeconds,
+        );
+
+        console.log("After Redis");
+      } catch (err) {
+        console.error("Redis/token error:", err);
+      }
     }
 
     res.clearCookie("token");
     return res.status(200).json({ message: "logout successful" });
   } catch (error) {
     console.error("Logout error:", error);
+    return res.status(500).json({ message: "Logout failed" });
   }
 };
 

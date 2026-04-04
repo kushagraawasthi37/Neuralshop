@@ -98,6 +98,7 @@ export const getProductById = async (req, res) => {
   }
 };
 
+
 //Checked
 export const updateProduct = async (req, res) => {
   try {

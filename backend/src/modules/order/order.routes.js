@@ -1,50 +1,28 @@
 import express from "express";
 import isAuth from "../../middlewares/auth.middleware.js";
-import {
-  placeOrder,
-  placeOrderRazorpay,
-  userOrders,
-  verifyRazorpay,
-  allOrders,
-  updateStatus,
-} from "./order.controller.js";
-import isAdmin from "../../middlewares/admin.middleware.js";
-import validationErrorHandler from "../../middlewares/validation.middleware.js";
+import { validationErrorHandler } from "../../middlewares/validation.middleware.js";
 import { orderValidations } from "../../utils/validations.js";
+import {
+  createOrder,
+  getOrders,
+  getOrderById,
+  cancelOrder,
+} from "./order.controller.js";
+import checkIdempotency from "../../utils/idempotency-util.js";
 
 const orderRoutes = express.Router();
 
-// for User
+// Apply idempotency check to order creation
 orderRoutes.post(
-  "/placeorder",
+  "/orders",
   isAuth,
   orderValidations.placeOrder,
   validationErrorHandler,
-  placeOrder,
+  checkIdempotency,
+  createOrder,
 );
-
-orderRoutes.post(
-  "/razorpay",
-  isAuth,
-  orderValidations.placeOrder,
-  validationErrorHandler,
-  placeOrderRazorpay,
-);
-
-orderRoutes.post("/userorder", isAuth, userOrders);
-
-orderRoutes.post("/verifyrazorpay", isAuth, verifyRazorpay);
-
-// for Admin
-orderRoutes.post("/list", isAuth, isAdmin, allOrders);
-
-orderRoutes.post(
-  "/status",
-  isAuth,
-  isAdmin,
-  orderValidations.updateStatus,
-  validationErrorHandler,
-  updateStatus,
-);
+orderRoutes.get("/orders", isAuth, getOrders);
+orderRoutes.get("/orders/:orderId", isAuth, getOrderById);
+orderRoutes.patch("/orders/:orderId/cancel", isAuth, cancelOrder);
 
 export default orderRoutes;

@@ -1,16 +1,17 @@
 // Mail Consumer - Consumes mail events and sends emails via SendGrid
-import { kafkaConsumer } from "../../config/kafka.js";
+import { createKafkaConsumer } from "../../config/kafka.js";
 import sgMail from "@sendgrid/mail";
 import config from "../../config/environment.config.js";
 
 sgMail.setApiKey(config.sendgrid.apiKey);
 
 export const startMailConsumer = async () => {
+  const consumer = createKafkaConsumer("mail-group");
   try {
-    await kafkaConsumer.connect();
-    await kafkaConsumer.subscribe({ topic: "emails" });
+    await consumer.connect();
+    await consumer.subscribe({ topic: "emails" });
 
-    await kafkaConsumer.run({
+    await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         const event = JSON.parse(message.value.toString());
         console.log("Mail event consumed:", event);
@@ -29,7 +30,7 @@ export const startMailConsumer = async () => {
       },
     });
   } catch (error) {
-    console.error("Error starting mail consumer:", error);
+    // console.error("Error starting mail consumer:", error);
     console.warn("Mail consumer not started - Kafka may not be available");
   }
 };

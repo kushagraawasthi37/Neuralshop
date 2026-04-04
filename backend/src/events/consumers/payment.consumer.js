@@ -1,58 +1,37 @@
-<<<<<<< HEAD
-// // Payment Consumer - Consumes payment events
-// import { kafkaConsumer } from "../../config/kafka.js";
-
-// export const startPaymentConsumer = async () => {
-//   try {
-//     await kafkaConsumer.connect();
-//     await kafkaConsumer.subscribe({ topic: "payments" });
-
-//     await kafkaConsumer.run({
-//       eachMessage: async ({ topic, partition, message }) => {
-//         const event = JSON.parse(message.value.toString());
-//         console.log("Payment event consumed:", event);
-
-//         // Handle payment events
-//         switch (event.eventType) {
-//           case "payment.success":
-//             // Update order status
-//             break;
-//           case "payment.failed":
-//             // Handle payment failure
-//             break;
-//           default:
-//             console.log("Unknown payment event");
-//         }
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error starting payment consumer:", error);
-//     console.warn("Payment consumer not started - Kafka may not be available");
-//   }
-// };
-=======
 // Payment Consumer - Consumes payment events
-import { kafkaConsumer } from "../../config/kafka.js";
+import { createKafkaConsumer } from "../../config/kafka.js";
+import { paymentEvents } from "../event-types.js";
 
 export const startPaymentConsumer = async () => {
+  const consumer = createKafkaConsumer("payment-group");
   try {
-    await kafkaConsumer.subscribe({ topic: "payments" });
+    await consumer.connect();
+    await consumer.subscribe({ topic: "payments" });
 
-    await kafkaConsumer.run({
+    await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         const event = JSON.parse(message.value.toString());
         console.log("Payment event consumed:", event);
 
         // Handle payment events
         switch (event.eventType) {
-          case "payment.success":
-            // Update order status
+          case paymentEvents.PAYMENT_SUCCESS:
+            // Payment success is already handled by webhook
+            console.log("Payment success event received:", event.data);
             break;
-          case "payment.failed":
-            // Handle payment failure
+
+          case paymentEvents.PAYMENT_FAILED:
+            // Handle payment failure (could trigger notifications, etc.)
+            console.log("Payment failed event received:", event.data);
             break;
+
+          case paymentEvents.PAYMENT_INITIATED:
+            // Payment initiated (could trigger notifications)
+            console.log("Payment initiated event received:", event.data);
+            break;
+
           default:
-            console.log("Unknown payment event");
+            console.log("Unknown payment event:", event.eventType);
         }
       },
     });
@@ -60,4 +39,3 @@ export const startPaymentConsumer = async () => {
     console.error("Error starting payment consumer:", error);
   }
 };
->>>>>>> e46555d8f8e41a1394076e4977938949b8144567
