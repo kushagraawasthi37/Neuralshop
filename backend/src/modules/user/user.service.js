@@ -73,6 +73,8 @@ export const updateUserProfileService = async (userId, updateData) => {
 
 export const getUserAddressesService = async (userId) => {
   try {
+    // console.log(prisma);
+    // console.log(prisma.address);
     const addresses = await prisma.address.findMany({
       where: { userId },
       orderBy: [
@@ -89,6 +91,7 @@ export const getUserAddressesService = async (userId) => {
 export const createUserAddressService = async (userId, addressData) => {
   try {
     // If this is set as default, unset other defaults
+    console.log("Creating address with data:", addressData.isDefault);
     if (addressData.isDefault) {
       await prisma.address.updateMany({
         where: { userId, isDefault: true },

@@ -35,8 +35,7 @@ model Address {
 
   // Relations
   orders Order[]
-
-  @@unique([userId, isDefault]) // Ensure only one default per user
+  
   @@index([userId])
   @@index([isDefault])
 }

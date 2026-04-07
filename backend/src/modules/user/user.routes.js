@@ -25,6 +25,7 @@ userRoutes.post("/getcurrentadmin", isAuthAdmin, getCurrentAdmin);
 // ============================================
 
 userRoutes.get("/profile", isAuth, getUserProfile);
+
 userRoutes.patch(
   "/profile",
   isAuth,
@@ -45,6 +46,7 @@ userRoutes.post(
   validationErrorHandler,
   createUserAddress,
 );
+
 userRoutes.patch(
   "/addresses/:addressId",
   isAuth,
@@ -52,6 +54,8 @@ userRoutes.patch(
   validationErrorHandler,
   updateUserAddress,
 );
+
+
 userRoutes.delete(
   "/addresses/:addressId",
   isAuth,

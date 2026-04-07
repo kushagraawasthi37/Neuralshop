@@ -10,6 +10,7 @@ import {
 } from "./user.service.js";
 import ApiResponse from "../../utils/api-response.js";
 
+
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await getCurrentUserService(req.userId);
@@ -73,6 +74,7 @@ export const updateUserProfile = async (req, res) => {
 
 export const getUserAddresses = async (req, res) => {
   try {
+    // console.log("Fetching addresses for user:", req.userId);
     const addresses = await getUserAddressesService(req.userId);
     return res
       .status(200)
@@ -166,6 +168,12 @@ export const deleteUserAddress = async (req, res) => {
 export const getUserDefaultAddress = async (req, res) => {
   try {
     const address = await getUserDefaultAddressService(req.userId);
+
+    if (!address) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, address, "No default address set"));
+    }
     return res
       .status(200)
       .json(

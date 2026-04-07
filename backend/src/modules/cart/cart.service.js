@@ -233,9 +233,15 @@ export const removeCartItemService = async (userId, productId, size) => {
     throw new Error("size must be one of: XS, S, M, L, XL, XXL");
 
   return _modifyCartWithTransaction(userId, (cart) => {
-    const filtered = cart.items.filter(
-      (x) => !(x.productId === productId && x.size === size),
-    );
+    const filtered = cart.items.filter((x) => {
+      const pid = x.productId.toString().trim();
+      const inputPid = productId.toString().trim();
+
+      const itemSize = x.size.trim().toUpperCase();
+      const inputSize = size.trim().toUpperCase();
+
+      return !(pid === inputPid && itemSize === inputSize);
+    });
 
     if (filtered.length === cart.items.length) {
       throw new Error("Item not found in cart");
