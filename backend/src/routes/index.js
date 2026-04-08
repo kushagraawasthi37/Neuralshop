@@ -6,8 +6,9 @@ import orderRoutes from "../modules/order/order.routes.js";
 import orderAdminRoutes from "../modules/order/order.admin.routes.js";
 import paymentRoutes from "../modules/payment/payment.routes.js";
 import inventoryAdminRoutes from "../modules/inventory/inventory.admin.routes.js";
-// import inventoryRoutes from "../modules/inventory/inventory.routes.js";
+import inventoryRoutes from "../modules/inventory/inventory.admin.routes.js";
 import userRoutes from "../modules/user/user.routes.js";
+
 export const setupRoutes = (app) => {
   app.use("/api/healthCheck", healthRoute);
   app.use("/api/auth", authRoutes);
@@ -18,5 +19,5 @@ export const setupRoutes = (app) => {
   app.use("/api/admin/inventory", inventoryAdminRoutes); // Admin inventory routes
   app.use(paymentRoutes); // Payment routes at root: /orders/:id/pay, /payments/:id, /webhook
   app.use("/api/user", userRoutes);
-  // app.use("/api/inventory", inventoryRoutes);
+  app.use("/api/inventory", inventoryRoutes);
 };

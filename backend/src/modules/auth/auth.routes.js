@@ -2,7 +2,8 @@ import express from "express";
 import {
   registration,
   login,
-  logOut,
+  adminLogout,
+  userLogout,
   googleLogin,
   adminLogin,
   adminRegistration,
@@ -27,8 +28,8 @@ authRoutes.post(
 
 authRoutes.post("/login", authValidations.login, validationErrorHandler, login);
 
-authRoutes.get("/user/logout", isAuth, logOut);
-authRoutes.get("/admin/logout", isAuthAdmin, logOut);
+authRoutes.get("/user/logout", isAuth, userLogout);
+authRoutes.get("/admin/logout", isAuthAdmin, adminLogout);
 
 authRoutes.post(
   "/adminregister",

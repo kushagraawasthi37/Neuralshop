@@ -13,11 +13,22 @@ import {
 } from "./auth.service.js";
 import config from "../../config/environment.config.js";
 import { OTP_TYPES, ROLES } from "./otp.service.js";
+import jwt from "jsonwebtoken";
+import redisClient from "../../config/redis.js";
 
 const isProd = config.app.isProduction;
 
-const setCookie = (res, token) => {
-  res.cookie("token", token, {
+const setUserCookie = (res, token) => {
+  res.cookie("userToken", token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+};
+
+const setAdminCookie = (res, token) => {
+  res.cookie("adminToken", token, {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
@@ -31,7 +42,7 @@ export const registration = async (req, res) => {
     const { name, email, password } = req.body;
     const { user, token } = await registerUserService(name, email, password);
 
-    setCookie(res, token);
+    setUserCookie(res, token);
     return res.status(201).json({
       user,
       token,
@@ -115,7 +126,7 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
     const { user, token } = await loginUserService(email, password);
 
-    setCookie(res, token);
+    setUserCookie(res, token);
     return res
       .status(200)
       .json({ user, token, message: "User Logged in Successfully" });
@@ -126,50 +137,74 @@ export const login = async (req, res) => {
 };
 
 //Checked
-export const logOut = async (req, res) => {
+export const userLogout = async (req, res) => {
   try {
-    console.log("Logging out user:", req.userId);
+    console.log("Logging out USER:", req.userId);
 
-    const authHeader = req.header("Authorization");
-    const token =
-      req.cookies?.token ||
-      (authHeader && authHeader.startsWith("Bearer ")
-        ? authHeader.split(" ")[1].trim()
-        : null);
+    const token = req.token;
 
     if (token) {
-      try {
-        const decoded = jwt.decode(token);
-        const expiresAt = decoded?.exp ? decoded.exp * 1000 : null;
+      const decoded = jwt.decode(token);
+      let ttlSeconds = 3600;
 
-        let ttlSeconds = 60 * 60;
-
-        if (expiresAt) {
-          const remainingMs = expiresAt - Date.now();
-          if (remainingMs > 0) {
-            ttlSeconds = Math.ceil(remainingMs / 1000);
-          }
+      if (decoded?.exp) {
+        const remaining = decoded.exp * 1000 - Date.now();
+        if (remaining > 0) {
+          ttlSeconds = Math.ceil(remaining / 1000);
         }
-
-        console.log("Before Redis");
-
-        await redisClient.set(
-          `blacklisted_token:${token}`,
-          "1",
-          "EX",
-          ttlSeconds,
-        );
-
-        console.log("After Redis");
-      } catch (err) {
-        console.error("Redis/token error:", err);
       }
+
+      await redisClient.set(
+        `blacklisted_token:${token}`,
+        "1",
+        "EX",
+        ttlSeconds,
+      );
     }
 
-    res.clearCookie("token");
-    return res.status(200).json({ message: "logout successful" });
+    res.clearCookie("userToken");
+
+    return res.status(200).json({
+      message: "User logout successful",
+    });
   } catch (error) {
-    console.error("Logout error:", error);
+    console.error("User logout error:", error);
+    return res.status(500).json({ message: "Logout failed" });
+  }
+};
+
+export const adminLogout = async (req, res) => {
+  try {
+    console.log("Logging out ADMIN:", req.email);
+
+    const token = req.token;
+
+    if (token) {
+      const decoded = jwt.decode(token);
+      let ttlSeconds = 3600;
+
+      if (decoded?.exp) {
+        const remaining = decoded.exp * 1000 - Date.now();
+        if (remaining > 0) {
+          ttlSeconds = Math.ceil(remaining / 1000);
+        }
+      }
+
+      await redisClient.set(
+        `blacklisted_token:${token}`,
+        "1",
+        "EX",
+        ttlSeconds,
+      );
+    }
+
+    res.clearCookie("adminToken");
+
+    return res.status(200).json({
+      message: "Admin logout successful",
+    });
+  } catch (error) {
+    console.error("Admin logout error:", error);
     return res.status(500).json({ message: "Logout failed" });
   }
 };
@@ -179,7 +214,7 @@ export const googleLogin = async (req, res) => {
     const { name, email } = req.body;
     const { user, token } = await googleLoginService(name, email);
 
-    setCookie(res, token);
+    setUserCookie(res, token);
     return res.status(200).json({ user, token });
   } catch (error) {
     return res
@@ -194,7 +229,7 @@ export const adminRegistration = async (req, res) => {
     const { name, email, password } = req.body;
     const { admin, token } = await registerAdminService(name, email, password);
 
-    setCookie(res, token);
+    setAdminCookie(res, token);
     return res.status(201).json({
       admin,
       token,
@@ -214,7 +249,7 @@ export const adminLogin = async (req, res) => {
     const { email, password } = req.body;
     const { admin, token } = await loginAdminService(email, password);
 
-    setCookie(res, token);
+    setAdminCookie(res, token);
     return res.status(200).json({ admin, token });
   } catch (error) {
     return res.status(400).json({ message: error.message || "Login error" });

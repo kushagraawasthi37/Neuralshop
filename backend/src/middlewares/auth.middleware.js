@@ -7,7 +7,7 @@ const isAuth = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
     const token =
-      req.cookies?.token ||
+      req.cookies?.userToken ||
       (authHeader && authHeader.startsWith("Bearer ")
         ? authHeader.split(" ")[1].trim()
         : null);
@@ -41,9 +41,10 @@ const isAuth = async (req, res, next) => {
 
 const isAuthAdmin = async (req, res, next) => {
   try {
+    console.log("isAuthAdmin called");
     const authHeader = req.header("Authorization");
     const token =
-      req.cookies?.token ||
+      req.cookies?.adminToken ||
       (authHeader && authHeader.startsWith("Bearer ")
         ? authHeader.split(" ")[1].trim()
         : null);

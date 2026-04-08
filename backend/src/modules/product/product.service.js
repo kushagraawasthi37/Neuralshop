@@ -7,7 +7,19 @@ import {
   deleteProductIndex,
   searchProducts,
 } from "./elasticsearch.service.js";
+import {
+  initializeInventoryService,
+  updateTotalStockService,
+} from "../inventory/inventory.service.js";
 
+const parseSizes = (sizesInput) => {
+  if (!sizesInput) return [];
+  if (typeof sizesInput === "string") return JSON.parse(sizesInput);
+  return sizesInput;
+};
+
+const calculateTotalStock = (sizes) =>
+  sizes.reduce((sum, item) => sum + (Number(item.stock) || 0), 0);
 
 //Checked
 export const addProductService = async (productData, adminEmail, files) => {
@@ -45,17 +57,26 @@ export const addProductService = async (productData, adminEmail, files) => {
       throw new Error("Admin not found");
     }
 
+    const parsedSizes = parseSizes(sizes);
     const product = await Product.create({
       name,
       description,
       price: Number(price),
       category,
       subCategory,
-      sizes: JSON.parse(sizes),
+      sizes: parsedSizes,
       bestseller: bestseller === "true" ? true : false,
       images: [image1, image2, image3, image4],
       owner: owner._id,
     });
+
+    const initialStock = calculateTotalStock(parsedSizes);
+    try {
+      await initializeInventoryService(product._id.toString(), initialStock);
+    } catch (inventoryError) {
+      await product.deleteOne();
+      throw inventoryError;
+    }
 
     // Index in Elasticsearch
     await indexProduct(product);
@@ -237,7 +258,14 @@ export const updateProductService = async (
     if (price) updateFields.price = Number(price);
     if (category) updateFields.category = category;
     if (subCategory) updateFields.subCategory = subCategory;
-    if (sizes) updateFields.sizes = JSON.parse(sizes);
+    const originalSizes = product.sizes;
+    let newTotalStock = null;
+
+    if (sizes) {
+      const parsedSizes = parseSizes(sizes);
+      updateFields.sizes = parsedSizes;
+      newTotalStock = calculateTotalStock(parsedSizes);
+    }
     if (bestseller !== undefined)
       updateFields.bestseller = bestseller === "true";
 
@@ -270,6 +298,17 @@ export const updateProductService = async (
       { new: true },
     );
 
+    if (newTotalStock !== null) {
+      try {
+        await updateTotalStockService(productId, newTotalStock);
+      } catch (inventoryError) {
+        await Product.findByIdAndUpdate(productId, {
+          sizes: originalSizes,
+        });
+        throw inventoryError;
+      }
+    }
+
     // Update Elasticsearch index
     await updateProductIndex(productId, updateFields);
 
@@ -278,7 +317,6 @@ export const updateProductService = async (
     throw error;
   }
 };
-
 
 //Checked
 export const updateStockService = async (
@@ -307,12 +345,23 @@ export const updateStockService = async (
       throw new Error("Size not found");
     }
 
+    const originalSizes = [...product.sizes.map((s) => ({ ...s }))];
+
     product.sizes[sizeIndex].stock += stockChange;
     if (product.sizes[sizeIndex].stock < 0) {
       product.sizes[sizeIndex].stock = 0;
     }
 
+    const newTotalStock = calculateTotalStock(product.sizes);
+
     await product.save();
+
+    try {
+      await updateTotalStockService(productId, newTotalStock);
+    } catch (inventoryError) {
+      await Product.findByIdAndUpdate(productId, { sizes: originalSizes });
+      throw inventoryError;
+    }
 
     // Update Elasticsearch index
     await updateProductIndex(productId, { sizes: product.sizes });

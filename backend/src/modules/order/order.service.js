@@ -82,7 +82,9 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
   //Create order items and calculate total amount
   for (const item of cart.items) {
     // Validate product exists in MongoDB
-    const product = await Product.findById(item.productId);
+
+    const cleanProductId = item.productId.trim();
+    const product = await Product.findById(cleanProductId);
     if (!product) {
       throw new ApiError(
         400,

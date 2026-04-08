@@ -189,7 +189,7 @@ export const initializeInventoryService = async (
   });
 };
 
-/**
+/** 
  * Update total stock for a product (admin operation)
  */
 export const updateTotalStockService = async (productId, newTotalStock) => {
@@ -244,11 +244,13 @@ export const updateTotalStockService = async (productId, newTotalStock) => {
   }
 };
 
+
+
 // ============================================
 // ADMIN INVENTORY MANAGEMENT
 // ============================================
 
-/**
+/**Checked
  * 🔐 Get all inventory (admin only)
  */
 export const getAllInventoryService = async () => {
@@ -258,7 +260,7 @@ export const getAllInventoryService = async () => {
   return inventory;
 };
 
-/**
+/** Checked
  * Get inventory for a single product
  */
 export const getInventoryService = async (productId) => {
@@ -278,7 +280,7 @@ export const getInventoryService = async (productId) => {
   return inventory;
 };
 
-/**
+/** Checked
  * 🔐 Manually update total stock (admin operation)
  * Non-blocking, with event emission
  */
@@ -359,7 +361,7 @@ export const updateInventoryManuallyService = async (
 // BULK STOCK UPLOAD
 // ============================================
 
-/**
+/** Checked
  * 🔐 Bulk upload/update inventory from CSV or JSON
  * Format: [ { productId, totalStock }, ... ]
  */
@@ -418,7 +420,7 @@ export const bulkUpdateInventoryService = async (inventoryData) => {
   };
 };
 
-/**
+/** Checked
  * 🔐 Bulk upload from CSV file content
  * Expected CSV format: productId,totalStock
  */
