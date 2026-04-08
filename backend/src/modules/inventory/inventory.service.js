@@ -3,160 +3,202 @@ import { ApiError } from "../../utils/api-error.js";
 import { produceInventoryEvent } from "../../events/producers/inventory.producer.js";
 import { inventoryEvents } from "../../events/event-types.js";
 
-/**
- * 🔒 Reserve stock atomically using row-level locking
- * Prevents overselling by locking the inventory row
- */
-export const reserveStockService = async (productId, quantity) => {
-  const result = await prisma.$transaction(async (tx) => {
-    // 🔒 Row-level lock the inventory row for this product
-
-    console.log("Reserving stock for product:", `"${productId}"`);
-    const rows = await tx.$queryRaw`
-      SELECT * FROM "Inventory"
-      WHERE "productId" = ${productId}
-      FOR UPDATE
-    `;
-
-    const inventory = Array.isArray(rows) ? rows[0] : rows;
-
-    if (!inventory) {
-      throw new ApiError(
-        404,
-        `Inventory not found for product ${productId}`,
-        [],
-        "inventory",
-      );
-    }
-
-    const availableStock = inventory.totalStock - inventory.reservedStock;
-
-    if (availableStock < quantity) {
-      throw new ApiError(
-        400,
-        `Insufficient stock for product ${productId}. Available: ${availableStock}, Requested: ${quantity}`,
-        [],
-        "inventory",
-      );
-    }
-
-    await tx.$executeRaw`
-      UPDATE "Inventory"
-      SET "reservedStock" = "reservedStock" + ${quantity}
-      WHERE "productId" = ${productId}
-    `;
-
-    return tx.inventory.findUnique({ where: { productId } });
-  });
-
-  return result;
+const validateProductId = (productId) => {
+  if (!productId || typeof productId !== "string" || !productId.trim()) {
+    throw new ApiError(400, "Invalid productId", [], "inventory");
+  }
 };
 
-/**
- * 🔒 Release reserved stock atomically
- * Used when order is cancelled or fails
- */
-export const releaseStockService = async (productId, quantity) => {
-  // 🔒 Atomic update in transaction
-  await prisma.$transaction(async (tx) => {
-    const inventory = await tx.inventory.findUnique({
-      where: { productId },
-    });
-
-    if (!inventory) {
-      throw new ApiError(
-        404,
-        `Inventory not found for product ${productId}`,
-        [],
-        "inventory",
-      );
-    }
-
-    // Ensure we don't go below 0
-    const newReserved = Math.max(inventory.reservedStock - quantity, 0);
-
-    await tx.inventory.update({
-      where: { productId },
-      data: {
-        reservedStock: newReserved,
-      },
-    });
-  });
+const validateSize = (size) => {
+  if (!size || typeof size !== "string" || !size.trim()) {
+    throw new ApiError(400, "Invalid size", [], "inventory");
+  }
 };
 
-/**
- * 🔒 Deduct stock permanently after successful payment
- * Converts reserved stock to actual deduction
- */
-export const deductStockService = async (productId, quantity) => {
-  const result = await prisma.$transaction(async (tx) => {
-    const rows = await tx.$queryRaw`
-      SELECT * FROM "Inventory"
-      WHERE "productId" = ${productId}
-      FOR UPDATE
-    `;
+const validateQuantity = (quantity) => {
+  if (
+    quantity == null ||
+    typeof quantity !== "number" ||
+    quantity <= 0 ||
+    !Number.isInteger(quantity)
+  ) {
+    throw new ApiError(
+      400,
+      "quantity must be positive integer",
+      [],
+      "inventory",
+    );
+  }
+};
 
-    const inventory = Array.isArray(rows) ? rows[0] : rows;
+export const reserveStockService = async (productId, size, quantity) => {
+  validateProductId(productId);
+  validateSize(size);
+  validateQuantity(quantity);
 
-    if (!inventory) {
-      throw new ApiError(
-        404,
-        `Inventory not found for product ${productId}`,
-        [],
-        "inventory",
-      );
+  const result = await prisma.$queryRaw`
+    UPDATE "Inventory"
+    SET "reservedStock" = "reservedStock" + ${quantity}
+    WHERE "productId" = ${productId} 
+      AND "size" = ${size}
+      AND ("totalStock" - "reservedStock") >= ${quantity}
+    RETURNING *
+  `;
+
+  if (!result || result.length === 0) {
+    throw new ApiError(
+      409,
+      "Insufficient stock or inventory not found",
+      [],
+      "inventory",
+    );
+  }
+
+  return result[0];
+};
+
+export const releaseStockService = async (productId, size, quantity) => {
+  validateProductId(productId);
+  validateSize(size);
+  validateQuantity(quantity);
+
+  const result = await prisma.$queryRaw`
+    UPDATE "Inventory"
+    SET "reservedStock" = "reservedStock" - ${quantity}
+    WHERE "productId" = ${productId} 
+      AND "size" = ${size}
+      AND "reservedStock" >= ${quantity}
+    RETURNING *
+  `;
+
+  if (!result || result.length === 0) {
+    throw new ApiError(
+      409,
+      "Cannot release more than reserved or inventory not found",
+      [],
+      "inventory",
+    );
+  }
+
+  return result[0];
+};
+
+export const deductStockService = async (
+  productId,
+  size,
+  quantity,
+  idempotencyKey = null,
+) => {
+  validateProductId(productId);
+  validateSize(size);
+  validateQuantity(quantity);
+
+  if (idempotencyKey) {
+    if (typeof idempotencyKey !== "string" || !idempotencyKey.trim()) {
+      throw new ApiError(400, "Invalid idempotency key", [], "inventory");
     }
 
-    if (inventory.reservedStock < quantity) {
-      throw new ApiError(
-        400,
-        `Not enough reserved stock for product ${productId}`,
-        [],
-        "inventory",
-      );
-    }
-
-    await tx.$executeRaw`
-      UPDATE "Inventory"
-      SET "totalStock" = "totalStock" - ${quantity},
-          "reservedStock" = "reservedStock" - ${quantity}
-      WHERE "productId" = ${productId}
-        AND "reservedStock" >= ${quantity}
-    `;
-
-    return tx.inventory.findUnique({ where: { productId } });
-  });
-
-  if (result) {
-    const availableStock = result.totalStock - result.reservedStock;
-    if (availableStock <= 5) {
-      try {
-        await produceInventoryEvent(inventoryEvents.STOCK_LOW, {
-          productId,
-          totalStock: result.totalStock,
-          reservedStock: result.reservedStock,
-          availableStock,
+    try {
+      await prisma.idempotencyKey.create({
+        data: {
+          key: idempotencyKey,
+          userId: "system",
+          method: "INTERNAL",
+          endpoint: "inventory_deduct",
+          response: {},
+          status: "pending",
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+    } catch (err) {
+      if (err?.code === "P2002") {
+        const existing = await prisma.idempotencyKey.findUnique({
+          where: { key: idempotencyKey },
         });
-      } catch (error) {
-        console.error("Failed to produce inventory.stock_low event:", error);
+        if (existing.status === "completed") {
+          return existing.response;
+        }
+        throw new ApiError(409, "Deduction in progress", [], "inventory");
       }
+      throw err;
     }
   }
 
-  return result;
+  try {
+    const result = await prisma.$queryRaw`
+      UPDATE "Inventory"
+      SET "totalStock" = "totalStock" - ${quantity},
+          "reservedStock" = "reservedStock" - ${quantity}
+      WHERE "productId" = ${productId} 
+        AND "size" = ${size}
+        AND "reservedStock" >= ${quantity}
+      RETURNING *
+    `;
+
+    if (!result || result.length === 0) {
+      throw new ApiError(
+        409,
+        "Insufficient reserved stock or inventory not found",
+        [],
+        "inventory",
+      );
+    }
+
+    const updated = result[0];
+
+    if (idempotencyKey) {
+      const response = {
+        productId: updated.productId,
+        size: updated.size,
+        totalStock: updated.totalStock,
+        reservedStock: updated.reservedStock,
+      };
+
+      await prisma.idempotencyKey.update({
+        where: { key: idempotencyKey },
+        data: { response, status: "completed" },
+      });
+    }
+
+    const availableStock = updated.totalStock - updated.reservedStock;
+    if (availableStock <= 5) {
+      produceInventoryEvent(inventoryEvents.STOCK_LOW, {
+        productId,
+        size,
+        totalStock: updated.totalStock,
+        reservedStock: updated.reservedStock,
+        availableStock,
+      }).catch((error) => {
+        console.error("Failed to produce inventory.stock_low event:", error);
+      });
+    }
+
+    return updated;
+  } catch (error) {
+    if (idempotencyKey) {
+      await prisma.idempotencyKey
+        .updateMany({
+          where: { key: idempotencyKey, status: "pending" },
+          data: { status: "failed" },
+        })
+        .catch(() => {});
+    }
+    throw error;
+  }
 };
 
-/**
- * Get stock information for a product
- */
-export const getStockService = async (productId) => {
+export const getStockService = async (productId, size) => {
+  validateProductId(productId);
+  validateSize(size);
+
   const inventory = await prisma.inventory.findUnique({
-    where: { productId },
+    where: { productId_size: { productId, size } },
   });
 
   if (!inventory) {
     return {
       productId,
+      size,
       totalStock: 0,
       reservedStock: 0,
       availableStock: 0,
@@ -164,116 +206,125 @@ export const getStockService = async (productId) => {
   }
 
   return {
-    productId,
+    productId: inventory.productId,
+    size: inventory.size,
     totalStock: inventory.totalStock,
     reservedStock: inventory.reservedStock,
     availableStock: inventory.totalStock - inventory.reservedStock,
   };
 };
 
-/**
- * Initialize inventory for a new product
- * Called when a product is added to the system
- */
 export const initializeInventoryService = async (
   productId,
+  size,
   initialStock = 0,
 ) => {
+  validateProductId(productId);
+  validateSize(size);
+
+  if (
+    typeof initialStock !== "number" ||
+    initialStock < 0 ||
+    !Number.isInteger(initialStock)
+  ) {
+    throw new ApiError(
+      400,
+      "initialStock must be non-negative integer",
+      [],
+      "inventory",
+    );
+  }
+
   await prisma.inventory.upsert({
-    where: { productId },
-    update: {}, // No update needed
+    where: { productId_size: { productId, size } },
+    update: {},
     create: {
       productId,
+      size,
       totalStock: initialStock,
       reservedStock: 0,
     },
   });
 };
 
-/**
- * Update total stock for a product (admin operation)
- */
-export const updateTotalStockService = async (productId, newTotalStock) => {
-  if (newTotalStock < 0) {
-    throw new ApiError(400, "Total stock cannot be negative", [], "inventory");
-  }
+export const updateTotalStockService = async (
+  productId,
+  size,
+  newTotalStock,
+) => {
+  validateProductId(productId);
+  validateSize(size);
 
-  const inventory = await prisma.inventory.findUnique({
-    where: { productId },
-  });
-
-  if (!inventory) {
-    throw new ApiError(
-      404,
-      `Inventory not found for product ${productId}`,
-      [],
-      "inventory",
-    );
-  }
-
-  // Ensure new total doesn't go below reserved stock
-  if (newTotalStock < inventory.reservedStock) {
+  if (
+    typeof newTotalStock !== "number" ||
+    newTotalStock < 0 ||
+    !Number.isInteger(newTotalStock)
+  ) {
     throw new ApiError(
       400,
-      `Cannot set total stock below reserved stock (${inventory.reservedStock})`,
+      "newTotalStock must be non-negative integer",
       [],
       "inventory",
     );
   }
 
-  await prisma.inventory.update({
-    where: { productId },
-    data: {
-      totalStock: newTotalStock,
-    },
-  });
+  const result = await prisma.$queryRaw`
+    UPDATE "Inventory"
+    SET "totalStock" = ${newTotalStock}
+    WHERE "productId" = ${productId}
+    AND "size" = ${size}
+    AND "reservedStock" <= ${newTotalStock}
+    RETURNING *
+  `;
 
-  // Produce Kafka event for stock update
-  try {
-    await produceInventoryEvent(inventoryEvents.STOCK_UPDATED, {
-      productId,
-      oldTotalStock: inventory.totalStock,
-      newTotalStock,
-      reservedStock: inventory.reservedStock,
-      availableStock: newTotalStock - inventory.reservedStock,
-      updatedBy: "admin",
-    });
-  } catch (error) {
-    console.error("Failed to produce stock updated event:", error);
-    // Don't fail the stock update if event production fails
+  if (!result || result.length === 0) {
+    throw new ApiError(409, "Invalid stock update", [], "inventory");
   }
+
+  const updated = result[0];
+
+  produceInventoryEvent(inventoryEvents.STOCK_UPDATED, {
+    productId,
+    size,
+    newTotalStock,
+    reservedStock: updated.reservedStock,
+    availableStock: updated.totalStock - updated.reservedStock,
+  }).catch(() => {});
+
+  return updated;
 };
 
 // ============================================
 // ADMIN INVENTORY MANAGEMENT
 // ============================================
 
-/**Checked
- * 🔐 Get all inventory (admin only)
- */
 export const getAllInventoryService = async () => {
   const inventory = await prisma.inventory.findMany({
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ productId: "asc" }, { size: "asc" }, { updatedAt: "desc" }],
   });
 
-  // Add computed availableStock to each inventory record
   return inventory.map((inv) => ({
-    ...inv,
+    productId: inv.productId,
+    size: inv.size,
+    totalStock: inv.totalStock,
+    reservedStock: inv.reservedStock,
     availableStock: inv.totalStock - inv.reservedStock,
+    updatedAt: inv.updatedAt,
   }));
 };
 
-/** Checked
- * Get inventory for a single product
- */
-export const getInventoryService = async (productId) => {
+export const getInventoryService = async (productId, size) => {
+  validateProductId(productId);
+  validateSize(size);
+
   const inventory = await prisma.inventory.findUnique({
-    where: { productId },
+    where: { productId_size: { productId, size } },
   });
 
   if (!inventory) {
     return {
       productId,
+      size,
       totalStock: 0,
       reservedStock: 0,
       availableStock: 0,
@@ -281,82 +332,80 @@ export const getInventoryService = async (productId) => {
   }
 
   return {
-    ...inventory,
+    productId: inventory.productId,
+    size: inventory.size,
+    totalStock: inventory.totalStock,
+    reservedStock: inventory.reservedStock,
     availableStock: inventory.totalStock - inventory.reservedStock,
+    updatedAt: inventory.updatedAt,
   };
 };
 
-/** Checked
- * 🔐 Manually update total stock (admin operation)
- * Non-blocking, with event emission
- */
 export const updateInventoryManuallyService = async (
   productId,
+  size,
   newTotalStock,
   reason = "manual_adjustment",
 ) => {
-  if (newTotalStock < 0) {
-    throw new ApiError(400, "Total stock cannot be negative", [], "inventory");
+  validateProductId(productId);
+  validateSize(size);
+
+  if (
+    typeof newTotalStock !== "number" ||
+    newTotalStock < 0 ||
+    !Number.isInteger(newTotalStock)
+  ) {
+    throw new ApiError(
+      400,
+      "newTotalStock must be non-negative integer",
+      [],
+      "inventory",
+    );
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    let inventory = await tx.inventory.findUnique({
-      where: { productId },
-    });
+  if (typeof reason !== "string" || !reason.trim()) {
+    throw new ApiError(400, "reason must be non-empty string", [], "inventory");
+  }
 
-    if (!inventory) {
-      // Create if doesn't exist
-      inventory = await tx.inventory.create({
-        data: {
-          productId,
-          totalStock: newTotalStock,
-          reservedStock: 0,
-        },
-      });
-    } else {
-      // Ensure new total doesn't go below reserved stock
-      if (newTotalStock < inventory.reservedStock) {
-        throw new ApiError(
-          400,
-          `Cannot set total stock (${newTotalStock}) below reserved stock (${inventory.reservedStock})`,
-          [],
-          "inventory",
-        );
-      }
-
-      const oldTotalStock = inventory.totalStock;
-
-      // Update total stock
-      inventory = await tx.inventory.update({
-        where: { productId },
-        data: {
-          totalStock: newTotalStock,
-        },
-      });
-
-      // Save change details for event
-      inventory._oldTotalStock = oldTotalStock;
-    }
-
-    return inventory;
+  let result = await prisma.inventory.findUnique({
+    where: { productId_size: { productId, size } },
   });
 
-  // 📢 Produce event (non-blocking)
-  try {
-    await produceInventoryEvent(inventoryEvents.STOCK_UPDATED, {
-      productId,
-      oldTotalStock: result._oldTotalStock || 0,
-      newTotalStock: result.totalStock,
-      reservedStock: result.reservedStock,
-      availableStock: result.totalStock - result.reservedStock,
-      reason,
-      updatedBy: "admin",
-      timestamp: new Date().toISOString(),
+  if (!result) {
+    result = await prisma.inventory.create({
+      data: {
+        productId,
+        size,
+        totalStock: newTotalStock,
+        reservedStock: 0,
+      },
     });
-  } catch (error) {
-    console.error("Failed to produce inventory.stock_updated event:", error);
-    // Don't fail the update if event production fails
+  } else {
+    if (newTotalStock < result.reservedStock) {
+      throw new ApiError(
+        400,
+        "Cannot set below reserved stock",
+        [],
+        "inventory",
+      );
+    }
+
+    result = await prisma.inventory.update({
+      where: { productId_size: { productId, size } },
+      data: { totalStock: newTotalStock },
+    });
   }
+
+  produceInventoryEvent(inventoryEvents.STOCK_UPDATED, {
+    productId,
+    size,
+    newTotalStock: result.totalStock,
+    reservedStock: result.reservedStock,
+    availableStock: result.totalStock - result.reservedStock,
+    reason,
+  }).catch((error) => {
+    console.error("Failed to produce inventory.stock_updated event:", error);
+  });
 
   return result;
 };
@@ -365,52 +414,125 @@ export const updateInventoryManuallyService = async (
 // BULK STOCK UPLOAD
 // ============================================
 
-/** Checked
- * 🔐 Bulk upload/update inventory from CSV or JSON
- * Format: [ { productId, totalStock }, ... ]
- */
 export const bulkUpdateInventoryService = async (inventoryData) => {
   if (!Array.isArray(inventoryData) || inventoryData.length === 0) {
     throw new ApiError(
       400,
-      "Inventory data must be a non-empty array",
+      "Inventory data must be non-empty array",
       [],
       "inventory",
     );
   }
 
-  const results = [];
-  const errors = [];
+  const validated = [];
+  const validationErrors = [];
 
-  for (const item of inventoryData) {
+  for (let i = 0; i < inventoryData.length; i++) {
+    const item = inventoryData[i];
+
     try {
-      const { productId, totalStock } = item;
-
-      if (!productId) {
-        errors.push({
-          productId,
-          error: "productId is required",
-        });
-        continue;
+      if (
+        !item.productId ||
+        typeof item.productId !== "string" ||
+        !item.productId.trim()
+      ) {
+        throw new ApiError(400, "productId required", [], "inventory");
       }
 
-      if (typeof totalStock !== "number" || totalStock < 0) {
-        errors.push({
-          productId,
-          error: "totalStock must be a non-negative number",
-        });
-        continue;
+      if (!item.size || typeof item.size !== "string" || !item.size.trim()) {
+        throw new ApiError(400, "size required", [], "inventory");
       }
 
-      const result = await updateInventoryManuallyService(
-        productId,
-        totalStock,
-        "bulk_upload",
-      );
-      results.push(result);
+      if (
+        typeof item.totalStock !== "number" ||
+        item.totalStock < 0 ||
+        !Number.isInteger(item.totalStock)
+      ) {
+        throw new ApiError(
+          400,
+          "totalStock must be non-negative integer",
+          [],
+          "inventory",
+        );
+      }
+
+      validated.push({
+        productId: item.productId.trim(),
+        size: item.size.trim(),
+        totalStock: item.totalStock,
+      });
+    } catch (error) {
+      validationErrors.push({
+        index: i,
+        productId: item.productId,
+        size: item.size,
+        error: error.message,
+      });
+    }
+  }
+
+  if (validated.length === 0) {
+    throw new ApiError(400, "No valid inventory items", [], "inventory");
+  }
+
+  const results = [];
+  const errors = [...validationErrors];
+
+  for (const item of validated) {
+    try {
+      let inventory = await prisma.inventory.findUnique({
+        where: {
+          productId_size: { productId: item.productId, size: item.size },
+        },
+      });
+
+      if (!inventory) {
+        inventory = await prisma.inventory.create({
+          data: {
+            productId: item.productId,
+            size: item.size,
+            totalStock: item.totalStock,
+            reservedStock: 0,
+          },
+        });
+      } else {
+        if (item.totalStock < inventory.reservedStock) {
+          throw new ApiError(
+            400,
+            "Cannot set below reserved stock",
+            [],
+            "inventory",
+          );
+        }
+
+        inventory = await prisma.inventory.update({
+          where: {
+            productId_size: { productId: item.productId, size: item.size },
+          },
+          data: { totalStock: item.totalStock },
+        });
+      }
+
+      results.push({
+        productId: inventory.productId,
+        size: inventory.size,
+        totalStock: inventory.totalStock,
+        reservedStock: inventory.reservedStock,
+        availableStock: inventory.totalStock - inventory.reservedStock,
+      });
+
+      produceInventoryEvent(inventoryEvents.STOCK_UPDATED, {
+        productId: inventory.productId,
+        size: inventory.size,
+        newTotalStock: inventory.totalStock,
+        reason: "bulk_upload",
+      }).catch((error) => {
+        console.error("Failed to produce event:", error);
+      });
     } catch (error) {
       errors.push({
         productId: item.productId,
+        size: item.size,
         error: error.message,
       });
     }
@@ -420,46 +542,55 @@ export const bulkUpdateInventoryService = async (inventoryData) => {
     processed: results.length,
     failed: errors.length,
     results,
-    errors,
+    errors: errors.length > 0 ? errors : undefined,
   };
 };
 
-/** Checked
- * 🔐 Bulk upload from CSV file content
- * Expected CSV format: productId,totalStock
- */
 export const parseAndUploadCSVService = async (csvContent) => {
+  if (!csvContent || typeof csvContent !== "string") {
+    throw new ApiError(400, "CSV content required", [], "inventory");
+  }
+
   const lines = csvContent
     .trim()
     .split("\n")
     .filter((line) => line.trim());
 
   if (lines.length === 0) {
-    throw new ApiError(400, "CSV file is empty", [], "inventory");
+    throw new ApiError(400, "CSV is empty", [], "inventory");
   }
 
-  // Skip header if present
   const dataLines = lines[0].toLowerCase().includes("productid")
     ? lines.slice(1)
     : lines;
 
-  const inventoryData = dataLines.map((line, index) => {
-    const [productId, totalStock] = line.split(",").map((val) => val.trim());
+  const inventoryData = [];
 
-    if (!productId || !totalStock) {
+  for (let i = 0; i < dataLines.length; i++) {
+    const [productId, size, totalStockStr] = dataLines[i]
+      .split(",")
+      .map((val) => val.trim());
+
+    if (!productId || !size || !totalStockStr) {
+      throw new ApiError(400, `Invalid CSV at line ${i + 1}`, [], "inventory");
+    }
+
+    const totalStock = parseInt(totalStockStr, 10);
+    if (!Number.isInteger(totalStock) || totalStock < 0) {
       throw new ApiError(
         400,
-        `Invalid data at line ${index + 1}: productId and totalStock are required`,
+        `Invalid totalStock at line ${i + 1}`,
         [],
         "inventory",
       );
     }
 
-    return {
+    inventoryData.push({
       productId,
-      totalStock: parseInt(totalStock, 10),
-    };
-  });
+      size,
+      totalStock,
+    });
+  }
 
   return await bulkUpdateInventoryService(inventoryData);
 };
@@ -468,20 +599,31 @@ export const parseAndUploadCSVService = async (csvContent) => {
 // SEARCH & FILTER
 // ============================================
 
-/** Checked
- * Get inventory for low stock products
- */
 export const getLowStockProductsService = async (threshold = 10) => {
-  // Use raw query since availableStock is computed (totalStock - reservedStock)
+  if (
+    typeof threshold !== "number" ||
+    threshold < 0 ||
+    !Number.isInteger(threshold)
+  ) {
+    throw new ApiError(
+      400,
+      "threshold must be non-negative integer",
+      [],
+      "inventory",
+    );
+  }
+
   const inventory = await prisma.$queryRaw`
     SELECT * FROM "Inventory"
     WHERE ("totalStock" - "reservedStock") <= ${threshold}
-    ORDER BY ("totalStock" - "reservedStock") ASC
+    ORDER BY ("totalStock" - "reservedStock") ASC, "productId" ASC, "size" ASC
   `;
 
-  // Add computed availableStock to each record
   return inventory.map((inv) => ({
-    ...inv,
+    productId: inv.productId,
+    size: inv.size,
+    totalStock: inv.totalStock,
+    reservedStock: inv.reservedStock,
     availableStock: inv.totalStock - inv.reservedStock,
   }));
 };

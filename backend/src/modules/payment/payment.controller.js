@@ -7,7 +7,7 @@ import {
   getPaymentService,
 } from "./payment.service.js";
 
-/*
+/* Checked
  * POST /orders/:orderId/pay - Initiate payment
  * ♻️ Idempotency protected via header
  */

@@ -24,26 +24,9 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
   if (!address) {
     throw new ApiError(400, "Invalid address", [], "order");
   }
+
   // ♻️ Reserve idempotency entry early to guard against duplicate requests
-  let idempotencyRecord = null;
   if (idempotencyKey) {
-    idempotencyRecord = await prisma.idempotencyKey.findUnique({
-      where: { key: idempotencyKey },
-    });
-
-    if (idempotencyRecord) {
-      if (idempotencyRecord.status === "completed") {
-        return idempotencyRecord.response;
-      }
-
-      throw new ApiError(
-        409,
-        "Duplicate order request in progress or already created",
-        [],
-        "order",
-      );
-    }
-
     try {
       await prisma.idempotencyKey.create({
         data: {
@@ -64,6 +47,12 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
         if (existing?.status === "completed") {
           return existing.response;
         }
+        throw new ApiError(
+          409,
+          "Duplicate order request in progress or already created",
+          [],
+          "order",
+        );
       }
       throw error;
     }
@@ -79,10 +68,19 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
   let totalAmount = 0;
   const orderItems = [];
 
-  //Create order items and calculate total amount
+  // Create order items and calculate total amount
   for (const item of cart.items) {
-    // Validate product exists in MongoDB
+    // ✅ NEW: Validate size is present
+    if (!item.size) {
+      throw new ApiError(
+        400,
+        `Size is required for product ${item.productId}`,
+        [],
+        "order",
+      );
+    }
 
+    // Validate product exists in MongoDB
     const cleanProductId = item.productId.trim();
     const product = await Product.findById(cleanProductId);
     if (!product) {
@@ -94,6 +92,8 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
       );
     }
 
+    // ✅ REMOVE: Don't validate product.sizes.stock - inventory table is source of truth
+    // Just validate size exists in product definition
     const sizeEntry = product.sizes.find((s) => s.size === item.size);
     if (!sizeEntry) {
       throw new ApiError(
@@ -104,37 +104,35 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
       );
     }
 
-    if (item.quantity > sizeEntry.stock) {
-      throw new ApiError(
-        400,
-        `Insufficient stock for ${item.productId} size ${item.size}`,
-        [],
-        "order",
-      );
-    }
-
     totalAmount += item.quantity * item.priceAtAdd;
     orderItems.push({
       productId: cleanProductId,
-      sellerId: product.owner.toString(), // 🔥 Use owner from product as sellerId
+      size: item.size, // ✅ NEW: Include size
+      sellerId: product.owner.toString(),
       quantity: item.quantity,
       price: item.priceAtAdd,
     });
   }
 
-  // 🔒 Reserve stock atomically for all items
+  // 🔒 Reserve stock atomically for all items (with size)
   const reservedItems = [];
   try {
     for (const item of orderItems) {
       const cleanProductId = item.productId.trim();
-      await reserveStockService(cleanProductId, item.quantity);
+      // ✅ UPDATED: Pass size to reserveStockService
+      await reserveStockService(cleanProductId, item.size, item.quantity);
       reservedItems.push(item);
     }
   } catch (error) {
     // Release any reserved stock on failure
     for (const item of reservedItems) {
       const cleanProductId = item.productId.trim();
-      await releaseStockService(cleanProductId, item.quantity).catch(() => {});
+      try {
+        // ✅ UPDATED: Pass size to releaseStockService
+        await releaseStockService(cleanProductId, item.size, item.quantity);
+      } catch (e) {
+        // Ignore release errors
+      }
     }
     throw error;
   }
@@ -148,27 +146,32 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
           userId,
           totalAmount,
           addressId,
-          status: "PENDING", // 🔥 UPDATED: Use uppercase as per schema
+          status: "PENDING",
         },
       });
 
-      // Create order items
+      // Create order items (with size)
       await tx.orderItem.createMany({
         data: orderItems.map((item) => ({
           orderId: order.id,
           productId: item.productId,
-          sellerId: item.sellerId, // 🔥 NEW: Include sellerId
+          size: item.size, // ✅ NEW: Include size
+          sellerId: item.sellerId,
           quantity: item.quantity,
           price: item.price,
         })),
       });
 
-      // ♻️ Store idempotency response
+      // ♻️ Store idempotency response with consistent format
       if (idempotencyKey) {
         await tx.idempotencyKey.upsert({
           where: { key: idempotencyKey },
           update: {
-            response: { orderId: order.id, status: "PENDING" },
+            response: {
+              orderId: order.id,
+              status: "PENDING",
+              totalAmount,
+            },
             status: "completed",
           },
           create: {
@@ -176,9 +179,13 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
             userId,
             method: "POST",
             endpoint: "/orders",
-            response: { orderId: order.id, status: "PENDING" },
+            response: {
+              orderId: order.id,
+              status: "PENDING",
+              totalAmount,
+            },
             status: "completed",
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           },
         });
       }
@@ -186,7 +193,20 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
       return order;
     });
 
-    const payload = { orderId: result.id, status: "PENDING", totalAmount };
+    // ✅ IMPORTANT: Clear cart after successful order creation
+    try {
+      await clearCartService(userId);
+    } catch (error) {
+      console.error("Failed to clear cart:", error);
+      // Don't fail order creation if cart clear fails
+    }
+
+    // ✅ Consistent response format
+    const payload = {
+      orderId: result.id,
+      status: "PENDING",
+      totalAmount,
+    };
 
     try {
       await produceOrderEvent(orderEvents.ORDER_CREATED, {
@@ -202,6 +222,15 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
 
     return payload;
   } catch (error) {
+    for (const item of reservedItems) {
+      const cleanProductId = item.productId.trim();
+      try {
+        await releaseStockService(cleanProductId, item.size, item.quantity);
+      } catch (e) {
+        // ignore release errors
+      }
+    }
+
     if (idempotencyKey) {
       await prisma.idempotencyKey.updateMany({
         where: { key: idempotencyKey, status: "pending" },
@@ -297,17 +326,21 @@ export const cancelOrderService = async (userId, orderId) => {
       where: { orderId },
       data: { status: "CANCELLED" },
     });
-
-    // ✅ Restore stock (NO SIZE)
-    for (const item of order.items) {
-      await tx.$executeRaw`
-        UPDATE "Inventory"
-        SET 
-          "reservedStock" = GREATEST("reservedStock" - ${item.quantity}, 0),
-        WHERE "productId" = ${item.productId}
-      `;
-    }
   });
+
+  // ✅ Release stock for each item (with size)
+  for (const item of order.items) {
+    try {
+      // ✅ UPDATED: Use inventory service with size
+      await releaseStockService(item.productId, item.size, item.quantity);
+    } catch (error) {
+      console.error(
+        `Failed to release stock for ${item.productId} ${item.size}:`,
+        error,
+      );
+      // Continue releasing other items even if one fails
+    }
+  }
 
   // 📩 3. Kafka event (non-blocking)
   try {

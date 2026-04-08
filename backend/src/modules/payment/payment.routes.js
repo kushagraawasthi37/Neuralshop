@@ -9,7 +9,7 @@ import checkIdempotency from "../../utils/idempotency-util.js";
 
 const paymentRoutes = express.Router();
 
-// User routes
+// User routes Checked
 paymentRoutes.post(
   "/orders/:orderId/pay",
   isAuth,
@@ -17,8 +17,9 @@ paymentRoutes.post(
   initiatePayment,
 );
 
-
+//Checked
 paymentRoutes.get("/payments/:orderId", isAuth, getPayment);
+
 
 // Webhook route (no auth required, verified via signature)
 paymentRoutes.post("/webhook", checkIdempotency, handleWebhook);

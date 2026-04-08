@@ -69,6 +69,7 @@ model OrderItem {
   id        String @id @default(uuid())
   orderId   String
   productId String // Reference to MongoDB Product
+  size      String @default("M") // Size variant (XS, S, M, L, XL, XXL)
   sellerId  String // 🔥 Reference to seller (admin user)
   quantity  Int
   price     Float // Price at purchase time
@@ -114,13 +115,16 @@ model Payment {
 // INVENTORY MODEL
 // ============================================
 
-/// Stock management for products
+/// Stock management for products (size-based)
 model Inventory {
-  productId     String   @id // Reference to MongoDB Product
-  totalStock    Int
+  productId     String // Reference to MongoDB Product
+  size          String   @default("M") // Size variant (XS, S, M, L, XL, XXL)
+  totalStock    Int // Total stock available
   reservedStock Int // Reserved during checkout
   updatedAt     DateTime @updatedAt
 
+  // Composite key: (productId, size) is unique
+  @@id([productId, size])
   @@index([productId])
 }
 

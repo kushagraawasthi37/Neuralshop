@@ -4,12 +4,32 @@ import { Product } from "../product/product.model.js";
 import mongoose from "mongoose";
 
 const CART_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
+const MAX_CART_ITEMS = 50;
 const getRedisKey = (userId) => `cart:${userId}`;
 
 const buildEmptyCart = (userId) => ({
   userId,
   items: [],
   updatedAt: new Date(),
+});
+
+const normalizeId = (id) => String(id || "").trim();
+const normalizeSize = (size) =>
+  String(size || "")
+    .trim()
+    .toUpperCase();
+const assertCartItemLimit = (cart) => {
+  if (cart.items.length > MAX_CART_ITEMS) {
+    throw new Error(
+      `Cart item limit exceeded: maximum ${MAX_CART_ITEMS} items allowed`,
+    );
+  }
+};
+
+const buildMutationResult = (cart, message) => ({
+  success: true,
+  message,
+  itemCount: cart.items.length,
 });
 
 //Redis se aayi string data ko safe object me convert karta hai
@@ -93,12 +113,13 @@ const _modifyCartWithTransaction = async (userId, modifierFn) => {
       // Case 1: NO CHANGE → SUCCESS
       // Kisi ne cart modify nahi kiya
       if (results) {
-        await persistCartToMongo(userId, modifiedCart).catch((err) =>
+        persistCartToMongo(userId, modifiedCart).catch((err) =>
           console.error("Failed to persist cart to Mongo:", err),
         );
         return modifiedCart;
       }
 
+      console.warn(`Cart retry attempt ${attempt + 1} for user ${userId}`);
       // transaction failed due to concurrent change, retry
       // Kisi aur ne cart update kar diya
     } catch (error) {
@@ -167,21 +188,32 @@ export const getCartService = async (userId) => {
 //Checked
 export const addItemToCartService = async (userId, item) => {
   const { productId, size, quantity, priceAtAdd, name, image } = item || {};
+  const normalizedProductId = normalizeId(productId);
+  const normalizedSize = normalizeSize(size);
 
-  if (!productId) throw new Error("productId is required");
-  if (!size) throw new Error("size is required");
-  if (!["XS", "S", "M", "L", "XL", "XXL"].includes(size))
+  if (!normalizedProductId) throw new Error("productId is required");
+  if (!normalizedSize) throw new Error("size is required");
+  if (!["XS", "S", "M", "L", "XL", "XXL"].includes(normalizedSize))
     throw new Error("size must be one of: XS, S, M, L, XL, XXL");
   if (!Number.isFinite(quantity) || quantity <= 0)
     throw new Error("quantity must be a positive number");
   if (!Number.isFinite(priceAtAdd) || priceAtAdd < 0)
     throw new Error("priceAtAdd must be a non-negative number");
 
-  const itemData = { productId, size, quantity, priceAtAdd, name, image };
+  const itemData = {
+    productId: normalizedProductId,
+    size: normalizedSize,
+    quantity,
+    priceAtAdd,
+    name,
+    image,
+  };
 
-  return _modifyCartWithTransaction(userId, (cart) => {
+  const cart = await _modifyCartWithTransaction(userId, (cart) => {
     const existing = cart.items.find(
-      (x) => x.productId === productId && x.size === size,
+      (x) =>
+        normalizeId(x.productId) === normalizedProductId &&
+        normalizeSize(x.size) === normalizedSize,
     );
 
     if (existing) {
@@ -190,8 +222,11 @@ export const addItemToCartService = async (userId, item) => {
       cart.items.push(itemData);
     }
 
+    assertCartItemLimit(cart);
     return cart;
   });
+
+  return buildMutationResult(cart, "Item added successfully");
 };
 
 //Checked
@@ -201,16 +236,21 @@ export const updateCartItemService = async (
   size,
   quantity,
 ) => {
-  if (!productId) throw new Error("productId is required");
-  if (!size) throw new Error("size is required");
-  if (!["XS", "S", "M", "L", "XL", "XXL"].includes(size))
+  const normalizedProductId = normalizeId(productId);
+  const normalizedSize = normalizeSize(size);
+
+  if (!normalizedProductId) throw new Error("productId is required");
+  if (!normalizedSize) throw new Error("size is required");
+  if (!["XS", "S", "M", "L", "XL", "XXL"].includes(normalizedSize))
     throw new Error("size must be one of: XS, S, M, L, XL, XXL");
   if (!Number.isFinite(quantity) || quantity < 0)
     throw new Error("quantity must be zero or a positive number");
 
-  return _modifyCartWithTransaction(userId, (cart) => {
+  const cart = await _modifyCartWithTransaction(userId, (cart) => {
     const index = cart.items.findIndex(
-      (x) => x.productId === productId && x.size === size,
+      (x) =>
+        normalizeId(x.productId) === normalizedProductId &&
+        normalizeSize(x.size) === normalizedSize,
     );
 
     if (index === -1) throw new Error("Item not found in cart");
@@ -223,25 +263,28 @@ export const updateCartItemService = async (
 
     return cart;
   });
+
+  return buildMutationResult(cart, "Item updated successfully");
 };
 
 //Checked
 export const removeCartItemService = async (userId, productId, size) => {
-  if (!productId) throw new Error("productId is required");
-  if (!size) throw new Error("size is required");
-  if (!["XS", "S", "M", "L", "XL", "XXL"].includes(size))
+  const normalizedProductId = normalizeId(productId);
+  const normalizedSize = normalizeSize(size);
+
+  if (!normalizedProductId) throw new Error("productId is required");
+  if (!normalizedSize) throw new Error("size is required");
+  if (!["XS", "S", "M", "L", "XL", "XXL"].includes(normalizedSize))
     throw new Error("size must be one of: XS, S, M, L, XL, XXL");
 
-  return _modifyCartWithTransaction(userId, (cart) => {
-    const filtered = cart.items.filter((x) => {
-      const pid = x.productId.toString().trim();
-      const inputPid = productId.toString().trim();
-
-      const itemSize = x.size.trim().toUpperCase();
-      const inputSize = size.trim().toUpperCase();
-
-      return !(pid === inputPid && itemSize === inputSize);
-    });
+  const cart = await _modifyCartWithTransaction(userId, (cart) => {
+    const filtered = cart.items.filter(
+      (x) =>
+        !(
+          normalizeId(x.productId) === normalizedProductId &&
+          normalizeSize(x.size) === normalizedSize
+        ),
+    );
 
     if (filtered.length === cart.items.length) {
       throw new Error("Item not found in cart");
@@ -250,14 +293,18 @@ export const removeCartItemService = async (userId, productId, size) => {
     cart.items = filtered;
     return cart;
   });
+
+  return buildMutationResult(cart, "Item removed successfully");
 };
 
 //Checked
 export const clearCartService = async (userId) => {
-  return _modifyCartWithTransaction(userId, (cart) => {
+  const cart = await _modifyCartWithTransaction(userId, (cart) => {
     cart.items = [];
     return cart;
   });
+
+  return buildMutationResult(cart, "Cart cleared successfully");
 };
 
 //Checked
@@ -269,28 +316,38 @@ export const validateCartService = async (userId) => {
     issues.push("Cart is empty");
   }
 
+  const productIds = cart.items
+    .map((item) => normalizeId(item.productId))
+    .filter((id) => id && mongoose.Types.ObjectId.isValid(id));
+  const uniqueProductIds = [...new Set(productIds)];
+  const products = uniqueProductIds.length
+    ? await Product.find({ _id: { $in: uniqueProductIds } }).lean()
+    : [];
+  const productMap = new Map(
+    products.map((product) => [String(product._id), product]),
+  );
+
   for (let idx = 0; idx < cart.items.length; idx++) {
     const item = cart.items[idx];
+    const itemId = normalizeId(item.productId);
+    const itemSize = normalizeSize(item.size);
 
-    // 🔥 FIX: sanitize productId
-    if (!item.productId) {
+    if (!itemId) {
       issues.push(`item[${idx}] missing productId`);
       continue;
     }
 
-    const cleanProductId = item.productId.trim();
-
-    if (!mongoose.Types.ObjectId.isValid(cleanProductId)) {
+    if (!mongoose.Types.ObjectId.isValid(itemId)) {
       issues.push(`item[${idx}] invalid productId`);
       continue;
     }
 
-    if (!item.size) {
+    if (!itemSize) {
       issues.push(`item[${idx}] missing size`);
       continue;
     }
 
-    if (!["XS", "S", "M", "L", "XL", "XXL"].includes(item.size)) {
+    if (!["XS", "S", "M", "L", "XL", "XXL"].includes(itemSize)) {
       issues.push(`item[${idx}] invalid size`);
       continue;
     }
@@ -305,60 +362,81 @@ export const validateCartService = async (userId) => {
       continue;
     }
 
-    try {
-      const product = await Product.findById(cleanProductId);
+    const product = productMap.get(itemId);
+    if (!product) {
+      issues.push(`item[${idx}] product not found`);
+      continue;
+    }
 
-      if (!product) {
-        issues.push(`item[${idx}] product not found`);
-        continue;
-      }
+    if (!Array.isArray(product.sizes)) {
+      issues.push(`item[${idx}] invalid product data`);
+      continue;
+    }
+    const sizeEntry = product.sizes.find(
+      (s) => normalizeSize(s.size) === itemSize,
+    );
 
-      const sizeEntry = product.sizes.find((s) => s.size === item.size);
+    if (!sizeEntry) {
+      issues.push(
+        `item[${idx}] size ${itemSize} not available for this product`,
+      );
+      continue;
+    }
 
-      if (!sizeEntry) {
-        issues.push(
-          `item[${idx}] size ${item.size} not available for this product`,
-        );
-        continue;
-      }
-
-      if (item.quantity > sizeEntry.stock) {
-        issues.push(
-          `item[${idx}] requested quantity (${item.quantity}) exceeds available stock (${sizeEntry.stock}) for size ${item.size}`,
-        );
-      }
-    } catch (error) {
-      issues.push(`item[${idx}] error checking stock: ${error.message}`);
+    if (item.quantity > sizeEntry.stock) {
+      issues.push(
+        `item[${idx}] requested quantity (${item.quantity}) exceeds available stock (${sizeEntry.stock}) for size ${itemSize}`,
+      );
     }
   }
 
-  return { valid: issues.length === 0, issues, cart };
+  return { valid: issues.length === 0, issues, itemCount: cart.items.length };
 };
 
 //Checked
 export const checkoutCartService = async (userId) => {
-  const { valid, issues, cart } = await validateCartService(userId);
+  const { valid, issues } = await validateCartService(userId);
   if (!valid) {
     throw new Error(`Cart validation failed: ${issues.join(", ")}`);
   }
 
-  const totalItems = cart.items.reduce((acc, item) => acc + item.quantity, 0);
-  const totalPrice = cart.items.reduce(
-    (acc, item) => acc + item.quantity * item.priceAtAdd,
-    0,
+  const cart = await getCartService(userId);
+
+  if (!cart || !Array.isArray(cart.items)) {
+    throw new Error("Invalid cart state during checkout");
+  }
+
+  const productIds = cart.items
+    .map((item) => normalizeId(item.productId))
+    .filter((id) => id && mongoose.Types.ObjectId.isValid(id));
+  const uniqueProductIds = [...new Set(productIds)];
+  const products = uniqueProductIds.length
+    ? await Product.find({ _id: { $in: uniqueProductIds } }).lean()
+    : [];
+  const productMap = new Map(
+    products.map((product) => [String(product._id), product]),
   );
 
-  const payload = {
-    userId,
-    items: cart.items,
+  const totalItems = cart.items.reduce((acc, item) => acc + item.quantity, 0);
+  let totalPrice = 0;
+
+  for (let idx = 0; idx < cart.items.length; idx++) {
+    const item = cart.items[idx];
+    const product = productMap.get(normalizeId(item.productId));
+
+    if (!product || Math.abs(product.price - item.priceAtAdd) > 0.01) {
+      throw new Error(`Price mismatch for item ${idx}, please refresh cart`);
+    }
+
+    totalPrice += item.quantity * item.priceAtAdd;
+  }
+
+  // Stock should be reserved here to avoid race conditions
+  return {
     totalItems,
     totalPrice,
     currency: "USD",
-    createdAt: new Date(),
   };
-
-  // Constraint from requirement: Clear Redis cart after checkout to avoid duplicate flows.
-  return payload;
 };
 
 //Checked
@@ -381,43 +459,52 @@ export const getCartSummaryService = async (userId) => {
 };
 
 export const mergeCartService = async (userId, guestCartPayload) => {
-  const userCart = await getCartService(userId);
-
-  if (!guestCartPayload || !Array.isArray(guestCartPayload.items)) {
-    return userCart;
-  }
-
-  guestCartPayload.items.forEach((guestItem) => {
-    if (
-      !guestItem.productId ||
-      !guestItem.size ||
-      !Number.isFinite(guestItem.quantity)
-    )
-      return;
-
-    const existing = userCart.items.find(
-      (item) =>
-        item.productId === guestItem.productId && item.size === guestItem.size,
-    );
-
-    if (existing) {
-      existing.quantity += guestItem.quantity;
-      existing.priceAtAdd = guestItem.priceAtAdd || existing.priceAtAdd;
-      existing.name = guestItem.name || existing.name;
-      existing.image = guestItem.image || existing.image;
-    } else {
-      userCart.items.push({
-        productId: guestItem.productId,
-        size: guestItem.size,
-        quantity: guestItem.quantity,
-        priceAtAdd: guestItem.priceAtAdd ?? 0,
-        name: guestItem.name,
-        image: guestItem.image,
-      });
+  const cart = await _modifyCartWithTransaction(userId, (cart) => {
+    if (!guestCartPayload || !Array.isArray(guestCartPayload.items)) {
+      return cart;
     }
+
+    guestCartPayload.items.forEach((guestItem) => {
+      if (
+        !guestItem.productId ||
+        !guestItem.size ||
+        !Number.isFinite(guestItem.quantity)
+      )
+        return;
+
+      const normalizedProductId = normalizeId(guestItem.productId);
+      const normalizedSize = normalizeSize(guestItem.size);
+      if (!normalizedProductId || !normalizedSize) return;
+
+      const existing = cart.items.find(
+        (item) =>
+          normalizeId(item.productId) === normalizedProductId &&
+          normalizeSize(item.size) === normalizedSize,
+      );
+
+      if (existing) {
+        existing.quantity = Math.min(
+          existing.quantity + guestItem.quantity,
+          10,
+        );
+        existing.priceAtAdd = guestItem.priceAtAdd ?? existing.priceAtAdd;
+        existing.name = guestItem.name || existing.name;
+        existing.image = guestItem.image || existing.image;
+      } else {
+        cart.items.push({
+          productId: normalizedProductId,
+          size: normalizedSize,
+          quantity: guestItem.quantity,
+          priceAtAdd: guestItem.priceAtAdd ?? 0,
+          name: guestItem.name,
+          image: guestItem.image,
+        });
+      }
+    });
+
+    assertCartItemLimit(cart);
+    return cart;
   });
 
-  userCart.updatedAt = new Date();
-  await cacheCart(userId, userCart);
-  return userCart;
+  return buildMutationResult(cart, "Cart merged successfully");
 };
