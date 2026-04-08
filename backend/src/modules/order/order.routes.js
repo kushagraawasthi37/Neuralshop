@@ -21,9 +21,11 @@ orderRoutes.post(
   checkIdempotency,
   createOrder,
 );
-
+//Checked
 orderRoutes.get("/orders", isAuth, getOrders);
+//Checked
 orderRoutes.get("/orders/:orderId", isAuth, getOrderById);
+//Checked
 orderRoutes.patch("/orders/:orderId/cancel", isAuth, cancelOrder);
 
 export default orderRoutes;

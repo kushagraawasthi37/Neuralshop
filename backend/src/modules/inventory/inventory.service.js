@@ -10,6 +10,8 @@ import { inventoryEvents } from "../../events/event-types.js";
 export const reserveStockService = async (productId, quantity) => {
   const result = await prisma.$transaction(async (tx) => {
     // 🔒 Row-level lock the inventory row for this product
+
+    console.log("Reserving stock for product:", `"${productId}"`);
     const rows = await tx.$queryRaw`
       SELECT * FROM "Inventory"
       WHERE "productId" = ${productId}
@@ -184,12 +186,11 @@ export const initializeInventoryService = async (
       productId,
       totalStock: initialStock,
       reservedStock: 0,
-      availableStock: initialStock,
     },
   });
 };
 
-/** 
+/**
  * Update total stock for a product (admin operation)
  */
 export const updateTotalStockService = async (productId, newTotalStock) => {
@@ -224,7 +225,6 @@ export const updateTotalStockService = async (productId, newTotalStock) => {
     where: { productId },
     data: {
       totalStock: newTotalStock,
-      availableStock: newTotalStock - inventory.reservedStock,
     },
   });
 
@@ -244,8 +244,6 @@ export const updateTotalStockService = async (productId, newTotalStock) => {
   }
 };
 
-
-
 // ============================================
 // ADMIN INVENTORY MANAGEMENT
 // ============================================
@@ -257,7 +255,12 @@ export const getAllInventoryService = async () => {
   const inventory = await prisma.inventory.findMany({
     orderBy: { updatedAt: "desc" },
   });
-  return inventory;
+
+  // Add computed availableStock to each inventory record
+  return inventory.map((inv) => ({
+    ...inv,
+    availableStock: inv.totalStock - inv.reservedStock,
+  }));
 };
 
 /** Checked
@@ -277,7 +280,10 @@ export const getInventoryService = async (productId) => {
     };
   }
 
-  return inventory;
+  return {
+    ...inventory,
+    availableStock: inventory.totalStock - inventory.reservedStock,
+  };
 };
 
 /** Checked
@@ -305,7 +311,6 @@ export const updateInventoryManuallyService = async (
           productId,
           totalStock: newTotalStock,
           reservedStock: 0,
-          availableStock: newTotalStock,
         },
       });
     } else {
@@ -326,7 +331,6 @@ export const updateInventoryManuallyService = async (
         where: { productId },
         data: {
           totalStock: newTotalStock,
-          availableStock: newTotalStock - inventory.reservedStock,
         },
       });
 
@@ -344,7 +348,7 @@ export const updateInventoryManuallyService = async (
       oldTotalStock: result._oldTotalStock || 0,
       newTotalStock: result.totalStock,
       reservedStock: result.reservedStock,
-      availableStock: result.availableStock,
+      availableStock: result.totalStock - result.reservedStock,
       reason,
       updatedBy: "admin",
       timestamp: new Date().toISOString(),
@@ -464,18 +468,20 @@ export const parseAndUploadCSVService = async (csvContent) => {
 // SEARCH & FILTER
 // ============================================
 
-/**
+/** Checked
  * Get inventory for low stock products
  */
 export const getLowStockProductsService = async (threshold = 10) => {
-  const inventory = await prisma.inventory.findMany({
-    where: {
-      availableStock: {
-        lte: threshold,
-      },
-    },
-    orderBy: { availableStock: "asc" },
-  });
+  // Use raw query since availableStock is computed (totalStock - reservedStock)
+  const inventory = await prisma.$queryRaw`
+    SELECT * FROM "Inventory"
+    WHERE ("totalStock" - "reservedStock") <= ${threshold}
+    ORDER BY ("totalStock" - "reservedStock") ASC
+  `;
 
-  return inventory;
+  // Add computed availableStock to each record
+  return inventory.map((inv) => ({
+    ...inv,
+    availableStock: inv.totalStock - inv.reservedStock,
+  }));
 };

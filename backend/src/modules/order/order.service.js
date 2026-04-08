@@ -10,7 +10,7 @@ import { Product } from "../product/product.model.js";
 import { produceOrderEvent } from "../../events/producers/order.producer.js";
 import { orderEvents } from "../../events/event-types.js";
 
-/*
+/* Checked
  * ♻️ Idempotency-protected order creation service
  * 🔒 Uses transactions for order + orderItems creation
  * 🔁 Reserves stock atomically to prevent overselling
@@ -115,8 +115,8 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
 
     totalAmount += item.quantity * item.priceAtAdd;
     orderItems.push({
-      productId: item.productId,
-      sellerId: product.sellerId, // 🔥 NEW: Add sellerId from product
+      productId: cleanProductId,
+      sellerId: product.owner.toString(), // 🔥 Use owner from product as sellerId
       quantity: item.quantity,
       price: item.priceAtAdd,
     });
@@ -126,13 +126,15 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
   const reservedItems = [];
   try {
     for (const item of orderItems) {
-      await reserveStockService(item.productId, item.quantity);
+      const cleanProductId = item.productId.trim();
+      await reserveStockService(cleanProductId, item.quantity);
       reservedItems.push(item);
     }
   } catch (error) {
     // Release any reserved stock on failure
     for (const item of reservedItems) {
-      await releaseStockService(item.productId, item.quantity).catch(() => {});
+      const cleanProductId = item.productId.trim();
+      await releaseStockService(cleanProductId, item.quantity).catch(() => {});
     }
     throw error;
   }
@@ -210,7 +212,7 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
   }
 };
 
-/*
+/*Checked
  * Get orders for a user
  */
 export const getOrdersService = async (userId) => {
@@ -227,7 +229,7 @@ export const getOrdersService = async (userId) => {
   return orders;
 };
 
-/*
+/*Checked
  * Get order by ID
  */
 export const getOrderByIdService = async (userId, orderId) => {
@@ -250,11 +252,12 @@ export const getOrderByIdService = async (userId, orderId) => {
   return order;
 };
 
-/*
+/*Checked
  * Cancel order service
  * 🔁 Only allows cancellation if payment not completed
  */
 export const cancelOrderService = async (userId, orderId) => {
+  // 🔍 1. Get order with items + payment
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
@@ -266,37 +269,47 @@ export const cancelOrderService = async (userId, orderId) => {
     },
   });
 
+  // ❌ Order not found
   if (!order) {
     throw new ApiError(404, "Order not found", [], "order");
   }
 
+  // ❌ Only pending orders can be cancelled
   if (order.status !== "PENDING") {
     throw new ApiError(400, "Order cannot be cancelled", [], "order");
   }
 
+  // ❌ Paid orders cannot be cancelled
   if (order.payment && order.payment.status === "success") {
     throw new ApiError(400, "Cannot cancel paid order", [], "order");
   }
 
-  // 🔒 Cancel order and release reserved stock in the same transaction
+  // 🔒 2. Transaction: cancel order + items + release stock
   await prisma.$transaction(async (tx) => {
-    // Update order status
+    // ✅ Cancel order
     await tx.order.update({
       where: { id: orderId },
       data: { status: "CANCELLED" },
     });
 
+    // ✅ Cancel ALL items
+    await tx.orderItem.updateMany({
+      where: { orderId },
+      data: { status: "CANCELLED" },
+    });
+
+    // ✅ Restore stock (NO SIZE)
     for (const item of order.items) {
-      //Direct SQL query run karo (Prisma bypass)
       await tx.$executeRaw`
         UPDATE "Inventory"
-        SET "reservedStock" = GREATEST("reservedStock" - ${item.quantity}, 0)
+        SET 
+          "reservedStock" = GREATEST("reservedStock" - ${item.quantity}, 0),
         WHERE "productId" = ${item.productId}
       `;
     }
   });
 
-  // Produce Kafka event for order cancellation
+  // 📩 3. Kafka event (non-blocking)
   try {
     await produceOrderEvent(orderEvents.ORDER_CANCELLED, {
       orderId,
@@ -305,10 +318,13 @@ export const cancelOrderService = async (userId, orderId) => {
     });
   } catch (error) {
     console.error("Failed to produce order cancelled event:", error);
-    // Don't fail the cancellation if event production fails
   }
 
-  return { orderId, status: "CANCELLED" };
+  // ✅ Response
+  return {
+    orderId,
+    status: "CANCELLED",
+  };
 };
 
 // ============================================
@@ -323,22 +339,40 @@ export const getSellerOrdersService = async (sellerId) => {
     where: { sellerId },
     include: {
       order: {
-        include: { payment: true },
+        include: { payment: true, address: true },
       },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  // Group by orderId
   const ordersMap = new Map();
+
   for (const item of orderItems) {
     if (!ordersMap.has(item.orderId)) {
       ordersMap.set(item.orderId, {
-        ...item.order,
+        id: item.order.id,
+        status: item.order.status,
+        createdAt: item.order.createdAt,
+        payment: item.order.payment,
+        address: item.order.address,
         items: [],
+        sellerTotal: 0, // ✅ ADD THIS
       });
     }
-    ordersMap.get(item.orderId).items.push(item);
+
+    const order = ordersMap.get(item.orderId);
+
+    // ✅ accumulate seller total
+    const itemTotal = item.price * item.quantity;
+    order.sellerTotal += itemTotal;
+
+    order.items.push({
+      id: item.id,
+      productId: item.productId,
+      quantity: item.quantity,
+      price: item.price,
+      status: item.status,
+    });
   }
 
   return Array.from(ordersMap.values());
@@ -353,6 +387,7 @@ export const getSellerOrderByIdService = async (sellerId, orderId) => {
     include: {
       items: true,
       payment: true,
+      address: true, // ✅ ADD THIS
     },
   });
 
@@ -360,8 +395,9 @@ export const getSellerOrderByIdService = async (sellerId, orderId) => {
     throw new ApiError(404, "Order not found", [], "order");
   }
 
-  // Validate seller owns at least one item in this order
+  // ✅ Filter seller items
   const sellerItems = order.items.filter((item) => item.sellerId === sellerId);
+
   if (sellerItems.length === 0) {
     throw new ApiError(
       403,
@@ -371,10 +407,30 @@ export const getSellerOrderByIdService = async (sellerId, orderId) => {
     );
   }
 
-  // Return order but filter items to only seller's items
+  // ✅ Calculate seller total
+  let sellerTotal = 0;
+  for (const item of sellerItems) {
+    sellerTotal += item.price * item.quantity;
+  }
+
+  // ✅ Clean response
   return {
-    ...order,
-    items: sellerItems,
+    id: order.id,
+    status: order.status,
+    createdAt: order.createdAt,
+    payment: order.payment,
+    address: order.address,
+
+    totalAmount: order.totalAmount, // optional (full order)
+    sellerTotal, // 🔥 IMPORTANT
+
+    items: sellerItems.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      quantity: item.quantity,
+      price: item.price,
+      status: item.status,
+    })),
   };
 };
 

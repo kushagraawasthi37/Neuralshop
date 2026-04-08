@@ -35,7 +35,7 @@ model Address {
 
   // Relations
   orders Order[]
-  
+
   @@index([userId])
   @@index([isDefault])
 }
@@ -116,11 +116,10 @@ model Payment {
 
 /// Stock management for products
 model Inventory {
-  productId      String   @id // Reference to MongoDB Product
-  totalStock     Int
-  reservedStock  Int // Reserved during checkout
-  availableStock Int // totalStock - reservedStock
-  updatedAt      DateTime @updatedAt
+  productId     String   @id // Reference to MongoDB Product
+  totalStock    Int
+  reservedStock Int // Reserved during checkout
+  updatedAt     DateTime @updatedAt
 
   @@index([productId])
 }

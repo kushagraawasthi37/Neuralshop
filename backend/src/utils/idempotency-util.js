@@ -6,6 +6,8 @@ const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 export const checkIdempotency = async (req, res, next) => {
   const idempotencyKey = req.headers["idempotency-key"];
 
+  console.log("Received request with idempotency key:", idempotencyKey);
+
   if (!idempotencyKey) {
     return next();
   }
@@ -14,12 +16,14 @@ export const checkIdempotency = async (req, res, next) => {
 
   try {
     // Check if response is already cached
+
     const cachedResponse = await redisClient.get(redisKey);
     if (cachedResponse) {
+      console.log("Cached response found for idempotency key:", idempotencyKey);
       const { statusCode, data } = JSON.parse(cachedResponse);
       return res.status(statusCode).json(data);
     }
-
+    console.log("No cached response found, proceeding to controller");
     // Express ka original response function store kar liya
     const originalSend = res.send;
 
@@ -40,6 +44,7 @@ export const checkIdempotency = async (req, res, next) => {
 
       return originalSend.call(this, data);
     };
+    console.log("Idempotency check passed, proceeding to controller");
 
     next();
   } catch (error) {

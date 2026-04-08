@@ -64,6 +64,7 @@ const isAuthAdmin = async (req, res, next) => {
     try {
       const verifyToken = jwt.verify(token, config.jwt.secret);
       req.email = verifyToken?.email;
+      req.adminId = verifyToken?.adminId;
       req.token = token;
       next();
     } catch (error) {

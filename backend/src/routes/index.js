@@ -14,8 +14,8 @@ export const setupRoutes = (app) => {
   app.use("/api/auth", authRoutes);
   app.use("/api/product", productRoutes);
   app.use("/api/cart", cartRoutes);
-  app.use(orderRoutes); // Order routes at root: /orders
   app.use("/api/admin/orders", orderAdminRoutes); // Admin order routes
+  app.use(orderRoutes); // Order routes at root: /orders
   app.use("/api/admin/inventory", inventoryAdminRoutes); // Admin inventory routes
   app.use(paymentRoutes); // Payment routes at root: /orders/:id/pay, /payments/:id, /webhook
   app.use("/api/user", userRoutes);

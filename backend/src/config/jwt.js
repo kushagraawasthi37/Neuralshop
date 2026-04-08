@@ -12,9 +12,9 @@ export const genToken = (userId) => {
   }
 };
 
-export const genToken1 = async (email) => {
+export const genToken1 = async (email, adminId) => {
   try {
-    const token = jwt.sign({ email }, config.jwt.secret, {
+    const token = jwt.sign({ email, adminId }, config.jwt.secret, {
       expiresIn: config.jwt.expiryTime,
     });
     return token;

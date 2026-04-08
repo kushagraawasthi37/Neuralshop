@@ -8,15 +8,18 @@ import {
   cancelOrderService,
 } from "./order.service.js";
 
-/**
+/*
  * POST /orders - Create new order
  * ♻️ Idempotency protected via header
  */
-
 export const createOrder = asyncHandler(async (req, res) => {
   const { addressId } = req.body;
   const idempotencyKey = req.headers["idempotency-key"];
 
+  console.log(
+    "Received order creation request with idempotency key:",
+    idempotencyKey,
+  );
   if (!addressId) {
     throw new ApiError(400, "Address ID is required", [], "order");
   }

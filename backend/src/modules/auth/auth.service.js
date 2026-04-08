@@ -1,5 +1,5 @@
 import { User } from "../user/user.model.js";
-import Admin  from "./auth.model.js";
+import Admin from "./auth.model.js";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import { genToken, genToken1 } from "../../config/jwt.js";
@@ -107,7 +107,7 @@ export const registerAdminService = async (name, email, password) => {
     const hashPassword = await bcrypt.hash(password, 10);
     const admin = await Admin.create({ name, email, password: hashPassword });
 
-    const token = await genToken1(email);
+    const token = await genToken1(email, admin._id.toString());
     return { admin, token };
   } catch (error) {
     throw error;
@@ -136,7 +136,7 @@ export const loginAdminService = async (email, password) => {
     if (!isMatch) {
       throw new Error("Invalid Credentials");
     }
-    const token = await genToken1(admin.email);
+    const token = await genToken1(admin.email, admin._id.toString());
     return { admin, token };
   } catch (error) {
     throw error;
@@ -246,4 +246,3 @@ export const getCurrentAdminService = async (email) => {
     throw error;
   }
 };
-

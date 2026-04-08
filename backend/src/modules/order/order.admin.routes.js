@@ -2,6 +2,7 @@ import express from "express";
 import { asyncHandler } from "../../utils/async-handler.js";
 import ApiResponse from "../../utils/api-response.js";
 import { ApiError } from "../../utils/api-error.js";
+import { isAuthAdmin } from "../../middlewares/auth.middleware.js";
 import {
   getSellerOrdersService,
   getSellerOrderByIdService,
@@ -9,21 +10,23 @@ import {
   bulkUpdateOrderItemStatusService,
 } from "./order.service.js";
 import { validateOrderItemStatusUpdate } from "./order.validation.js";
-
 const router = express.Router();
 
 // ============================================
 // 🔐 SELLER ORDER MANAGEMENT
 // ============================================
 
-/**
+/** Checked
  * GET /admin/orders
  * Get all orders for authenticated seller
  */
+
 router.get(
   "/",
+  isAuthAdmin,
   asyncHandler(async (req, res) => {
-    const sellerId = req.user?.id;
+    const sellerId = req.adminId;
+
     if (!sellerId) {
       throw new ApiError(401, "Unauthorized", [], "order");
     }
@@ -35,15 +38,16 @@ router.get(
   }),
 );
 
-/**
+/** Checked
  * GET /admin/orders/:orderId
  * Get specific order for seller (filtered to seller's items)
  */
 router.get(
   "/:orderId",
+  isAuthAdmin,
   asyncHandler(async (req, res) => {
     const { orderId } = req.params;
-    const sellerId = req.user?.id;
+    const sellerId = req.adminId;
     if (!sellerId) {
       throw new ApiError(401, "Unauthorized", [], "order");
     }
@@ -55,17 +59,18 @@ router.get(
   }),
 );
 
-/**
+/** Checked
  * PATCH /admin/order-items/:itemId/status
  * Update OrderItem status with seller validation
  * Body: { status: "SHIPPED" | "DELIVERED" | "PROCESSING" | "CANCELLED" }
  */
 router.patch(
   "/order-items/:itemId/status",
+  isAuthAdmin,
   asyncHandler(async (req, res) => {
     const { itemId } = req.params;
     const { status } = req.body;
-    const sellerId = req.user?.id;
+    const sellerId = req.adminId;
     if (!sellerId) {
       throw new ApiError(401, "Unauthorized", [], "order");
     }
@@ -87,16 +92,17 @@ router.patch(
   }),
 );
 
-/**
+/**  Checked
  * PATCH /admin/order-items/bulk/status
  * Bulk update multiple items' status
  * Body: { updates: [ { itemId: "...", status: "SHIPPED" }, ... ] }
  */
 router.patch(
   "/bulk/status",
+  isAuthAdmin,
   asyncHandler(async (req, res) => {
     const { updates } = req.body;
-    const sellerId = req.user?.id;
+    const sellerId = req.adminId;
     if (!sellerId) {
       throw new ApiError(401, "Unauthorized", [], "order");
     }
