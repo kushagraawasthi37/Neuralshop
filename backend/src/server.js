@@ -3,6 +3,9 @@
 // ==========================
 import "./config/loadenv.js";
 
+import { EventEmitter } from "events";
+EventEmitter.defaultMaxListeners = 20;
+
 // ==========================
 // 📦 IMPORTS (AFTER ENV LOAD)
 // ==========================

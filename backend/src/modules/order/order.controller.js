@@ -32,14 +32,30 @@ export const createOrder = asyncHandler(async (req, res) => {
 });
 
 /**
- * GET /orders - Get user's orders
+ * GET /orders - Get user's orders with filters, search, and sorting
  */
 export const getOrders = asyncHandler(async (req, res) => {
-  const orders = await getOrdersService(req.userId);
+  const {
+    skip = 0,
+    limit = 10,
+    status,
+    sortBy = "createdAt",
+    order = "desc",
+    search,
+  } = req.query;
+
+  const result = await getOrdersService(req.userId, {
+    skip,
+    limit,
+    status,
+    sortBy,
+    order,
+    search,
+  });
 
   res
     .status(200)
-    .json(new ApiResponse(200, orders, "Orders retrieved successfully"));
+    .json(new ApiResponse(200, result, "Orders retrieved successfully"));
 });
 
 /**

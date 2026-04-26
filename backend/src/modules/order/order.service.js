@@ -241,20 +241,63 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
 };
 
 /*Checked
- * Get orders for a user
+ * Get orders for a user with filters, search, and sorting
  */
-export const getOrdersService = async (userId) => {
-  const orders = await prisma.order.findMany({
-    where: { userId },
-    include: {
-      items: true,
-      payment: true,
-      address: true, // Include address information
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export const getOrdersService = async (
+  userId,
+  {
+    skip = 0,
+    limit = 10,
+    status,
+    sortBy = "createdAt",
+    order = "desc",
+    search,
+  } = {},
+) => {
+  const where = { userId };
 
-  return orders;
+  // Filter by status
+  if (status) {
+    where.status = status.toUpperCase();
+  }
+
+  // Search by order ID
+  if (search) {
+    where.id = { contains: search };
+  }
+
+  // Build sort options
+  const orderByOptions = {
+    createdAt: { createdAt: order === "asc" ? "asc" : "desc" },
+    totalAmount: { totalAmount: order === "asc" ? "asc" : "desc" },
+    status: { status: order === "asc" ? "asc" : "desc" },
+    updatedAt: { updatedAt: order === "asc" ? "asc" : "desc" },
+  };
+
+  const orderBy = orderByOptions[sortBy] || orderByOptions.createdAt;
+
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      include: {
+        items: true,
+        payment: true,
+        address: true,
+      },
+      orderBy,
+      skip: parseInt(skip),
+      take: parseInt(limit),
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  return {
+    orders,
+    total,
+    skip: parseInt(skip),
+    limit: parseInt(limit),
+    pages: Math.ceil(total / limit),
+  };
 };
 
 /*Checked

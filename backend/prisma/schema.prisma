@@ -147,3 +147,98 @@ model IdempotencyKey {
   @@index([createdAt])
   @@index([expiresAt])
 }
+
+// ============================================
+// COUPON/DISCOUNT MODEL
+// ============================================
+
+/// Discount coupons and promotions
+model Coupon {
+  id             String @id @default(uuid())
+  code           String @unique
+  discountType   String // PERCENTAGE, FIXED
+  discountValue  Float // Percentage (0-100) or fixed amount
+  minOrderAmount Float? // Minimum order value to use coupon
+  maxUses        Int? // Total uses allowed (null = unlimited)
+  usedCount      Int    @default(0)
+  maxUsesPerUser Int    @default(1) // Per user limit
+
+  isActive   Boolean  @default(true)
+  startDate  DateTime
+  expiryDate DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orderDiscounts OrderDiscount[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([expiryDate])
+}
+
+// ============================================
+// ORDER DISCOUNT MODEL (Coupon Usage)
+// ============================================
+
+/// Track which coupon was used on which order
+model OrderDiscount {
+  id       String @id @default(uuid())
+  orderId  String
+  couponId String
+
+  discountAmount Float
+  createdAt      DateTime @default(now())
+
+  // Relations
+  coupon Coupon @relation(fields: [couponId], references: [id])
+
+  @@index([orderId])
+  @@index([couponId])
+}
+
+// ============================================
+// RETURN/REFUND MODEL
+// ============================================
+
+/// Manage product returns and refunds
+model ReturnRequest {
+  id          String @id @default(uuid())
+  orderItemId String
+  userId      String // Reference to MongoDB User
+
+  reason      String // DAMAGED, WRONG_ITEM, NOT_AS_DESCRIBED, CHANGED_MIND, etc
+  description String?
+
+  status       String @default("REQUESTED") // REQUESTED, APPROVED, REJECTED, REFUNDED, COMPLETED
+  refundAmount Float?
+  refundStatus String @default("PENDING") // PENDING, PROCESSED, FAILED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderItemId])
+}
+
+// ============================================
+// GUEST CART MODEL (Persistence)
+// ============================================
+
+/// Persistent guest cart storage (complementary to Redis)
+model GuestCart {
+  id        String @id @default(uuid())
+  sessionId String @unique // Browser session identifier
+
+  items Json // [{productId, size, quantity, price, name, image}]
+  total Float @default(0)
+
+  expiresAt DateTime // Auto-cleanup after 7 days
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId])
+  @@index([expiresAt])
+}

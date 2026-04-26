@@ -35,7 +35,6 @@ const cartSchema = new mongoose.Schema(
       type: String,
       required: [true, "userId is required"],
       unique: true,
-      index: true,
     },
     items: {
       type: [cartItemSchema],

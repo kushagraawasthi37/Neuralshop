@@ -105,7 +105,5 @@ productSchema.index({ price: 1 });
 productSchema.index({ bestseller: 1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ "sizes.size": 1 });
-productSchema.index({ sku: 1 });
 
 export const Product = mongoose.model("Product", productSchema);
-
