@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import config from "./environment.config.js";
+import { logger } from "../utils/logger.js";
 
 export const genToken = (userId) => {
   try {
@@ -8,7 +9,8 @@ export const genToken = (userId) => {
     });
     return token;
   } catch (error) {
-    console.log("Generate user token error Check file jwt.js");
+    logger.error("Failed to generate user token", { error: error.message });
+    throw error;
   }
 };
 
@@ -19,6 +21,7 @@ export const genToken1 = async (email, adminId) => {
     });
     return token;
   } catch (error) {
-    console.log("Generate admin token error Check file jwt.js");
+    logger.error("Failed to generate admin token", { error: error.message });
+    throw error;
   }
 };

@@ -121,11 +121,7 @@ export const listProductService = async (queryParams) => {
       );
       return result;
     } catch (esError) {
-      console.warn(
-        "Elasticsearch search failed, falling back to MongoDB:",
-        esError.message,
-      );
-      // Fallback to MongoDB
+      // Fallback to MongoDB if Elasticsearch fails
       const query = {};
       if (search) {
         query.$or = [

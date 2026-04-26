@@ -197,7 +197,6 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
     try {
       await clearCartService(userId);
     } catch (error) {
-      console.error("Failed to clear cart:", error);
       // Don't fail order creation if cart clear fails
     }
 
@@ -217,7 +216,7 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
         items: orderItems,
       });
     } catch (error) {
-      console.error("Failed to produce order.created event:", error);
+      // Silently handle event production errors
     }
 
     return payload;

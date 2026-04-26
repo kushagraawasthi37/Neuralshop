@@ -105,9 +105,6 @@ export const initiatePaymentService = async (
   try {
     razorpayOrder = await razorpayInstance.orders.create(razorpayOrderOptions);
   } catch (error) {
-    console.error("RAZORPAY ERROR FULL:", error);
-    console.error("RAZORPAY ERROR RESPONSE:", error?.error);
-
     throw new ApiError(
       500,
       "Failed to create payment order",
@@ -180,7 +177,7 @@ export const initiatePaymentService = async (
         status: "pending",
       });
     } catch (error) {
-      console.error("Failed to produce payment.initiated event:", error);
+      // Silently handle event production errors
     }
 
     return payload;
@@ -349,7 +346,7 @@ export const handleWebhookService = async (
     try {
       await clearCartService(payment.order.userId);
     } catch (error) {
-      console.error("Failed to clear cart after payment success:", error);
+      // Silently handle cart clear errors to not fail webhook processing
     }
 
     // Produce Kafka event for payment success
@@ -364,8 +361,7 @@ export const handleWebhookService = async (
         status: "success",
       });
     } catch (error) {
-      console.error("Failed to produce payment.success event:", error);
-      // Don't fail the webhook processing if event production fails
+      // Silently handle event production errors to not fail webhook processing
     }
 
     return { status: "processed", orderId: payment.orderId };

@@ -29,7 +29,6 @@ export const addItem = async (req, res) => {
     quantity = Number(quantity);
     priceAtAdd = Number(priceAtAdd);
 
-    console.log(`Quantity ${quantity} type: ${typeof quantity}`);
     const cart = await addItemToCartService(req.userId, {
       productId,
       size,

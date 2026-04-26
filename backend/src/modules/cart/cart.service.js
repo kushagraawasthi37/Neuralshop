@@ -113,14 +113,13 @@ const _modifyCartWithTransaction = async (userId, modifierFn) => {
       // Case 1: NO CHANGE → SUCCESS
       // Kisi ne cart modify nahi kiya
       if (results) {
-        persistCartToMongo(userId, modifiedCart).catch((err) =>
-          console.error("Failed to persist cart to Mongo:", err),
-        );
+        persistCartToMongo(userId, modifiedCart).catch((err) => {
+          // Silently handle persistence errors to avoid blocking cart operations
+        });
         return modifiedCart;
       }
 
-      console.warn(`Cart retry attempt ${attempt + 1} for user ${userId}`);
-      // transaction failed due to concurrent change, retry
+      // Cart conflict detected during transaction, retrying
       // Kisi aur ne cart update kar diya
     } catch (error) {
       if (attempt === maxRetries - 1) throw error;

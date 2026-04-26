@@ -45,8 +45,9 @@ app.listen(PORT, async () => {
     await redisClient.ping(); // no getRedis() needed
     logStartup("Redis connected");
   } catch (error) {
-    console.warn("Redis connection failed:", error.message);
-    console.warn("Caching / rate limiting disabled.");
+    logStartup("Redis connection failed, caching and rate limiting disabled", {
+      error: error.message,
+    });
   }
 
   // ==========================
@@ -56,8 +57,9 @@ app.listen(PORT, async () => {
     await createElasticsearchClient();
     logStartup("Elastic Search connected");
   } catch (error) {
-    console.warn("Elastic Search connection failed:", error.message);
-    console.warn("Caching / rate limiting disabled.");
+    logStartup("Elasticsearch connection failed, search fallback to MongoDB", {
+      error: error.message,
+    });
   }
 
   // ==========================
@@ -67,10 +69,9 @@ app.listen(PORT, async () => {
     await kafkaProducer.connect();
     logStartup("Kafka producer connected");
   } catch (error) {
-    console.warn("Kafka producer connection failed:", error.message);
-    console.warn(
-      "Mail features will not work. Start Kafka to enable email sending.",
-    );
+    logStartup("Kafka producer connection failed, mail features disabled", {
+      error: error.message,
+    });
   }
 
   // ==========================
@@ -84,7 +85,11 @@ app.listen(PORT, async () => {
 
     logStartup("Kafka consumers started");
   } catch (error) {
-    console.warn("Kafka consumers failed to start:", error.message);
-    console.warn("Event-driven features may not work. Start Kafka to enable.");
+    logStartup(
+      "Kafka consumers failed to start, event-driven features may not work",
+      {
+        error: error.message,
+      },
+    );
   }
 });

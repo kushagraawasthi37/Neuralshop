@@ -48,7 +48,6 @@ export const registration = async (req, res) => {
       token,
       message: "Verification OTP has been sent on Email",
     });
-    return res.status(201).json({ user, token });
   } catch (error) {
     return res
       .status(400)
@@ -130,7 +129,6 @@ export const login = async (req, res) => {
     return res
       .status(200)
       .json({ user, token, message: "User Logged in Successfully" });
-    return res.status(200).json({ user, token });
   } catch (error) {
     return res.status(400).json({ message: error.message || "Login error" });
   }
@@ -139,8 +137,6 @@ export const login = async (req, res) => {
 //Checked
 export const userLogout = async (req, res) => {
   try {
-    console.log("Logging out USER:", req.userId);
-
     const token = req.token;
 
     if (token) {
@@ -168,15 +164,12 @@ export const userLogout = async (req, res) => {
       message: "User logout successful",
     });
   } catch (error) {
-    console.error("User logout error:", error);
     return res.status(500).json({ message: "Logout failed" });
   }
 };
 
 export const adminLogout = async (req, res) => {
   try {
-    console.log("Logging out ADMIN:", req.email);
-
     const token = req.token;
 
     if (token) {

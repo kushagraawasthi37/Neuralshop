@@ -37,7 +37,6 @@ router.get(
   "/low-stock",
   isAuthAdmin,
   asyncHandler(async (req, res) => {
-    // console.log("Low stock endpoint called with query:", req.query)
     const threshold = parseInt(req.query.threshold || "10", 10);
 
     if (threshold < 0) {

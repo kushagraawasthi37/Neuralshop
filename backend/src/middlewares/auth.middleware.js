@@ -30,18 +30,15 @@ const isAuth = async (req, res, next) => {
       req.token = token;
       next();
     } catch (error) {
-      console.log("JWT error:", error.message);
       return res.status(401).json({ message: `isAuth error ${error.message}` });
     }
   } catch (error) {
-    console.log("isAuth error", error);
     return res.status(500).json({ message: `isAuth error ${error}` });
   }
 };
 
 const isAuthAdmin = async (req, res, next) => {
   try {
-    console.log("isAuthAdmin called");
     const authHeader = req.header("Authorization");
     const token =
       req.cookies?.adminToken ||
@@ -68,13 +65,11 @@ const isAuthAdmin = async (req, res, next) => {
       req.token = token;
       next();
     } catch (error) {
-      console.log("JWT error:", error.message);
       return res
         .status(401)
         .json({ message: `isAuthAdmin error ${error.message}` });
     }
   } catch (error) {
-    console.log("isAuthAdmin error", error);
     return res.status(500).json({ message: `isAuthAdmin error ${error}` });
   }
 };

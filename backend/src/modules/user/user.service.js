@@ -1,5 +1,5 @@
 import { User } from "./user.model.js";
-import { prisma } from "../../prisma/client.js";
+import prisma from "../../prisma/client.js";
 
 export const getCurrentUserService = async (userId) => {
   try {
@@ -91,7 +91,6 @@ export const getUserAddressesService = async (userId) => {
 export const createUserAddressService = async (userId, addressData) => {
   try {
     // If this is set as default, unset other defaults
-    console.log("Creating address with data:", addressData.isDefault);
     if (addressData.isDefault) {
       await prisma.address.updateMany({
         where: { userId, isDefault: true },
