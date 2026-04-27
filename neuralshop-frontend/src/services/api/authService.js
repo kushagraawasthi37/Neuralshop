@@ -12,6 +12,8 @@ export const authService = {
   forgotPassword: (data) => API.post("/auth/request-password-reset", data),
   resetPassword: (data) => API.post("/auth/reset-password", data),
   resendOtp: (data) => API.post("/auth/resend-otp", data),
+  logout: () => API.get("/auth/user/logout"),
+  adminLogout: () => API.get("/auth/admin/logout"),
 
   adminRegister: (data) => API.post("/auth/adminregister", data),
   adminLogin: (data) => API.post("/auth/adminlogin", data),

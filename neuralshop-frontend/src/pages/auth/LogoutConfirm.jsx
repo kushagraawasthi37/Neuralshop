@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
+import { authService } from "../../services/api/authService";
 
 const LogoutConfirm = () => {
   const navigate = useNavigate();
@@ -12,9 +13,19 @@ const LogoutConfirm = () => {
     [location.pathname],
   );
 
-  const handleLogout = () => {
-    logout();
-    navigate(isAdmin ? "/admin/login" : "/login");
+  const handleLogout = async () => {
+    try {
+      if (isAdmin) {
+        await authService.adminLogout();
+      } else {
+        await authService.logout();
+      }
+    } catch (error) {
+      console.error("Logout request failed:", error?.response || error);
+    } finally {
+      logout();
+      navigate(isAdmin ? "/admin/login" : "/login");
+    }
   };
 
   const handleCancel = () => {
