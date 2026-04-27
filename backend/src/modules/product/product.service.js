@@ -92,6 +92,7 @@ export const addProductService = async (productData, adminEmail, files) => {
 //Checked
 export const listProductService = async (queryParams) => {
   try {
+    console.log("Listing products with query:", queryParams);
     const {
       search,
       category,
@@ -105,6 +106,9 @@ export const listProductService = async (queryParams) => {
       limit = 10,
     } = queryParams;
 
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+
     const filters = {};
     if (category) filters.category = category;
     if (subCategory) filters.subCategory = subCategory;
@@ -113,57 +117,51 @@ export const listProductService = async (queryParams) => {
     if (ratingMin !== undefined) filters.ratingMin = parseFloat(ratingMin);
     if (bestseller !== undefined) filters.bestseller = bestseller === "true";
 
-    try {
-      // Try Elasticsearch first
-      const result = await searchProducts(
-        search,
-        filters,
-        sort,
-        parseInt(page),
-        parseInt(limit),
-      );
-      return result;
-    } catch (esError) {
-      // Fallback to MongoDB if Elasticsearch fails
-      const query = {};
-      if (search) {
-        query.$or = [
-          { name: { $regex: search, $options: "i" } },
-          { description: { $regex: search, $options: "i" } },
-          { category: { $regex: search, $options: "i" } },
-        ];
+    console.log("Search term:", search);
+    // ✅ 🔥 ONLY use Elasticsearch when search exists
+    if (search && search.trim() !== "") {
+      try {
+        return await searchProducts(search, filters, sort, pageNum, limitNum);
+      } catch (esError) {
+        console.warn("ES failed, fallback to Mongo");
       }
-      if (category) query.category = category;
-      if (subCategory) query.subCategory = subCategory;
-      if (priceMin !== undefined || priceMax !== undefined) {
-        query.price = {};
-        if (priceMin !== undefined) query.price.$gte = parseFloat(priceMin);
-        if (priceMax !== undefined) query.price.$lte = parseFloat(priceMax);
-      }
-      if (ratingMin !== undefined)
-        query.rating = { $gte: parseFloat(ratingMin) };
-      if (bestseller !== undefined) query.bestseller = bestseller === "true";
-
-      const sortOptions = {};
-      if (sort === "price_asc") sortOptions.price = 1;
-      else if (sort === "price_desc") sortOptions.price = -1;
-      else if (sort === "newest") sortOptions.createdAt = -1;
-      else if (sort === "rating") sortOptions.rating = -1;
-
-      const products = await Product.find(query)
-        .sort(sortOptions)
-        .skip((page - 1) * limit)
-        .limit(parseInt(limit));
-
-      const total = await Product.countDocuments(query);
-
-      return {
-        products,
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-      };
     }
+
+    // ✅ MongoDB for normal listing
+    const query = {};
+
+    if (category) query.category = category;
+    if (subCategory) query.subCategory = subCategory;
+
+    if (priceMin !== undefined || priceMax !== undefined) {
+      query.price = {};
+      if (priceMin !== undefined) query.price.$gte = parseFloat(priceMin);
+      if (priceMax !== undefined) query.price.$lte = parseFloat(priceMax);
+    }
+
+    if (ratingMin !== undefined) query.rating = { $gte: parseFloat(ratingMin) };
+
+    if (bestseller !== undefined) query.bestseller = bestseller === "true";
+
+    const sortOptions = {};
+    if (sort === "price_asc") sortOptions.price = 1;
+    else if (sort === "price_desc") sortOptions.price = -1;
+    else if (sort === "newest") sortOptions.createdAt = -1;
+    else if (sort === "rating") sortOptions.rating = -1;
+
+    const products = await Product.find(query)
+      .sort(sortOptions)
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum);
+
+    const total = await Product.countDocuments(query);
+
+    return {
+      products,
+      total,
+      page: pageNum,
+      limit: limitNum,
+    };
   } catch (error) {
     throw error;
   }
