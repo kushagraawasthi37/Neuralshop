@@ -19,6 +19,7 @@ import isAuth, { isAuthAdmin } from "../../middlewares/auth.middleware.js";
 
 const authRoutes = express.Router();
 
+//Checked
 authRoutes.post(
   "/registration",
   authValidations.registration,
@@ -26,6 +27,7 @@ authRoutes.post(
   registration,
 );
 
+//Checked
 authRoutes.post("/login", authValidations.login, validationErrorHandler, login);
 
 authRoutes.get("/user/logout", isAuth, userLogout);
@@ -45,6 +47,8 @@ authRoutes.post(
   adminLogin,
 );
 
+
+//Checked
 authRoutes.post(
   "/verify-email",
   authValidations.verifyEmail,
@@ -60,6 +64,7 @@ authRoutes.post(
 );
 
 authRoutes.post("/resend-otp", resendOtp);
+
 
 authRoutes.post(
   "/request-password-reset",
