@@ -1,33 +1,35 @@
 import createElasticsearchClient from "../../config/elasticsearch.js";
 
-const elasticsearchClient = createElasticsearchClient();
+const getClient = async () => {
+  return await createElasticsearchClient();
+};
 
 const PRODUCT_INDEX = "products";
 
 export const createProductIndex = async () => {
   try {
+    const elasticsearchClient = await getClient();
     const exists = await elasticsearchClient.indices.exists({
       index: PRODUCT_INDEX,
     });
     if (!exists) {
       await elasticsearchClient.indices.create({
         index: PRODUCT_INDEX,
-        body: {
-          mappings: {
-            properties: {
-              name: { type: "text", analyzer: "standard" },
-              description: { type: "text", analyzer: "standard" },
-              category: { type: "keyword" },
-              subCategory: { type: "keyword" },
-              price: { type: "float" },
-              rating: { type: "float" },
-              reviewCount: { type: "integer" },
-              bestseller: { type: "boolean" },
-              tags: { type: "keyword" },
-              owner: { type: "keyword" },
-              createdAt: { type: "date" },
-              updatedAt: { type: "date" },
-            },
+
+        mappings: {
+          properties: {
+            name: { type: "text", analyzer: "standard" },
+            description: { type: "text", analyzer: "standard" },
+            category: { type: "keyword" },
+            subCategory: { type: "keyword" },
+            price: { type: "float" },
+            rating: { type: "float" },
+            reviewCount: { type: "integer" },
+            bestseller: { type: "boolean" },
+            tags: { type: "keyword" },
+            owner: { type: "keyword" },
+            createdAt: { type: "date" },
+            updatedAt: { type: "date" },
           },
         },
       });
@@ -41,6 +43,7 @@ export const createProductIndex = async () => {
 // DB → Elasticsearch sync
 export const indexProduct = async (product) => {
   try {
+    const elasticsearchClient = await getClient();
     await elasticsearchClient.index({
       index: PRODUCT_INDEX,
       id: product._id.toString(),
@@ -66,12 +69,13 @@ export const indexProduct = async (product) => {
 
 export const updateProductIndex = async (productId, updateData) => {
   try {
+    const elasticsearchClient = await getClient();
     await elasticsearchClient.update({
       index: PRODUCT_INDEX,
       id: productId,
-      body: {
-        doc: updateData,
-      },
+      doc: updateData,
+      doc_as_upsert: true,
+      retry_on_conflict: 5,
     });
   } catch (error) {
     console.error("Error updating product index:", error);
@@ -80,6 +84,7 @@ export const updateProductIndex = async (productId, updateData) => {
 
 export const deleteProductIndex = async (productId) => {
   try {
+    const elasticsearchClient = await getClient();
     await elasticsearchClient.delete({
       index: PRODUCT_INDEX,
       id: productId,
@@ -97,6 +102,7 @@ export const searchProducts = async (
   limit = 10,
 ) => {
   try {
+    const elasticsearchClient = await getClient();
     const body = {
       query: {
         bool: {

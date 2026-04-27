@@ -24,8 +24,11 @@ const calculateTotalStock = (sizes) =>
 
 //Checked
 export const addProductService = async (productData, adminEmail, files) => {
+  // console.log("Adding product with data:", productData);
   const { name, description, price, category, subCategory, sizes, bestseller } =
     productData;
+
+  console.log("Received files:", files);
 
   if (
     !files?.image1?.[0] ||

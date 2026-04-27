@@ -12,7 +12,13 @@ const AdminDashboard = () => {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Link
+              to="/admin/products"
+              className="rounded-2xl bg-green-500 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-green-400"
+            >
+              Manage Products
+            </Link>
             <Link
               to="/admin/logout"
               className="rounded-2xl bg-blue-500 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-blue-400"

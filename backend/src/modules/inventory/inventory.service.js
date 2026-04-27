@@ -191,8 +191,8 @@ export const getStockService = async (productId, size) => {
   validateProductId(productId);
   validateSize(size);
 
-  const inventory = await prisma.inventory.findUnique({
-    where: { productId_size: { productId, size } },
+  const inventory = await prisma.inventory.findFirst({
+    where: { productId, size },
   });
 
   if (!inventory) {
@@ -235,16 +235,20 @@ export const initializeInventoryService = async (
     );
   }
 
-  await prisma.inventory.upsert({
-    where: { productId_size: { productId, size } },
-    update: {},
-    create: {
-      productId,
-      size,
-      totalStock: initialStock,
-      reservedStock: 0,
-    },
+  const existingInventory = await prisma.inventory.findFirst({
+    where: { productId, size },
   });
+
+  if (!existingInventory) {
+    await prisma.inventory.create({
+      data: {
+        productId,
+        size,
+        totalStock: initialStock,
+        reservedStock: 0,
+      },
+    });
+  }
 };
 
 export const updateTotalStockService = async (
@@ -268,12 +272,40 @@ export const updateTotalStockService = async (
     );
   }
 
+  const existingInventory = await prisma.inventory.findFirst({
+    where: { productId, size },
+  });
+
+  if (!existingInventory) {
+    const created = await prisma.inventory.create({
+      data: {
+        productId,
+        size,
+        totalStock: newTotalStock,
+        reservedStock: 0,
+      },
+    });
+
+    produceInventoryEvent(inventoryEvents.STOCK_UPDATED, {
+      productId,
+      size,
+      newTotalStock,
+      reservedStock: created.reservedStock,
+      availableStock: created.totalStock - created.reservedStock,
+    }).catch(() => {});
+
+    return created;
+  }
+
+  if (existingInventory.reservedStock > newTotalStock) {
+    throw new ApiError(409, "Invalid stock update", [], "inventory");
+  }
+
   const result = await prisma.$queryRaw`
     UPDATE "Inventory"
     SET "totalStock" = ${newTotalStock}
     WHERE "productId" = ${productId}
     AND "size" = ${size}
-    AND "reservedStock" <= ${newTotalStock}
     RETURNING *
   `;
 
@@ -317,8 +349,8 @@ export const getInventoryService = async (productId, size) => {
   validateProductId(productId);
   validateSize(size);
 
-  const inventory = await prisma.inventory.findUnique({
-    where: { productId_size: { productId, size } },
+  const inventory = await prisma.inventory.findFirst({
+    where: { productId, size },
   });
 
   if (!inventory) {
@@ -367,8 +399,8 @@ export const updateInventoryManuallyService = async (
     throw new ApiError(400, "reason must be non-empty string", [], "inventory");
   }
 
-  let result = await prisma.inventory.findUnique({
-    where: { productId_size: { productId, size } },
+  let result = await prisma.inventory.findFirst({
+    where: { productId, size },
   });
 
   if (!result) {
@@ -391,7 +423,7 @@ export const updateInventoryManuallyService = async (
     }
 
     result = await prisma.inventory.update({
-      where: { productId_size: { productId, size } },
+      where: { productId, size },
       data: { totalStock: newTotalStock },
     });
   }
@@ -480,10 +512,8 @@ export const bulkUpdateInventoryService = async (inventoryData) => {
 
   for (const item of validated) {
     try {
-      let inventory = await prisma.inventory.findUnique({
-        where: {
-          productId_size: { productId: item.productId, size: item.size },
-        },
+      let inventory = await prisma.inventory.findFirst({
+        where: { productId: item.productId, size: item.size },
       });
 
       if (!inventory) {
@@ -506,9 +536,7 @@ export const bulkUpdateInventoryService = async (inventoryData) => {
         }
 
         inventory = await prisma.inventory.update({
-          where: {
-            productId_size: { productId: item.productId, size: item.size },
-          },
+          where: { productId: item.productId, size: item.size },
           data: { totalStock: item.totalStock },
         });
       }

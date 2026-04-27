@@ -41,13 +41,12 @@ const isAuthAdmin = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
     const token =
-      req.cookies?.adminToken ||
       (authHeader && authHeader.startsWith("Bearer ")
         ? authHeader.split(" ")[1].trim()
-        : null);
+        : null) || req.cookies?.adminToken;
 
     if (!token) {
-      return res.status(400).json({ message: "admin does not have token" });
+      return res.status(400).json({ message: "Admin authentication required" });
     }
 
     // blacklist lookup

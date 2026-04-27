@@ -69,7 +69,7 @@ const productSchema = new mongoose.Schema(
     // 🔐 Owner reference
     owner: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Admin",
       required: true,
     },
 

@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { authService } from "../../services/api/authService";
+import { useAuthStore } from "../../stores/authStore";
 import Button from "../../components/ui/atoms/Button";
 import Input from "../../components/ui/atoms/Input";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const adminLogin = useAuthStore((state) => state.adminLogin);
+  const isLoading = useAuthStore((state) => state.isLoading);
   const [form, setForm] = useState({ email: "", password: "" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await authService.adminLogin(form);
+      await adminLogin(form);
       toast.success("Admin login successful.");
       navigate("/admin");
     } catch (err) {
@@ -35,6 +37,7 @@ const AdminLogin = () => {
         value={form.email}
         onChange={(e) => setForm({ ...form, email: e.target.value })}
         className="w-full p-3 rounded bg-slate-800 text-white"
+        required
       />
 
       <Input
@@ -43,10 +46,15 @@ const AdminLogin = () => {
         value={form.password}
         onChange={(e) => setForm({ ...form, password: e.target.value })}
         className="w-full p-3 rounded bg-slate-800 text-white"
+        required
       />
 
-      <Button type="submit" className="w-full px-4 py-3 rounded">
-        Sign in
+      <Button
+        type="submit"
+        disabled={isLoading}
+        className="w-full px-4 py-3 rounded"
+      >
+        {isLoading ? "Signing in..." : "Sign in"}
       </Button>
 
       <div className="flex justify-between items-center text-sm text-slate-400">

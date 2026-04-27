@@ -34,29 +34,12 @@ productRoutes.post(
 productRoutes.get("/admin/list", isAuthAdmin, AdminlistProduct);
 
 //Checked
-productRoutes.get(
-  "/list",
-  isAuth,
-  productValidations.listProduct,
-  validationErrorHandler,
-  listProduct,
-);
-
-//Checked
 productRoutes.post(
   "/remove/:id",
   isAuthAdmin,
   productValidations.removeProduct,
   validationErrorHandler,
   removeProduct,
-);
-
-//Checked
-productRoutes.get(
-  "/:id",
-  productValidations.getProductById,
-  validationErrorHandler,
-  getProductById,
 );
 
 //Checked
@@ -74,6 +57,7 @@ productRoutes.put(
   updateProduct,
 );
 
+
 //Checked
 productRoutes.put(
   "/update-stock/:id",
@@ -82,5 +66,22 @@ productRoutes.put(
   validationErrorHandler,
   updateStock,
 );
+
+//Checked
+productRoutes.get(
+  "/list",
+  productValidations.listProduct,
+  validationErrorHandler,
+  listProduct,
+);
+
+//Checked
+productRoutes.get(
+  "/:id",
+  productValidations.getProductById,
+  validationErrorHandler,
+  getProductById,
+);
+
 
 export default productRoutes;
