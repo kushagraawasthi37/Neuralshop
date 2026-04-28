@@ -6,8 +6,8 @@ import {
   getProductByIdService,
   updateProductService,
   updateStockService,
+  browseProductsService,
 } from "./product.service.js";
-
 
 //Checked
 export const addProduct = async (req, res) => {
@@ -98,7 +98,6 @@ export const getProductById = async (req, res) => {
   }
 };
 
-
 //Checked
 export const updateProduct = async (req, res) => {
   try {
@@ -132,7 +131,6 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-
 //Checked
 export const updateStock = async (req, res) => {
   try {
@@ -154,6 +152,20 @@ export const updateStock = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: error.message || "Stock update failed",
+    });
+  }
+};
+
+//Optimized browse endpoint for home page pagination
+export const browseProducts = async (req, res) => {
+  try {
+    const { skip = 0, limit = 12 } = req.query;
+    const result = await browseProductsService(skip, limit);
+    const token = req.token || "";
+    return res.status(200).json({ ...result, token });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || "Failed to fetch products",
     });
   }
 };

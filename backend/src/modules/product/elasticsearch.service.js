@@ -173,10 +173,16 @@ export const searchProducts = async (
         body.sort.push({ price: { order: "asc" } });
       } else if (sort === "price_desc") {
         body.sort.push({ price: { order: "desc" } });
-      } else if (sort === "newest") {
+      } else if (sort === "newest" || sort === "createdAt_desc") {
         body.sort.push({ createdAt: { order: "desc" } });
-      } else if (sort === "rating") {
+      } else if (sort === "createdAt_asc") {
+        body.sort.push({ createdAt: { order: "asc" } });
+      } else if (sort === "rating" || sort === "rating_desc") {
         body.sort.push({ rating: { order: "desc" } });
+      } else if (sort === "name_asc") {
+        body.sort.push({ name: { order: "asc" } });
+      } else if (sort === "name_desc") {
+        body.sort.push({ name: { order: "desc" } });
       }
     } else {
       body.sort.push({ _score: { order: "desc" } });

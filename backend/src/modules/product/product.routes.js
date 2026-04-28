@@ -7,6 +7,7 @@ import {
   getProductById,
   updateProduct,
   updateStock,
+  browseProducts,
 } from "./product.controller.js";
 import upload from "../../middlewares/multer.middleware.js";
 import isAuth, { isAuthAdmin } from "../../middlewares/auth.middleware.js";
@@ -57,7 +58,6 @@ productRoutes.put(
   updateProduct,
 );
 
-
 //Checked
 productRoutes.put(
   "/update-stock/:id",
@@ -65,6 +65,14 @@ productRoutes.put(
   productValidations.updateStock,
   validationErrorHandler,
   updateStock,
+);
+
+//Optimized browse endpoint for home page pagination
+productRoutes.get(
+  "/browse/all",
+  productValidations.browseProducts,
+  validationErrorHandler,
+  browseProducts,
 );
 
 //Checked
@@ -82,6 +90,5 @@ productRoutes.get(
   validationErrorHandler,
   getProductById,
 );
-
 
 export default productRoutes;

@@ -212,6 +212,33 @@ export const productValidations = {
       .withMessage(
         "Sort must be one of: price_asc, price_desc, newest, rating",
       ),
+
+    query("sortBy")
+      .optional()
+      .isIn(["price", "createdAt", "rating", "name"])
+      .withMessage("sortBy must be one of: price, createdAt, rating, name"),
+
+    query("order")
+      .optional()
+      .isIn(["asc", "desc"])
+      .withMessage("Order must be asc or desc"),
+
+    query("skip")
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage("Skip must be a non-negative integer"),
+  ],
+
+  browseProducts: [
+    query("skip")
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage("Skip must be a non-negative integer"),
+
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("Limit must be between 1 and 100"),
   ],
 
   getProductById: [
