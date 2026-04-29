@@ -11,6 +11,7 @@ import {
   verifyAdminEmail,
   requestPasswordReset,
   resetPassword,
+  verifyResetOtp,
   resendOtp,
 } from "./auth.controller.js";
 import validationErrorHandler from "../../middlewares/validation.middleware.js";
@@ -47,7 +48,6 @@ authRoutes.post(
   adminLogin,
 );
 
-
 //Checked
 authRoutes.post(
   "/verify-email",
@@ -65,7 +65,6 @@ authRoutes.post(
 
 authRoutes.post("/resend-otp", resendOtp);
 
-
 authRoutes.post(
   "/request-password-reset",
   authValidations.requestPasswordReset,
@@ -79,6 +78,8 @@ authRoutes.post(
   validationErrorHandler,
   resetPassword,
 );
+
+authRoutes.post("/verify-reset-otp", verifyResetOtp);
 
 authRoutes.post(
   "/googlelogin",

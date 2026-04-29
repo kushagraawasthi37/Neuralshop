@@ -177,13 +177,6 @@ export const resetPasswordService = async (email, otp, newPassword, role) => {
     if (role === "user") {
       model = User;
     }
-    await verifyOTP({
-      email,
-      otp,
-      type: OTP_TYPES.RESET,
-      role,
-      model,
-    });
 
     if (newPassword.length < 8) {
       throw new Error("Password must be at least 8 characters");
@@ -242,6 +235,17 @@ export const getCurrentAdminService = async (email) => {
       throw new Error("Admin not found");
     }
     return admin;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const verifyResetOtpService = async (email, otp, role) => {
+  try {
+    let model = role === "admin" ? Admin : User;
+
+    await verifyOTP({ email, otp, type: OTP_TYPES.RESET, role, model });
+    return { message: "OTP verified successfully" };
   } catch (error) {
     throw error;
   }

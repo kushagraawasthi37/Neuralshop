@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralShop — Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0d0c0b;--ink2:#1a1916;--ink3:#252320;--ink4:#181714;
+  --gold:#c9a96e;--gold2:#a07840;--gold-pale:#e8d5b0;
+  --bronze:#8b6340;--champagne:#f0e6d0;--moss:#4a5c47;
+  --border-gold:rgba(201,169,110,0.18);
+  --border-hover:rgba(201,169,110,0.44);
+  --text-muted:rgba(240,230,208,0.36);
+  --text-mid:rgba(240,230,208,0.55);
+  --glass:rgba(37,35,32,0.96);
+  --teal:rgba(42,74,71,1);
+  --teal-glow:rgba(42,74,71,0.25);
+  --red-dim:rgba(180,80,80,0.75);
+}
+
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{font-family:'DM Sans',sans-serif;background:#0d0c0b;color:var(--champagne);line-height:1.6;overflow-x:hidden;cursor:none}
+
+/* ─── CURSOR ─── */
+#cursor{position:fixed;width:7px;height:7px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:transform 0.08s}
+#cursor-ring{position:fixed;width:30px;height:30px;border:1px solid rgba(201,169,110,0.35);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:width 0.35s ease,height 0.35s ease,opacity 0.3s}
+body:has(button:hover) #cursor-ring,body:has(a:hover) #cursor-ring,body:has(.clickable:hover) #cursor-ring{width:50px;height:50px;border-color:rgba(201,169,110,0.6)}
+
+/* ─── NOISE ─── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:0.5;mix-blend-mode:overlay}
+
+/* ─── ORBS ─── */
+.orb{position:fixed;border-radius:50%;pointer-events:none;filter:blur(140px);animation:floatOrb 20s ease-in-out infinite}
+.o1{width:560px;height:560px;background:var(--gold);opacity:0.04;top:-180px;right:-120px}
+.o2{width:380px;height:380px;background:#4a5c47;opacity:0.055;bottom:-60px;left:-80px;animation-delay:-9s}
+.o3{width:220px;height:220px;background:#8b6340;opacity:0.035;top:55%;left:50%;animation-delay:-16s}
+@keyframes floatOrb{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-55px) scale(1.07)}}
+
+/* ─── GRID ─── */
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(201,169,110,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(201,169,110,0.022) 1px,transparent 1px);background-size:80px 80px;animation:gridScroll 38s linear infinite;pointer-events:none}
+@keyframes gridScroll{to{background-position:0 80px}}
+
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:20px 52px;transition:all 0.5s cubic-bezier(0.23,1,0.32,1)}
+nav.scrolled{background:rgba(13,12,11,0.95);backdrop-filter:blur(28px);border-bottom:1px solid var(--border-gold);padding:13px 52px}
+.logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;color:var(--champagne);letter-spacing:0.04em;text-decoration:none}
+.logo em{font-style:normal;color:var(--gold)}
+.nav-pills{display:flex;gap:4px}
+.nav-pill{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);background:none;border:1px solid transparent;padding:7px 16px;cursor:none;font-family:'DM Sans',sans-serif;transition:all 0.3s}
+.nav-pill:hover{color:var(--champagne);border-color:var(--border-gold)}
+.nav-pill.active{color:var(--gold);border-color:var(--border-gold);background:rgba(201,169,110,0.05)}
+
+/* ─── MARQUEE ─── */
+.marquee-strip{border-top:1px solid var(--border-gold);border-bottom:1px solid var(--border-gold);overflow:hidden;padding:9px 0;background:rgba(201,169,110,0.012);position:fixed;top:58px;left:0;right:0;z-index:499}
+.marquee-inner{display:flex;animation:marquee 32s linear infinite;width:max-content}
+.marquee-item{font-size:9px;letter-spacing:0.26em;text-transform:uppercase;color:rgba(201,169,110,0.26);padding:0 26px;border-right:1px solid var(--border-gold);white-space:nowrap}
+@keyframes marquee{to{transform:translateX(-50%)}}
+
+/* ─── PAGE SHELL ─── */
+.page{display:none;min-height:100vh;padding-top:96px;animation:pageIn 0.65s cubic-bezier(0.23,1,0.32,1) both}
+.page.active{display:block}
+@keyframes pageIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.container{max-width:1320px;margin:0 auto;padding:0 52px}
+
+/* ─── PAGE HEADER ─── */
+.pg-header{padding:52px 0 44px;display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--border-gold);margin-bottom:52px}
+.pg-eyebrow{font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pg-eyebrow::before{content:'';width:26px;height:1px;background:var(--gold)}
+.pg-title{font-family:'Cormorant Garamond',serif;font-size:clamp(34px,4.5vw,58px);font-weight:300;color:var(--champagne);line-height:1.04}
+.pg-title em{font-style:italic;color:var(--gold)}
+
+/* ─── SCROLL REVEAL ─── */
+.sr{opacity:0;transform:translateY(28px);transition:opacity 0.75s cubic-bezier(0.23,1,0.32,1),transform 0.75s cubic-bezier(0.23,1,0.32,1)}
+.sr.v{opacity:1;transform:none}
+.d1{transition-delay:0.08s}.d2{transition-delay:0.16s}.d3{transition-delay:0.24s}.d4{transition-delay:0.32s}.d5{transition-delay:0.40s}
+
+/* ─── SHARED COMPONENTS ─── */
+.status-badge{display:inline-block;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;padding:3px 10px;font-weight:500}
+.sb-pending{background:rgba(139,99,64,0.2);border:1px solid rgba(139,99,64,0.4);color:rgba(201,160,100,0.9)}
+.sb-processing{background:rgba(42,74,71,0.2);border:1px solid rgba(42,74,71,0.5);color:rgba(100,180,170,0.85)}
+.sb-shipped{background:rgba(74,92,71,0.2);border:1px solid rgba(74,92,71,0.4);color:rgba(138,173,135,0.9)}
+.sb-delivered{background:rgba(60,90,60,0.2);border:1px solid rgba(80,130,80,0.35);color:rgba(140,200,140,0.85)}
+.sb-cancelled{background:rgba(100,50,50,0.2);border:1px solid rgba(140,70,70,0.35);color:rgba(190,110,110,0.8)}
+.sb-requested{background:rgba(139,99,64,0.18);border:1px solid rgba(139,99,64,0.35);color:rgba(201,160,100,0.85)}
+.sb-approved{background:rgba(42,74,71,0.2);border:1px solid rgba(42,74,71,0.45);color:rgba(100,180,170,0.85)}
+.sb-refunded{background:rgba(60,90,60,0.2);border:1px solid rgba(80,130,80,0.35);color:rgba(140,200,140,0.85)}
+.sb-rejected{background:rgba(100,50,50,0.2);border:1px solid rgba(140,70,70,0.35);color:rgba(190,110,110,0.8)}
+
+.btn-ghost-sm{padding:8px 18px;background:none;border:1px solid var(--border-gold);color:var(--text-muted);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:none;font-family:'DM Sans',sans-serif;transition:all 0.3s}
+.btn-ghost-sm:hover{border-color:var(--border-hover);color:var(--champagne)}
+.btn-gold-sm{padding:8px 18px;background:var(--gold);border:none;color:var(--ink);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:none;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.3s;position:relative;overflow:hidden}
+.btn-gold-sm::before{content:'';position:absolute;inset:0;background:var(--champagne);transform:translateX(-101%);transition:transform 0.4s cubic-bezier(0.23,1,0.32,1)}
+.btn-gold-sm:hover::before{transform:translateX(0)}
+.btn-gold-sm span{position:relative;z-index:1}
+.btn-danger-sm{padding:8px 18px;background:none;border:1px solid rgba(140,70,70,0.35);color:rgba(190,110,110,0.75);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:none;font-family:'DM Sans',sans-serif;transition:all 0.3s}
+.btn-danger-sm:hover{border-color:rgba(190,110,110,0.55);color:rgba(220,130,130,0.9)}
+
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,110,0.12),transparent);margin:52px 0}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:28px;right:28px;z-index:9999;background:var(--ink2);border:1px solid var(--border-gold);padding:14px 22px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--champagne);transform:translateY(70px);opacity:0;transition:all 0.5s cubic-bezier(0.23,1,0.32,1);min-width:240px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-dot{width:5px;height:5px;background:var(--gold);border-radius:50%;flex-shrink:0;animation:tdot 1.4s ease-in-out infinite}
+@keyframes tdot{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ─── MODAL ─── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(13,12,11,0.88);backdrop-filter:blur(12px);z-index:800;display:none;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex;animation:fadeIn 0.3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--ink2);border:1px solid var(--border-gold);padding:40px;min-width:480px;max-width:560px;animation:modalIn 0.4s cubic-bezier(0.23,1,0.32,1)}
+@keyframes modalIn{from{opacity:0;transform:translateY(32px) scale(0.97)}to{opacity:1;transform:none}}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:var(--champagne);margin-bottom:6px}
+.modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border-gold)}
+.modal-actions{display:flex;gap:12px;margin-top:28px;padding-top:24px;border-top:1px solid var(--border-gold)}
+.modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border:1px solid var(--border-gold);background:none;color:var(--text-muted);cursor:none;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.3s}
+.modal-close:hover{border-color:var(--border-hover);color:var(--champagne)}
+.modal-wrap{position:relative}
+
+/* ─────────────────────────────────────────
+   ORDER HISTORY
+───────────────────────────────────────── */
+/* Filter Bar */
+.filter-bar{display:flex;align-items:center;gap:0;margin-bottom:36px;overflow-x:auto;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-chip{padding:10px 22px;border:1px solid var(--border-gold);background:none;color:var(--text-muted);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;cursor:none;font-family:'DM Sans',sans-serif;transition:all 0.3s;border-right:none;white-space:nowrap}
+.filter-chip:last-child{border-right:1px solid var(--border-gold)}
+.filter-chip.active{background:rgba(201,169,110,0.08);color:var(--gold);border-color:rgba(201,169,110,0.35)}
+.filter-chip:hover:not(.active){color:var(--champagne);background:rgba(255,255,255,0.02)}
+
+/* Search Row */
+.search-sort-row{display:flex;gap:16px;margin-bottom:32px;align-items:center}
+.search-wrap{flex:1;position:relative}
+.search-wrap input{width:100%;padding:12px 18px 12px 42px;background:rgba(255,255,255,0.02);border:1px solid var(--border-gold);color:var(--champagne);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color 0.3s}
+.search-wrap input:focus{border-color:rgba(201,169,110,0.5)}
+.search-wrap input::placeholder{color:rgba(240,230,208,0.18);font-size:11px;letter-spacing:0.1em;text-transform:uppercase}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:0.3}
+.sort-select{padding:12px 18px;background:rgba(255,255,255,0.02);border:1px solid var(--border-gold);color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.1em;outline:none;cursor:none;min-width:180px;-webkit-appearance:none}
+
+/* Order Cards */
+.order-card{background:var(--ink2);border:1px solid var(--border-gold);margin-bottom:2px;transition:all 0.4s cubic-bezier(0.23,1,0.32,1);position:relative;overflow:hidden}
+.order-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);transform:scaleY(0);transform-origin:bottom;transition:transform 0.4s cubic-bezier(0.23,1,0.32,1)}
+.order-card:hover{border-color:var(--border-hover);transform:translateX(3px)}
+.order-card:hover::before{transform:scaleY(1)}
+.order-card-header{display:flex;align-items:center;justify-content:space-between;padding:22px 28px;cursor:none}
+.order-card-left{display:flex;align-items:center;gap:24px}
+.order-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);letter-spacing:0.06em}
+.order-date{font-size:11px;color:var(--text-muted)}
+.order-amount{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--champagne)}
+.order-card-right{display:flex;align-items:center;gap:16px}
+.expand-btn{width:28px;height:28px;border:1px solid var(--border-gold);background:none;display:flex;align-items:center;justify-content:center;cursor:none;transition:all 0.3s;flex-shrink:0}
+.expand-btn svg{transition:transform 0.4s cubic-bezier(0.23,1,0.32,1)}
+.expand-btn.open svg{transform:rotate(180deg)}
+.expand-btn:hover{border-color:var(--border-hover)}
+
+/* Expanded body */
+.order-card-body{max-height:0;overflow:hidden;transition:max-height 0.55s cubic-bezier(0.23,1,0.32,1)}
+.order-card-body.open{max-height:600px}
+.order-body-inner{padding:0 28px 24px;border-top:1px solid rgba(201,169,110,0.08)}
+.order-items-row{display:flex;gap:16px;padding:20px 0;overflow-x:auto;scrollbar-width:none}
+.order-item-thumb{flex-shrink:0;width:60px;text-align:center}
+.order-item-thumb-img{width:60px;height:76px;background:var(--ink3);border:1px solid var(--border-gold);display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.order-item-thumb-name{font-size:10px;color:var(--text-muted);line-height:1.4}
+.order-actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:16px;border-top:1px solid rgba(201,169,110,0.08)}
+
+/* ─────────────────────────────────────────
+   USER PROFILE
+───────────────────────────────────────── */
+.profile-layout{display:grid;grid-template-columns:280px 1fr;gap:40px;padding-bottom:100px;align-items:start}
+
+/* Profile Card */
+.profile-card{background:var(--ink2);border:1px solid var(--border-gold);padding:32px;position:sticky;top:100px}
+.avatar-wrap{width:88px;height:88px;border:1px solid var(--border-gold);margin:0 auto 20px;position:relative;cursor:none;overflow:hidden}
+.avatar-inner{width:100%;height:100%;background:var(--ink3);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:var(--gold);transition:opacity 0.3s}
+.avatar-overlay{position:absolute;inset:0;background:rgba(13,12,11,0.7);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--champagne)}
+.avatar-wrap:hover .avatar-inner{opacity:0.4}
+.avatar-wrap:hover .avatar-overlay{opacity:1}
+.profile-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--champagne);text-align:center;margin-bottom:4px}
+.profile-email{font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:20px}
+.profile-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:24px}
+.profile-stat{background:rgba(201,169,110,0.03);border:1px solid var(--border-gold);padding:12px;text-align:center}
+.profile-stat-num{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold)}
+.profile-stat-label{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-muted)}
+.profile-nav{display:flex;flex-direction:column;gap:0}
+.profile-nav-item{padding:13px 16px;border:1px solid var(--border-gold);border-bottom:none;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-muted);cursor:none;transition:all 0.3s;letter-spacing:0.04em}
+.profile-nav-item:last-child{border-bottom:1px solid var(--border-gold)}
+.profile-nav-item:hover{color:var(--champagne);background:rgba(255,255,255,0.02)}
+.profile-nav-item.active{color:var(--gold);background:rgba(201,169,110,0.05);border-left-color:var(--gold);border-left-width:2px}
+.profile-nav-item svg{opacity:0.4;flex-shrink:0}
+.profile-nav-item.active svg{opacity:0.9}
+
+/* Profile Tabs */
+.profile-tab-panel{display:none}
+.profile-tab-panel.active{display:block;animation:panelIn 0.5s cubic-bezier(0.23,1,0.32,1) both}
+@keyframes panelIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+
+/* Forms */
+.form-section{background:var(--ink2);border:1px solid var(--border-gold);padding:32px;margin-bottom:16px}
+.form-section-head{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--champagne);margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border-gold)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form-grid.full{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:7px}
+.form-label{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted)}
+.form-input{padding:13px 16px;background:rgba(255,255,255,0.018);border:1px solid var(--border-gold);color:var(--champagne);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:all 0.3s;width:100%}
+.form-input:focus{border-color:rgba(201,169,110,0.55);background:rgba(201,169,110,0.025)}
+.form-input::placeholder{color:rgba(240,230,208,0.14)}
+.form-input:read-only{opacity:0.5;cursor:default}
+.form-actions-row{display:flex;gap:12px;margin-top:24px}
+
+/* Strength Bar */
+.strength-wrap{margin-top:6px}
+.strength-bar{height:2px;background:rgba(201,169,110,0.1);position:relative;margin-bottom:6px}
+.strength-fill{height:100%;transition:width 0.4s cubic-bezier(0.23,1,0.32,1),background 0.4s}
+.strength-label{font-size:10px;color:var(--text-muted);letter-spacing:0.06em}
+
+/* Address Book */
+.address-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.addr-card{padding:20px;border:1px solid var(--border-gold);background:var(--ink3);position:relative;transition:all 0.4s cubic-bezier(0.23,1,0.32,1)}
+.addr-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}
+.addr-default-tag{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;padding:3px 8px;background:rgba(201,169,110,0.1);border:1px solid var(--border-gold);color:var(--gold);display:inline-block;margin-bottom:10px}
+.addr-name{font-size:13px;color:var(--champagne);margin-bottom:6px;font-weight:500}
+.addr-text{font-size:12px;color:var(--text-muted);line-height:1.8}
+.addr-actions{display:flex;gap:8px;margin-top:14px}
+.addr-add-btn{padding:18px;border:1px dashed rgba(201,169,110,0.2);background:none;color:var(--text-muted);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;cursor:none;font-family:'DM Sans',sans-serif;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.3s}
+.addr-add-btn:hover{border-color:var(--border-hover);color:var(--champagne)}
+
+/* ─────────────────────────────────────────
+   WISHLIST
+───────────────────────────────────────── */
+.wishlist-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px}
+.wishlist-count{font-size:12px;color:var(--text-muted);letter-spacing:0.08em}
+.wishlist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:2px;margin-bottom:80px}
+
+.wish-card{background:var(--ink2);border:1px solid var(--border-gold);position:relative;overflow:hidden;transition:all 0.45s cubic-bezier(0.23,1,0.32,1);cursor:none}
+.wish-card:hover{border-color:var(--border-hover);transform:translateY(-5px)}
+.wish-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,169,110,0.04),transparent 60%);opacity:0;transition:opacity 0.4s}
+.wish-card:hover::after{opacity:1}
+
+.wish-img{width:100%;aspect-ratio:3/4;background:var(--ink3);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.wish-img-inner{transition:transform 0.6s cubic-bezier(0.23,1,0.32,1)}
+.wish-card:hover .wish-img-inner{transform:scale(1.05)}
+.wish-badge{position:absolute;top:14px;left:14px;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;padding:4px 10px;background:var(--gold);color:var(--ink);font-weight:500}
+.wish-remove{position:absolute;top:12px;right:12px;width:30px;height:30px;border:1px solid rgba(201,169,110,0.25);background:rgba(13,12,11,0.7);display:flex;align-items:center;justify-content:center;cursor:none;opacity:0;transition:all 0.3s;backdrop-filter:blur(8px)}
+.wish-card:hover .wish-remove{opacity:1}
+.wish-remove:hover{border-color:rgba(190,110,110,0.5);background:rgba(100,40,40,0.5)}
+
+.wish-body{padding:20px}
+.wish-brand{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+.wish-name{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:300;color:var(--champagne);margin-bottom:10px;line-height:1.2}
+.wish-price-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.wish-price{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold)}
+.wish-stock{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:3px 8px}
+.ws-in{border:1px solid rgba(74,92,71,0.4);color:rgba(138,173,135,0.85)}
+.ws-low{border:1px solid rgba(139,99,64,0.4);color:rgba(201,160,100,0.85)}
+
+.wish-atc{width:100%;padding:13px;background:var(--gold);border:none;color:var(--ink);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;cursor:none;font-family:'DM Sans',sans-serif;position:relative;overflow:hidden;transition:all 0.3s}
+.wish-atc::before{content:'';position:absolute;inset:0;background:var(--champagne);transform:translateX(-101%);transition:transform 0.45s cubic-bezier(0.23,1,0.32,1)}
+.wish-atc:hover::before{transform:translateX(0)}
+.wish-atc span{position:relative;z-index:1}
+
+/* Empty wishlist */
+.empty-state{padding:100px 40px;text-align:center;border:1px dashed rgba(201,169,110,0.15)}
+.empty-icon{width:64px;height:64px;border:1px solid var(--border-gold);display:flex;align-items:center;justify-content:center;margin:0 auto 24px}
+.empty-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--champagne);margin-bottom:10px}
+.empty-sub{font-size:13px;color:var(--text-muted);max-width:320px;margin:0 auto 28px}
+
+/* ─────────────────────────────────────────
+   RETURNS & REFUNDS
+───────────────────────────────────────── */
+/* Stats row */
+.returns-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:40px}
+.rstat{background:var(--ink2);border:1px solid var(--border-gold);padding:20px 16px;text-align:center;transition:all 0.4s}
+.rstat:hover{border-color:var(--border-hover);transform:translateY(-2px)}
+.rstat-num{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--gold);line-height:1}
+.rstat-label{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-top:6px}
+
+/* Return Cards */
+.return-card{background:var(--ink2);border:1px solid var(--border-gold);margin-bottom:2px;transition:all 0.4s cubic-bezier(0.23,1,0.32,1);position:relative;overflow:hidden}
+.return-card:hover{border-color:var(--border-hover)}
+.return-card-inner{padding:24px 28px}
+.return-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.return-ref{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.06em;margin-bottom:4px}
+.return-date{font-size:11px;color:var(--text-muted)}
+.return-card-body{display:flex;gap:20px;align-items:center}
+.return-thumb{width:54px;height:68px;background:var(--ink3);border:1px solid var(--border-gold);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.return-info{flex:1}
+.return-product{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:var(--champagne)}
+.return-reason{font-size:12px;color:var(--text-muted);margin-top:4px}
+.return-amount-wrap{text-align:right;flex-shrink:0}
+.return-amount{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold)}
+.return-amount-label{font-size:10px;color:var(--text-muted);letter-spacing:0.08em}
+.return-card-footer{padding:14px 28px;border-top:1px solid rgba(201,169,110,0.08);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.01)}
+.return-timeline-mini{display:flex;align-items:center;gap:0}
+.rtm-step{display:flex;align-items:center;gap:0}
+.rtm-dot{width:20px;height:20px;border:1px solid var(--border-gold);display:flex;align-items:center;justify-content:center}
+.rtm-dot.done{background:rgba(201,169,110,0.15);border-color:var(--gold)}
+.rtm-dot.active{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,169,110,0.08)}
+.rtm-dot-inner{width:6px;height:6px;background:var(--gold);border-radius:50%;opacity:0}
+.rtm-dot.active .rtm-dot-inner{opacity:1;animation:tdot 1.6s ease-in-out infinite}
+.rtm-dot.done .rtm-dot-inner{opacity:1;animation:none}
+.rtm-line{width:32px;height:1px;background:var(--border-gold)}
+.rtm-line.done{background:rgba(201,169,110,0.35)}
+.rtm-label{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;text-align:center}
+.rtm-step-wrap{display:flex;flex-direction:column;align-items:center}
+
+/* Admin note */
+.admin-note{padding:12px 16px;border:1px solid rgba(42,74,71,0.3);background:rgba(42,74,71,0.08);font-size:12px;color:rgba(100,180,170,0.8);margin-top:12px;display:flex;gap:10px;align-items:flex-start}
+
+/* Form elements */
+.select-input{padding:13px 16px;background:rgba(255,255,255,0.018);border:1px solid var(--border-gold);color:var(--champagne);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%;-webkit-appearance:none;cursor:none;transition:border-color 0.3s}
+.select-input:focus{border-color:rgba(201,169,110,0.5)}
+.textarea-input{padding:13px 16px;background:rgba(255,255,255,0.018);border:1px solid var(--border-gold);color:var(--champagne);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%;resize:none;transition:border-color 0.3s;line-height:1.6}
+.textarea-input:focus{border-color:rgba(201,169,110,0.5)}
+.textarea-input::placeholder{color:rgba(240,230,208,0.14)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:var(--ink)}
+::-webkit-scrollbar-thumb{background:rgba(201,169,110,0.18)}
+
+@media(max-width:960px){
+  nav{padding:14px 24px}
+  nav.scrolled{padding:10px 24px}
+  .container{padding:0 24px}
+  .profile-layout{grid-template-columns:1fr}
+  .returns-stats{grid-template-columns:repeat(3,1fr)}
+  .wishlist-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  .address-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+<div class="grid-bg"></div>
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg">Done</span></div>
+
+<!-- CANCEL MODAL -->
+<div class="modal-backdrop" id="cancelModal">
+  <div class="modal-wrap">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('cancelModal')">✕</button>
+      <div class="modal-title">Cancel Order</div>
+      <div class="modal-sub">NS-2026-0301-4421 · Phantom Chronograph + 2 items</div>
+      <div class="form-group">
+        <label class="form-label">Reason for Cancellation</label>
+        <select class="select-input">
+          <option>Changed my mind</option>
+          <option>Found a better price</option>
+          <option>Ordered by mistake</option>
+          <option>Delivery time too long</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-danger-sm" onclick="closeModal('cancelModal');showToast('Order cancelled successfully')">Confirm Cancel</button>
+        <button class="btn-ghost-sm" onclick="closeModal('cancelModal')">Keep Order</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RETURN MODAL -->
+<div class="modal-backdrop" id="returnModal">
+  <div class="modal-wrap">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('returnModal')">✕</button>
+      <div class="modal-title">Request Return</div>
+      <div class="modal-sub">Select item and describe the issue</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-group">
+          <label class="form-label">Item</label>
+          <select class="select-input">
+            <option>Phantom Chronograph — Rose Gold 42mm</option>
+            <option>Obsidian Messenger — Midnight Black M</option>
+            <option>Accord No. 17 — 100ml EDP</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Return Reason</label>
+          <select class="select-input">
+            <option>Defective / Damaged</option>
+            <option>Wrong item received</option>
+            <option>Not as described</option>
+            <option>Size / Fit issue</option>
+            <option>Changed my mind</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Additional Details</label>
+          <textarea class="textarea-input" rows="3" placeholder="Describe the issue in detail…"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-gold-sm" onclick="closeModal('returnModal');showToast('Return request submitted')"><span>Submit Request</span></button>
+        <button class="btn-ghost-sm" onclick="closeModal('returnModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADDRESS MODAL -->
+<div class="modal-backdrop" id="addrModal">
+  <div class="modal-wrap">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('addrModal')">✕</button>
+      <div class="modal-title">Add Address</div>
+      <div class="modal-sub">New delivery address</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="form-group"><label class="form-label">First Name</label><input class="form-input" placeholder="Aryan"></div>
+          <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" placeholder="Mehta"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Street</label><input class="form-input" placeholder="42, Crescent Park"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="form-group"><label class="form-label">City</label><input class="form-input" placeholder="Mumbai"></div>
+          <div class="form-group"><label class="form-label">Pincode</label><input class="form-input" placeholder="400 050"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-input" placeholder="+91 98765 43210"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-gold-sm" onclick="closeModal('addrModal');showToast('Address saved')"><span>Save Address</span></button>
+        <button class="btn-ghost-sm" onclick="closeModal('addrModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="logo" onclick="return false">Neural<em>·</em>Shop</a>
+  <div class="nav-pills">
+    <button class="nav-pill active" onclick="showPage('orders')">Orders</button>
+    <button class="nav-pill" onclick="showPage('profile')">Profile</button>
+    <button class="nav-pill" onclick="showPage('wishlist')">Wishlist</button>
+    <button class="nav-pill" onclick="showPage('returns')">Returns</button>
+  </div>
+</nav>
+
+<!-- MARQUEE -->
+<div class="marquee-strip">
+  <div class="marquee-inner">
+    <div class="marquee-item">Order History</div><div class="marquee-item">Profile Settings</div><div class="marquee-item">Wishlist</div><div class="marquee-item">Returns & Refunds</div><div class="marquee-item">30-Day Return Window</div><div class="marquee-item">Neural AI Commerce</div><div class="marquee-item">Free Express Shipping</div>
+    <div class="marquee-item">Order History</div><div class="marquee-item">Profile Settings</div><div class="marquee-item">Wishlist</div><div class="marquee-item">Returns & Refunds</div><div class="marquee-item">30-Day Return Window</div><div class="marquee-item">Neural AI Commerce</div><div class="marquee-item">Free Express Shipping</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: ORDER HISTORY
+══════════════════════════════════════════ -->
+<div class="page active" id="page-orders">
+<div class="container">
+  <div class="pg-header sr">
+    <div>
+      <div class="pg-eyebrow">Account</div>
+      <h1 class="pg-title">Order <em>History</em></h1>
+    </div>
+    <div style="text-align:right;font-size:12px;color:var(--text-muted)">12 orders · ₹18,42,600 lifetime</div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar sr d1">
+    <button class="filter-chip active" onclick="filterOrders(this,'all')">All Orders</button>
+    <button class="filter-chip" onclick="filterOrders(this,'pending')">Pending</button>
+    <button class="filter-chip" onclick="filterOrders(this,'processing')">Processing</button>
+    <button class="filter-chip" onclick="filterOrders(this,'shipped')">Shipped</button>
+    <button class="filter-chip" onclick="filterOrders(this,'delivered')">Delivered</button>
+    <button class="filter-chip" onclick="filterOrders(this,'cancelled')">Cancelled</button>
+  </div>
+
+  <!-- Search + Sort -->
+  <div class="search-sort-row sr d2">
+    <div class="search-wrap">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search by Order ID or Product">
+    </div>
+    <select class="sort-select">
+      <option>Newest First</option>
+      <option>Oldest First</option>
+      <option>Amount: High–Low</option>
+      <option>Amount: Low–High</option>
+    </select>
+  </div>
+
+  <!-- Order Cards -->
+  <div id="orderList">
+
+    <!-- Order 1: Delivered -->
+    <div class="order-card sr d1" data-status="delivered">
+      <div class="order-card-header" onclick="toggleOrder(this)">
+        <div class="order-card-left">
+          <div>
+            <div class="order-num">NS-2026-0428-8847</div>
+            <div class="order-date">28 Apr 2026 · 3 items</div>
+          </div>
+          <span class="status-badge sb-delivered">Delivered</span>
+        </div>
+        <div class="order-card-right">
+          <div class="order-amount">₹2,67,126</div>
+          <div class="expand-btn" id="eb1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.6)" stroke-width="1.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="order-card-body" id="ob1">
+        <div class="order-body-inner">
+          <div class="order-items-row">
+            <div class="order-item-thumb">
+              <div class="order-item-thumb-img"><svg width="20" height="20" viewBox="0 0 60 60" fill="none"><rect x="15" y="8" width="30" height="44" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/><circle cx="30" cy="42" r="4" stroke="rgba(201,169,110,0.4)" stroke-width="0.8"/></svg></div>
+              <div class="order-item-thumb-name">Phantom Chrono</div>
+            </div>
+            <div class="order-item-thumb">
+              <div class="order-item-thumb-img"><svg width="20" height="20" viewBox="0 0 60 60" fill="none"><rect x="12" y="16" width="36" height="28" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/><rect x="18" y="10" width="24" height="8" stroke="rgba(201,169,110,0.4)" stroke-width="0.8"/></svg></div>
+              <div class="order-item-thumb-name">Obsidian Bag</div>
+            </div>
+            <div class="order-item-thumb">
+              <div class="order-item-thumb-img"><svg width="20" height="20" viewBox="0 0 60 60" fill="none"><ellipse cx="30" cy="30" rx="14" ry="18" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/></svg></div>
+              <div class="order-item-thumb-name">Accord No.17</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:rgba(60,90,60,0.08);border:1px solid rgba(80,130,80,0.2)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(140,200,140,0.8)" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span style="font-size:12px;color:rgba(140,200,140,0.8)">Delivered on May 2, 2026 · All 3 items received</span>
+          </div>
+          <div class="order-actions">
+            <button class="btn-ghost-sm" onclick="showPage('tracking')">Track Order</button>
+            <button class="btn-ghost-sm" onclick="openModal('returnModal')">Return Items</button>
+            <button class="btn-ghost-sm" onclick="showToast('Invoice downloaded')">Download Invoice</button>
+            <button class="btn-gold-sm" onclick="showToast('Items added to cart')"><span>Buy Again</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order 2: Shipped -->
+    <div class="order-card sr d2" data-status="shipped">
+      <div class="order-card-header" onclick="toggleOrder(this)">
+        <div class="order-card-left">
+          <div>
+            <div class="order-num">NS-2026-0415-3390</div>
+            <div class="order-date">15 Apr 2026 · 1 item</div>
+          </div>
+          <span class="status-badge sb-shipped">Shipped</span>
+        </div>
+        <div class="order-card-right">
+          <div class="order-amount">₹84,500</div>
+          <div class="expand-btn" id="eb2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.6)" stroke-width="1.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="order-card-body" id="ob2">
+        <div class="order-body-inner">
+          <div class="order-items-row">
+            <div class="order-item-thumb">
+              <div class="order-item-thumb-img"><svg width="20" height="20" viewBox="0 0 60 60" fill="none"><rect x="10" y="12" width="40" height="36" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/><line x1="10" y1="22" x2="50" y2="22" stroke="rgba(201,169,110,0.3)" stroke-width="0.6"/></svg></div>
+              <div class="order-item-thumb-name">Velvet Oxford</div>
+            </div>
+          </div>
+          <div style="margin-bottom:16px;padding:12px 16px;background:rgba(74,92,71,0.1);border:1px solid rgba(74,92,71,0.25);font-size:12px;color:rgba(138,173,135,0.8)">
+            Tracking ID: DLVR5512443Y · Expected Apr 18, 2026
+          </div>
+          <div class="order-actions">
+            <button class="btn-ghost-sm" onclick="showPage('tracking')">Track Shipment</button>
+            <button class="btn-ghost-sm" onclick="showToast('Invoice downloaded')">Download Invoice</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order 3: Processing -->
+    <div class="order-card sr d3" data-status="processing">
+      <div class="order-card-header" onclick="toggleOrder(this)">
+        <div class="order-card-left">
+          <div>
+            <div class="order-num">NS-2026-0410-7741</div>
+            <div class="order-date">10 Apr 2026 · 2 items</div>
+          </div>
+          <span class="status-badge sb-processing">Processing</span>
+        </div>
+        <div class="order-card-right">
+          <div class="order-amount">₹1,12,000</div>
+          <div class="expand-btn" id="eb3">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.6)" stroke-width="1.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="order-card-body" id="ob3">
+        <div class="order-body-inner">
+          <div class="order-items-row">
+            <div class="order-item-thumb">
+              <div class="order-item-thumb-img"><svg width="20" height="20" viewBox="0 0 60 60" fill="none"><polygon points="30,8 52,42 8,42" stroke="rgba(201,169,110,0.5)" stroke-width="0.8" fill="none"/></svg></div>
+              <div class="order-item-thumb-name">Prism Diffuser</div>
+            </div>
+            <div class="order-item-thumb">
+              <div class="order-item-thumb-img"><svg width="20" height="20" viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="18" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/><circle cx="30" cy="30" r="8" stroke="rgba(201,169,110,0.3)" stroke-width="0.6"/></svg></div>
+              <div class="order-item-thumb-name">Orbit Speaker</div>
+            </div>
+          </div>
+          <div class="order-actions">
+            <button class="btn-danger-sm" onclick="openModal('cancelModal')">Cancel Order</button>
+            <button class="btn-ghost-sm" onclick="showToast('Invoice downloaded')">Download Invoice</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order 4: Pending -->
+    <div class="order-card sr d4" data-status="pending">
+      <div class="order-card-header" onclick="toggleOrder(this)">
+        <div class="order-card-left">
+          <div>
+            <div class="order-num">NS-2026-0301-4421</div>
+            <div class="order-date">1 Mar 2026 · 1 item</div>
+          </div>
+          <span class="status-badge sb-pending">Pending</span>
+        </div>
+        <div class="order-card-right">
+          <div class="order-amount">₹34,800</div>
+          <div class="expand-btn" id="eb4">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.6)" stroke-width="1.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="order-card-body" id="ob4">
+        <div class="order-body-inner">
+          <div class="order-items-row">
+            <div class="order-item-thumb">
+              <div class="order-item-thumb-img"><svg width="20" height="20" viewBox="0 0 60 60" fill="none"><rect x="18" y="10" width="24" height="40" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/><line x1="24" y1="18" x2="36" y2="18" stroke="rgba(201,169,110,0.3)" stroke-width="0.6"/></svg></div>
+              <div class="order-item-thumb-name">Neural Flask</div>
+            </div>
+          </div>
+          <div class="order-actions">
+            <button class="btn-danger-sm" onclick="openModal('cancelModal')">Cancel Order</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order 5: Cancelled -->
+    <div class="order-card sr d5" data-status="cancelled">
+      <div class="order-card-header" onclick="toggleOrder(this)">
+        <div class="order-card-left">
+          <div>
+            <div class="order-num">NS-2026-0218-1102</div>
+            <div class="order-date">18 Feb 2026 · 2 items</div>
+          </div>
+          <span class="status-badge sb-cancelled">Cancelled</span>
+        </div>
+        <div class="order-card-right">
+          <div class="order-amount" style="text-decoration:line-through;opacity:0.4;font-size:16px">₹56,200</div>
+          <div class="expand-btn" id="eb5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.6)" stroke-width="1.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="order-card-body" id="ob5">
+        <div class="order-body-inner">
+          <div style="padding:12px 16px;background:rgba(100,50,50,0.08);border:1px solid rgba(140,70,70,0.2);font-size:12px;color:rgba(190,110,110,0.8);margin-bottom:14px">
+            Cancelled on Feb 19, 2026 · Refund of ₹56,200 processed within 5–7 business days
+          </div>
+          <div class="order-actions">
+            <button class="btn-gold-sm" onclick="showToast('Items added to cart')"><span>Buy Again</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /orderList -->
+  <div style="height:80px"></div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: USER PROFILE
+══════════════════════════════════════════ -->
+<div class="page" id="page-profile">
+<div class="container">
+  <div class="pg-header sr">
+    <div>
+      <div class="pg-eyebrow">Account</div>
+      <h1 class="pg-title">Your <em>Profile</em></h1>
+    </div>
+  </div>
+
+  <div class="profile-layout">
+    <!-- Left: Profile Card -->
+    <div class="sr">
+      <div class="profile-card">
+        <div class="avatar-wrap clickable" onclick="showToast('Avatar upload — coming soon')">
+          <div class="avatar-inner">AM</div>
+          <div class="avatar-overlay">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+        </div>
+        <div class="profile-name">Aryan Mehta</div>
+        <div class="profile-email">aryan@gmail.com</div>
+        <div class="profile-stat-row">
+          <div class="profile-stat"><div class="profile-stat-num">12</div><div class="profile-stat-label">Orders</div></div>
+          <div class="profile-stat"><div class="profile-stat-num">5</div><div class="profile-stat-label">Wishlist</div></div>
+          <div class="profile-stat"><div class="profile-stat-num">3</div><div class="profile-stat-label">Reviews</div></div>
+          <div class="profile-stat"><div class="profile-stat-num">2</div><div class="profile-stat-label">Returns</div></div>
+        </div>
+        <div class="profile-nav">
+          <div class="profile-nav-item active clickable" onclick="showProfileTab('personal',this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Personal Info
+          </div>
+          <div class="profile-nav-item clickable" onclick="showProfileTab('addresses',this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Addresses
+          </div>
+          <div class="profile-nav-item clickable" onclick="showProfileTab('security',this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Security
+          </div>
+        </div>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-gold)">
+          <button class="btn-ghost-sm" style="width:100%;justify-content:center;display:flex" onclick="showToast('Signed out')">Sign Out</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Panels -->
+    <div>
+      <!-- Personal -->
+      <div class="profile-tab-panel active sr d1" id="tab-personal">
+        <div class="form-section">
+          <div class="form-section-head">Personal Information</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">First Name</label><input class="form-input" value="Aryan"></div>
+            <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" value="Mehta"></div>
+          </div>
+          <div class="form-grid full">
+            <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" value="aryan@gmail.com" readonly></div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Phone</label><input class="form-input" value="+91 98765 43210"></div>
+            <div class="form-group"><label class="form-label">Date of Birth</label><input class="form-input" type="date" value="1996-04-12"></div>
+          </div>
+          <div class="form-grid full">
+            <div class="form-group"><label class="form-label">Gender</label>
+              <select class="select-input" style="width:100%"><option>Male</option><option>Female</option><option>Prefer not to say</option></select>
+            </div>
+          </div>
+          <div class="form-actions-row">
+            <button class="btn-gold-sm" onclick="showToast('Profile updated successfully')"><span>Save Changes</span></button>
+            <button class="btn-ghost-sm" onclick="showToast('Changes discarded')">Discard</button>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-head">Preferences</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(201,169,110,0.08)">
+              <div>
+                <div style="font-size:13px;color:var(--champagne)">Email Notifications</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Order updates, promotions, newsletters</div>
+              </div>
+              <div class="toggle" onclick="toggleSwitch(this)" style="width:40px;height:22px;border:1px solid var(--gold);background:rgba(201,169,110,0.15);border-radius:11px;position:relative;cursor:none;transition:all 0.3s">
+                <div style="position:absolute;top:3px;left:3px;width:14px;height:14px;background:var(--gold);border-radius:50%;transition:transform 0.3s;transform:translateX(18px)"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(201,169,110,0.08)">
+              <div>
+                <div style="font-size:13px;color:var(--champagne)">Neural AI Recommendations</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Personalised suggestions based on your taste</div>
+              </div>
+              <div class="toggle" onclick="toggleSwitch(this)" style="width:40px;height:22px;border:1px solid var(--gold);background:rgba(201,169,110,0.15);border-radius:11px;position:relative;cursor:none;transition:all 0.3s">
+                <div style="position:absolute;top:3px;left:3px;width:14px;height:14px;background:var(--gold);border-radius:50%;transition:transform 0.3s;transform:translateX(18px)"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
+              <div>
+                <div style="font-size:13px;color:var(--champagne)">SMS Updates</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Delivery alerts via text message</div>
+              </div>
+              <div class="toggle" onclick="toggleSwitch(this)" style="width:40px;height:22px;border:1px solid var(--border-gold);background:rgba(255,255,255,0.02);border-radius:11px;position:relative;cursor:none;transition:all 0.3s">
+                <div style="position:absolute;top:3px;left:3px;width:14px;height:14px;background:rgba(201,169,110,0.4);border-radius:50%;transition:transform 0.3s"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Addresses -->
+      <div class="profile-tab-panel" id="tab-addresses">
+        <div class="form-section">
+          <div class="form-section-head">Address Book</div>
+          <div class="address-grid">
+            <div class="addr-card">
+              <div class="addr-default-tag">Default</div>
+              <div class="addr-name">Aryan Mehta · Home</div>
+              <div class="addr-text">42, Crescent Park<br>Bandra West, Mumbai<br>Maharashtra — 400 050<br>+91 98765 43210</div>
+              <div class="addr-actions">
+                <button class="btn-ghost-sm" onclick="showToast('Edit address')">Edit</button>
+                <button class="btn-ghost-sm" onclick="showToast('Set as default')">Set Default</button>
+              </div>
+            </div>
+            <div class="addr-card">
+              <div class="addr-name">Neural HQ · Office</div>
+              <div class="addr-text">Level 12, Prestige Tower<br>BKC, Mumbai<br>Maharashtra — 400 051<br>+91 22 4000 1234</div>
+              <div class="addr-actions">
+                <button class="btn-ghost-sm" onclick="showToast('Edit address')">Edit</button>
+                <button class="btn-danger-sm" onclick="showToast('Address removed')">Remove</button>
+              </div>
+            </div>
+          </div>
+          <button class="addr-add-btn" onclick="openModal('addrModal')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add New Address
+          </button>
+        </div>
+      </div>
+
+      <!-- Security -->
+      <div class="profile-tab-panel" id="tab-security">
+        <div class="form-section">
+          <div class="form-section-head">Change Password</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" type="password" placeholder="••••••••••"></div>
+            <div class="form-group"><label class="form-label">New Password</label>
+              <input class="form-input" type="password" placeholder="Min. 8 characters" id="newPass" oninput="calcStrength(this.value)">
+              <div class="strength-wrap">
+                <div class="strength-bar"><div class="strength-fill" id="strengthFill" style="width:0;background:var(--red-dim)"></div></div>
+                <div class="strength-label" id="strengthLabel">Enter a password</div>
+              </div>
+            </div>
+            <div class="form-group"><label class="form-label">Confirm New Password</label><input class="form-input" type="password" placeholder="Repeat password"></div>
+          </div>
+          <div class="form-actions-row" style="margin-top:20px">
+            <button class="btn-gold-sm" onclick="showToast('Password updated')"><span>Update Password</span></button>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-head">Active Sessions</div>
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div style="padding:16px 0;border-bottom:1px solid rgba(201,169,110,0.08);display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;color:var(--champagne)">MacBook Pro · Safari</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Mumbai, IN · Current Session</div>
+              </div>
+              <span class="status-badge sb-delivered" style="padding:4px 12px">Active Now</span>
+            </div>
+            <div style="padding:16px 0;border-bottom:1px solid rgba(201,169,110,0.08);display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;color:var(--champagne)">iPhone 15 Pro · Chrome</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Mumbai, IN · 2 hours ago</div>
+              </div>
+              <button class="btn-danger-sm" onclick="showToast('Session revoked')">Revoke</button>
+            </div>
+            <div style="padding:16px 0;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;color:var(--champagne)">iPad Air · Safari</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Pune, IN · 4 days ago</div>
+              </div>
+              <button class="btn-danger-sm" onclick="showToast('Session revoked')">Revoke</button>
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn-danger-sm" onclick="showToast('All other sessions signed out')">Sign Out All Other Devices</button>
+          </div>
+        </div>
+      </div>
+    </div><!-- /right -->
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: WISHLIST
+══════════════════════════════════════════ -->
+<div class="page" id="page-wishlist">
+<div class="container">
+  <div class="pg-header sr">
+    <div>
+      <div class="pg-eyebrow">Account</div>
+      <h1 class="pg-title">Your <em>Wishlist</em></h1>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <button class="btn-ghost-sm" onclick="showToast('All items added to cart')">Add All to Cart</button>
+      <button class="btn-ghost-sm" onclick="showToast('Wishlist cleared')">Clear All</button>
+    </div>
+  </div>
+
+  <div class="wishlist-header-row sr d1">
+    <div class="wishlist-count">5 items saved · Last updated Apr 28, 2026</div>
+    <div style="display:flex;gap:0">
+      <button class="filter-chip active" style="border-right:none">All</button>
+      <button class="filter-chip" style="border-right:none">In Stock</button>
+      <button class="filter-chip">On Sale</button>
+    </div>
+  </div>
+
+  <div class="wishlist-grid">
+
+    <!-- Card 1 -->
+    <div class="wish-card sr d1">
+      <div class="wish-img">
+        <div class="wish-img-inner">
+          <svg width="60" height="80" viewBox="0 0 60 80" fill="none"><rect x="8" y="4" width="44" height="68" stroke="rgba(201,169,110,0.35)" stroke-width="0.8"/><rect x="14" y="12" width="32" height="32" stroke="rgba(201,169,110,0.2)" stroke-width="0.6"/><circle cx="30" cy="62" r="5" stroke="rgba(201,169,110,0.3)" stroke-width="0.8"/></svg>
+        </div>
+        <div class="wish-badge">Neural Pick</div>
+        <button class="wish-remove" onclick="removeWish(this)" title="Remove">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(200,100,100,0.8)" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="wish-body">
+        <div class="wish-brand">Maison Neural</div>
+        <div class="wish-name">Phantom Chronograph II</div>
+        <div class="wish-price-row">
+          <div class="wish-price">₹1,48,000</div>
+          <span class="wish-stock ws-in">In Stock</span>
+        </div>
+        <button class="wish-atc" onclick="showToast('Added to cart')"><span>Add to Cart →</span></button>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="wish-card sr d2">
+      <div class="wish-img">
+        <div class="wish-img-inner">
+          <svg width="60" height="80" viewBox="0 0 60 80" fill="none"><ellipse cx="30" cy="40" rx="18" ry="26" stroke="rgba(201,169,110,0.35)" stroke-width="0.8"/><ellipse cx="30" cy="40" rx="10" ry="18" stroke="rgba(201,169,110,0.2)" stroke-width="0.6"/><line x1="30" y1="14" x2="30" y2="8" stroke="rgba(201,169,110,0.4)" stroke-width="0.8"/><rect x="24" y="3" width="12" height="7" stroke="rgba(201,169,110,0.35)" stroke-width="0.8"/></svg>
+        </div>
+        <button class="wish-remove" onclick="removeWish(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(200,100,100,0.8)" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="wish-body">
+        <div class="wish-brand">Neural Essence</div>
+        <div class="wish-name">Accord No. 23</div>
+        <div class="wish-price-row">
+          <div class="wish-price">₹22,500</div>
+          <span class="wish-stock ws-low">3 Left</span>
+        </div>
+        <button class="wish-atc" onclick="showToast('Added to cart')"><span>Add to Cart →</span></button>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="wish-card sr d3">
+      <div class="wish-img">
+        <div class="wish-img-inner">
+          <svg width="60" height="80" viewBox="0 0 60 80" fill="none"><rect x="10" y="20" width="40" height="44" stroke="rgba(201,169,110,0.35)" stroke-width="0.8"/><rect x="18" y="10" width="24" height="12" stroke="rgba(201,169,110,0.3)" stroke-width="0.8"/><line x1="10" y1="36" x2="50" y2="36" stroke="rgba(201,169,110,0.15)" stroke-width="0.6"/></svg>
+        </div>
+        <div class="wish-badge">Sale 20%</div>
+        <button class="wish-remove" onclick="removeWish(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(200,100,100,0.8)" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="wish-body">
+        <div class="wish-brand">Atelier Lumière</div>
+        <div class="wish-name">Velvet Duffel Grande</div>
+        <div class="wish-price-row">
+          <div>
+            <div class="wish-price">₹67,200</div>
+            <div style="font-size:11px;color:var(--text-muted);text-decoration:line-through;margin-top:2px">₹84,000</div>
+          </div>
+          <span class="wish-stock ws-in">In Stock</span>
+        </div>
+        <button class="wish-atc" onclick="showToast('Added to cart')"><span>Add to Cart →</span></button>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="wish-card sr d4">
+      <div class="wish-img">
+        <div class="wish-img-inner">
+          <svg width="60" height="80" viewBox="0 0 60 80" fill="none"><polygon points="30,8 54,62 6,62" stroke="rgba(201,169,110,0.35)" stroke-width="0.8" fill="none"/><circle cx="30" cy="46" r="8" stroke="rgba(201,169,110,0.2)" stroke-width="0.6"/></svg>
+        </div>
+        <button class="wish-remove" onclick="removeWish(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(200,100,100,0.8)" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="wish-body">
+        <div class="wish-brand">Neural Objects</div>
+        <div class="wish-name">Apex Prism Lamp</div>
+        <div class="wish-price-row">
+          <div class="wish-price">₹38,900</div>
+          <span class="wish-stock ws-in">In Stock</span>
+        </div>
+        <button class="wish-atc" onclick="showToast('Added to cart')"><span>Add to Cart →</span></button>
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="wish-card sr d5">
+      <div class="wish-img">
+        <div class="wish-img-inner">
+          <svg width="60" height="80" viewBox="0 0 60 80" fill="none"><circle cx="30" cy="40" r="22" stroke="rgba(201,169,110,0.35)" stroke-width="0.8"/><circle cx="30" cy="40" r="14" stroke="rgba(201,169,110,0.2)" stroke-width="0.6"/><circle cx="30" cy="40" r="6" stroke="rgba(201,169,110,0.15)" stroke-width="0.6"/><line x1="30" y1="18" x2="30" y2="62" stroke="rgba(201,169,110,0.12)" stroke-width="0.6"/><line x1="8" y1="40" x2="52" y2="40" stroke="rgba(201,169,110,0.12)" stroke-width="0.6"/></svg>
+        </div>
+        <button class="wish-remove" onclick="removeWish(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(200,100,100,0.8)" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="wish-body">
+        <div class="wish-brand">Orbit Audio</div>
+        <div class="wish-name">Resonance Speaker</div>
+        <div class="wish-price-row">
+          <div class="wish-price">₹1,12,000</div>
+          <span class="wish-stock ws-low">1 Left</span>
+        </div>
+        <button class="wish-atc" onclick="showToast('Added to cart — Only 1 left!')"><span>Add to Cart →</span></button>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: RETURNS & REFUNDS
+══════════════════════════════════════════ -->
+<div class="page" id="page-returns">
+<div class="container">
+  <div class="pg-header sr">
+    <div>
+      <div class="pg-eyebrow">Account</div>
+      <h1 class="pg-title">Returns &amp; <em>Refunds</em></h1>
+    </div>
+    <button class="btn-gold-sm" onclick="openModal('returnModal')"><span>+ New Return</span></button>
+  </div>
+
+  <!-- Stats -->
+  <div class="returns-stats sr d1">
+    <div class="rstat"><div class="rstat-num">4</div><div class="rstat-label">Total Returns</div></div>
+    <div class="rstat"><div class="rstat-num">2</div><div class="rstat-label">Approved</div></div>
+    <div class="rstat"><div class="rstat-num">1</div><div class="rstat-label">Pending</div></div>
+    <div class="rstat"><div class="rstat-num">1</div><div class="rstat-label">Rejected</div></div>
+    <div class="rstat"><div class="rstat-num" style="font-size:20px">₹84,500</div><div class="rstat-label">Refunded</div></div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar sr d2" style="margin-bottom:28px">
+    <button class="filter-chip active" onclick="filterChip(this)">All Returns</button>
+    <button class="filter-chip" onclick="filterChip(this)">Requested</button>
+    <button class="filter-chip" onclick="filterChip(this)">Approved</button>
+    <button class="filter-chip" onclick="filterChip(this)">Refunded</button>
+    <button class="filter-chip" onclick="filterChip(this)">Rejected</button>
+  </div>
+
+  <!-- Return Cards -->
+
+  <!-- Return 1: Refunded -->
+  <div class="return-card sr d1">
+    <div class="return-card-inner">
+      <div class="return-card-top">
+        <div>
+          <div class="return-ref">RET-2026-0428-001</div>
+          <div class="return-date">Requested Apr 28, 2026</div>
+        </div>
+        <span class="status-badge sb-refunded">Refunded</span>
+      </div>
+      <div class="return-card-body">
+        <div class="return-thumb">
+          <svg width="20" height="20" viewBox="0 0 60 60" fill="none"><rect x="15" y="8" width="30" height="44" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/><circle cx="30" cy="42" r="4" stroke="rgba(201,169,110,0.4)" stroke-width="0.8"/></svg>
+        </div>
+        <div class="return-info">
+          <div class="return-product">Phantom Chronograph</div>
+          <div class="return-reason">Defective — Crown does not wind properly</div>
+          <div class="return-reason" style="margin-top:4px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(201,169,110,0.45)">Order NS-2026-0315-2211</div>
+          <div class="admin-note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Return approved. Refund of ₹1,24,000 credited to your original payment method within 5–7 business days.
+          </div>
+        </div>
+        <div class="return-amount-wrap">
+          <div class="return-amount">₹1,24,000</div>
+          <div class="return-amount-label">Refunded</div>
+        </div>
+      </div>
+    </div>
+    <div class="return-card-footer">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Return Journey</div>
+        <div style="display:flex;align-items:center;gap:0">
+          <div class="rtm-step-wrap"><div class="rtm-dot done"><div class="rtm-dot-inner"></div></div><div class="rtm-label">Requested</div></div>
+          <div><div class="rtm-line done"></div></div>
+          <div class="rtm-step-wrap"><div class="rtm-dot done"><div class="rtm-dot-inner"></div></div><div class="rtm-label">Approved</div></div>
+          <div><div class="rtm-line done"></div></div>
+          <div class="rtm-step-wrap"><div class="rtm-dot done"><div class="rtm-dot-inner"></div></div><div class="rtm-label">Refunded</div></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-ghost-sm" onclick="showToast('Return details opened')">View Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Return 2: Approved -->
+  <div class="return-card sr d2">
+    <div class="return-card-inner">
+      <div class="return-card-top">
+        <div>
+          <div class="return-ref">RET-2026-0420-002</div>
+          <div class="return-date">Requested Apr 20, 2026</div>
+        </div>
+        <span class="status-badge sb-approved">Approved</span>
+      </div>
+      <div class="return-card-body">
+        <div class="return-thumb">
+          <svg width="20" height="20" viewBox="0 0 60 60" fill="none"><rect x="12" y="16" width="36" height="28" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/><rect x="18" y="10" width="24" height="8" stroke="rgba(201,169,110,0.4)" stroke-width="0.8"/></svg>
+        </div>
+        <div class="return-info">
+          <div class="return-product">Obsidian Messenger</div>
+          <div class="return-reason">Wrong item received — Expected Midnight Black, got Brown</div>
+          <div class="return-reason" style="margin-top:4px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(201,169,110,0.45)">Order NS-2026-0410-7741</div>
+          <div class="admin-note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Return approved. Refund of ₹84,500 will be processed once we receive the item.
+          </div>
+        </div>
+        <div class="return-amount-wrap">
+          <div class="return-amount">₹84,500</div>
+          <div class="return-amount-label">Pending Refund</div>
+        </div>
+      </div>
+    </div>
+    <div class="return-card-footer">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Return Journey</div>
+        <div style="display:flex;align-items:center;gap:0">
+          <div class="rtm-step-wrap"><div class="rtm-dot done"><div class="rtm-dot-inner"></div></div><div class="rtm-label">Requested</div></div>
+          <div><div class="rtm-line done"></div></div>
+          <div class="rtm-step-wrap"><div class="rtm-dot done"><div class="rtm-dot-inner"></div></div><div class="rtm-label">Approved</div></div>
+          <div><div class="rtm-line"></div></div>
+          <div class="rtm-step-wrap"><div class="rtm-dot"><div class="rtm-dot-inner"></div></div><div class="rtm-label">Refunded</div></div>
+        </div>
+      </div>
+      <button class="btn-ghost-sm" onclick="showToast('Return details opened')">View Details</button>
+    </div>
+  </div>
+
+  <!-- Return 3: Requested (pending) -->
+  <div class="return-card sr d3">
+    <div class="return-card-inner">
+      <div class="return-card-top">
+        <div>
+          <div class="return-ref">RET-2026-0427-003</div>
+          <div class="return-date">Requested Apr 27, 2026</div>
+        </div>
+        <span class="status-badge sb-requested">Requested</span>
+      </div>
+      <div class="return-card-body">
+        <div class="return-thumb">
+          <svg width="20" height="20" viewBox="0 0 60 60" fill="none"><ellipse cx="30" cy="30" rx="14" ry="18" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/><line x1="30" y1="12" x2="30" y2="8" stroke="rgba(201,169,110,0.4)" stroke-width="0.8"/><rect x="26" y="4" width="8" height="5" stroke="rgba(201,169,110,0.4)" stroke-width="0.8"/></svg>
+        </div>
+        <div class="return-info">
+          <div class="return-product">Accord No. 17</div>
+          <div class="return-reason">Not as described — Scent profile significantly different from product description</div>
+          <div class="return-reason" style="margin-top:4px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(201,169,110,0.45)">Order NS-2026-0428-8847</div>
+        </div>
+        <div class="return-amount-wrap">
+          <div class="return-amount">₹18,200</div>
+          <div class="return-amount-label">Requested</div>
+        </div>
+      </div>
+    </div>
+    <div class="return-card-footer">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Return Journey</div>
+        <div style="display:flex;align-items:center;gap:0">
+          <div class="rtm-step-wrap"><div class="rtm-dot active"><div class="rtm-dot-inner"></div></div><div class="rtm-label" style="color:var(--gold)">Requested</div></div>
+          <div><div class="rtm-line"></div></div>
+          <div class="rtm-step-wrap"><div class="rtm-dot"><div class="rtm-dot-inner"></div></div><div class="rtm-label">Approved</div></div>
+          <div><div class="rtm-line"></div></div>
+          <div class="rtm-step-wrap"><div class="rtm-dot"><div class="rtm-dot-inner"></div></div><div class="rtm-label">Refunded</div></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-danger-sm" onclick="showToast('Return request cancelled')">Cancel Request</button>
+        <button class="btn-ghost-sm" onclick="showToast('Details opened')">View Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Return 4: Rejected -->
+  <div class="return-card sr d4">
+    <div class="return-card-inner">
+      <div class="return-card-top">
+        <div>
+          <div class="return-ref">RET-2026-0310-004</div>
+          <div class="return-date">Requested Mar 10, 2026</div>
+        </div>
+        <span class="status-badge sb-rejected">Rejected</span>
+      </div>
+      <div class="return-card-body">
+        <div class="return-thumb">
+          <svg width="20" height="20" viewBox="0 0 60 60" fill="none"><rect x="10" y="12" width="40" height="36" stroke="rgba(201,169,110,0.5)" stroke-width="0.8"/><line x1="10" y1="22" x2="50" y2="22" stroke="rgba(201,169,110,0.3)" stroke-width="0.6"/></svg>
+        </div>
+        <div class="return-info">
+          <div class="return-product">Velvet Oxford Shoes</div>
+          <div class="return-reason">Changed my mind — Preferred a different colour</div>
+          <div class="return-reason" style="margin-top:4px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(201,169,110,0.45)">Order NS-2026-0218-1102</div>
+          <div style="padding:12px 16px;border:1px solid rgba(140,70,70,0.25);background:rgba(100,40,40,0.08);font-size:12px;color:rgba(190,110,110,0.8);margin-top:12px;display:flex;gap:10px;align-items:flex-start">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Return rejected — Item was used and outside 30-day return window. Please contact support for further assistance.
+          </div>
+        </div>
+        <div class="return-amount-wrap">
+          <div class="return-amount" style="color:rgba(190,110,110,0.7)">₹84,000</div>
+          <div class="return-amount-label">Not Refunded</div>
+        </div>
+      </div>
+    </div>
+    <div class="return-card-footer">
+      <div style="font-size:11px;color:var(--text-muted)">Return window closed · Rejected Feb 20, 2026</div>
+      <button class="btn-ghost-sm" onclick="showToast('Support ticket raised')">Contact Support</button>
+    </div>
+  </div>
+
+  <div style="height:80px"></div>
+</div>
+</div>
+
+<script>
+// ─── CURSOR ───
+const cur=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function loop(){rx+=(mx-rx)*0.11;ry+=(my-ry)*0.11;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop)})();
+
+// ─── NAV SCROLL ───
+window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('scrolled',scrollY>20));
+
+// ─── PAGE SWITCHER ───
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-pill').forEach((b,i)=>{
+    const pages=['orders','profile','wishlist','returns'];
+    b.classList.toggle('active',pages[i]===name);
+  });
+  document.getElementById('page-'+name).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(initReveal,80);
+}
+
+// ─── SCROLL REVEAL ───
+function initReveal(){
+  const els=document.querySelectorAll('.sr:not(.v)');
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach((e,i)=>{
+      if(e.isIntersecting){setTimeout(()=>e.target.classList.add('v'),i*55);obs.unobserve(e.target)}
+    });
+  },{threshold:0.06});
+  els.forEach(el=>obs.observe(el));
+}
+initReveal();
+
+// ─── ORDER HISTORY ───
+let expandCounter=1;
+function toggleOrder(header){
+  const card=header.closest('.order-card');
+  const bodyId=card.querySelector('.order-card-body').id;
+  const btnId=card.querySelector('.expand-btn').id;
+  const body=document.getElementById(bodyId);
+  const btn=document.getElementById(btnId);
+  const isOpen=body.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.order-card-body').forEach(b=>b.classList.remove('open'));
+  document.querySelectorAll('.expand-btn').forEach(b=>b.classList.remove('open'));
+  if(!isOpen){body.classList.add('open');btn.classList.add('open')}
+}
+function filterOrders(chip,status){
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  document.querySelectorAll('.order-card').forEach(card=>{
+    const match=status==='all'||card.dataset.status===status;
+    card.style.display=match?'block':'none';
+    if(match){card.style.animation='none';setTimeout(()=>{card.style.animation='';card.classList.add('v')},10)}
+  });
+}
+function filterChip(el){
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── PROFILE TABS ───
+function showProfileTab(tab, navItem){
+  document.querySelectorAll('.profile-tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.profile-nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  navItem.classList.add('active');
+}
+
+// ─── PASSWORD STRENGTH ───
+function calcStrength(val){
+  const fill=document.getElementById('strengthFill');
+  const label=document.getElementById('strengthLabel');
+  if(!val){fill.style.width='0';label.textContent='Enter a password';return}
+  let score=0;
+  if(val.length>=8)score++;
+  if(val.length>=12)score++;
+  if(/[A-Z]/.test(val))score++;
+  if(/[0-9]/.test(val))score++;
+  if(/[^A-Za-z0-9]/.test(val))score++;
+  const levels=[
+    {w:'15%',c:'rgba(180,80,80,0.7)',t:'Very Weak'},
+    {w:'30%',c:'rgba(200,120,60,0.7)',t:'Weak'},
+    {w:'55%',c:'rgba(200,170,60,0.7)',t:'Fair'},
+    {w:'78%',c:'rgba(100,170,100,0.7)',t:'Strong'},
+    {w:'100%',c:'rgba(80,160,100,0.85)',t:'Very Strong'}
+  ];
+  const l=levels[Math.min(score,4)];
+  fill.style.width=l.w;fill.style.background=l.c;label.textContent=l.t;
+  label.style.color=l.c;
+}
+
+// ─── WISHLIST ───
+function removeWish(btn){
+  const card=btn.closest('.wish-card');
+  card.style.transition='all 0.5s cubic-bezier(0.23,1,0.32,1)';
+  card.style.opacity='0';
+  card.style.transform='scale(0.93) translateY(-8px)';
+  setTimeout(()=>{
+    card.style.display='none';
+    showToast('Removed from wishlist');
+  },450);
+}
+
+// ─── TOGGLE SWITCH ───
+function toggleSwitch(el){
+  const thumb=el.querySelector('div');
+  const isOn=thumb.style.transform==='translateX(18px)';
+  if(isOn){
+    thumb.style.transform='translateX(0)';
+    thumb.style.background='rgba(201,169,110,0.35)';
+    el.style.background='rgba(255,255,255,0.02)';
+    el.style.borderColor='var(--border-gold)';
+  } else {
+    thumb.style.transform='translateX(18px)';
+    thumb.style.background='var(--gold)';
+    el.style.background='rgba(201,169,110,0.15)';
+    el.style.borderColor='var(--gold)';
+  }
+}
+
+// ─── MODALS ───
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-backdrop').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')});
+});
+
+// ─── TOAST ───
+let tt;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  t.classList.add('show');
+  clearTimeout(tt);
+  tt=setTimeout(()=>t.classList.remove('show'),3200);
+}
+</script>
+</body>
+</html>

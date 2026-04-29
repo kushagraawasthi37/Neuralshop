@@ -10,6 +10,7 @@ import {
   resetPasswordService,
   verifyAdminEmailService,
   resendOtpService,
+  verifyResetOtpService,
 } from "./auth.service.js";
 import config from "../../config/environment.config.js";
 import { OTP_TYPES, ROLES } from "./otp.service.js";
@@ -268,6 +269,20 @@ export const resetPassword = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     return res.status(400).json({ message: error.message || "Reset failed" });
+  }
+};
+
+//Checked
+
+export const verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp, role } = req.body;
+    const result = await verifyResetOtpService(email, otp, role);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ message: error.message || "OTP verification failed" });
   }
 };
 
