@@ -3,6 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminCouponsApi } from "../../../api/admin";
 import { fmt } from "../adminUtils";
 
+function isCouponActive(c) {
+  if (c.isActive === false) return false;
+  if (c.expiryDate && new Date(c.expiryDate) < new Date()) return false;
+  if (c.expiresAt && new Date(c.expiresAt) < new Date()) return false;
+  return true;
+}
+
 export default function CouponsPanel({ showToast }) {
   const qc = useQueryClient();
   const [couponModal, setCouponModal] = useState(false);
@@ -31,9 +38,16 @@ export default function CouponsPanel({ showToast }) {
     onError: () => showToast("Failed to create coupon"),
   });
 
+  const toggleCouponMutation = useMutation({
+    mutationFn: (id) => adminCouponsApi.toggle(id),
+    onSuccess: () => { qc.invalidateQueries(["admin-coupons"]); showToast("Coupon status updated"); },
+    onError: () => showToast("Failed to toggle coupon status"),
+  });
+
   const deleteCouponMutation = useMutation({
     mutationFn: (id) => adminCouponsApi.delete(id),
     onSuccess: () => { qc.invalidateQueries(["admin-coupons"]); showToast("Coupon deleted"); },
+    onError: () => showToast("Failed to delete coupon"),
   });
 
   const set = (key, val) => setNewCoupon((p) => ({ ...p, [key]: val }));
@@ -86,8 +100,9 @@ export default function CouponsPanel({ showToast }) {
             </div>
             <div className="modal-actions">
               <button className="ns-btn ns-btn-ghost" onClick={() => setCouponModal(false)}>Cancel</button>
-              <button className="ns-btn ns-btn-primary" onClick={() => createCouponMutation.mutate(newCoupon)}>
-                Create Coupon
+              <button className="ns-btn ns-btn-primary" disabled={createCouponMutation.isPending}
+                onClick={() => createCouponMutation.mutate(newCoupon)}>
+                {createCouponMutation.isPending ? "Creating…" : "Create Coupon"}
               </button>
             </div>
           </div>
@@ -97,7 +112,7 @@ export default function CouponsPanel({ showToast }) {
       <div className="page-header">
         <div className="page-eyebrow">06 — Commerce</div>
         <div className="page-title">Coupon <em>Management</em></div>
-        <div className="page-sub">{coupons.length} active campaigns</div>
+        <div className="page-sub">{coupons.length} campaigns</div>
       </div>
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
@@ -108,35 +123,65 @@ export default function CouponsPanel({ showToast }) {
         <div className="table-wrap">
           <table className="ns-table">
             <thead>
-              <tr><th>Code</th><th>Type</th><th>Value</th><th>Uses</th><th>Min Order</th><th>Expires</th><th>Action</th></tr>
+              <tr><th>Code</th><th>Type</th><th>Value</th><th>Uses</th><th>Min Order</th><th>Expires</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {coupons.length === 0 ? (
-                <tr><td colSpan={7} style={{ textAlign: "center", padding: "40px 16px", color: "var(--text-muted)" }}>No coupons found</td></tr>
+                <tr><td colSpan={8} style={{ textAlign: "center", padding: "40px 16px", color: "var(--text-muted)" }}>No coupons found</td></tr>
               ) : (
-                coupons.map((c) => (
-                  <tr key={c.id || c._id}>
-                    <td className="primary"><span className="ns-code">{c.code}</span></td>
-                    <td>
-                      <span className={c.discountType === "PERCENTAGE" ? "badge badge-processing" : "badge badge-gold"}>
-                        {c.discountType === "PERCENTAGE" ? "% Percent" : "₹ Fixed"}
-                      </span>
-                    </td>
-                    <td>{c.discountType === "PERCENTAGE" ? `${c.discountValue}%` : fmt(c.discountValue)}</td>
-                    <td>{c.usedCount || 0} / {c.maxUses || "∞"}</td>
-                    <td>{fmt(c.minOrderAmount)}</td>
-                    <td>
-                      {c.expiryDate ? new Date(c.expiryDate).toLocaleDateString("en-IN")
-                        : c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("en-IN") : "—"}
-                    </td>
-                    <td>
-                      <button className="ns-btn ns-btn-danger" style={{ padding: "5px 12px", fontSize: 10 }}
-                        onClick={() => deleteCouponMutation.mutate(c.id || c._id)}>
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                coupons.map((c) => {
+                  const active = isCouponActive(c);
+                  const id = c.id || c._id;
+                  return (
+                    <tr key={id}>
+                      <td className="primary"><span className="ns-code">{c.code}</span></td>
+                      <td>
+                        <span className={c.discountType === "PERCENTAGE" ? "badge badge-processing" : "badge badge-gold"}>
+                          {c.discountType === "PERCENTAGE" ? "% Percent" : "₹ Fixed"}
+                        </span>
+                      </td>
+                      <td>{c.discountType === "PERCENTAGE" ? `${c.discountValue}%` : fmt(c.discountValue)}</td>
+                      <td>{c.usedCount || 0} / {c.maxUses || "∞"}</td>
+                      <td>{fmt(c.minOrderAmount)}</td>
+                      <td>
+                        {c.expiryDate ? new Date(c.expiryDate).toLocaleDateString("en-IN")
+                          : c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("en-IN") : "—"}
+                      </td>
+                      <td>
+                        <span className={active ? "badge badge-delivered" : "badge badge-cancelled"}>
+                          {active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            type="button"
+                            className="ns-btn ns-btn-ghost"
+                            style={{ padding: "5px 10px", fontSize: 10 }}
+                            disabled={toggleCouponMutation.isPending}
+                            onClick={() => toggleCouponMutation.mutate(String(id))}
+                            title={active ? "Deactivate" : "Activate"}
+                          >
+                            {toggleCouponMutation.isPending ? "…" : active ? "Deactivate" : "Activate"}
+                          </button>
+                          <button
+                            type="button"
+                            className="ns-btn ns-btn-danger"
+                            style={{ padding: "5px 10px", fontSize: 10 }}
+                            disabled={deleteCouponMutation.isPending}
+                            onClick={() => {
+                              if (window.confirm(`Delete coupon "${c.code}"? This cannot be undone.`)) {
+                                deleteCouponMutation.mutate(String(id));
+                              }
+                            }}
+                          >
+                            {deleteCouponMutation.isPending ? "…" : "Delete"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../../store/authStore";
@@ -6,18 +6,22 @@ import { cartApi } from "../../api/cart";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuthStore();
+  const { isLoggedIn, role } = useAuthStore();
+  const isUser = isLoggedIn && role === "user";
 
   const { data: cartSummary } = useQuery({
     queryKey: ["cart-summary"],
     queryFn: () => cartApi.summary().then((r) => r.data.data),
-    enabled: isLoggedIn,
+    enabled: isUser,
     staleTime: 30000,
   });
   const cartCount = cartSummary?.itemCount || 0;
 
   const handleLogout = () => {
+    setProfileOpen(false);
     navigate("/logout");
   };
 
@@ -26,6 +30,20 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Don't show navbar for admin users
+  if (isLoggedIn && role === "admin") return null;
 
   return (
     <nav
@@ -80,12 +98,8 @@ export default function Navbar() {
                 textDecoration: "none",
                 position: "relative",
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#c9a96e";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "rgba(240,230,208,0.6)";
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "#c9a96e"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(240,230,208,0.6)"; }}
             >
               {label}
             </Link>
@@ -96,25 +110,14 @@ export default function Navbar() {
       <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
         <button
           onClick={() => navigate("/search")}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-          }}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
         >
           <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="rgba(240,230,208,0.6)"
-            strokeWidth="1.2"
+            width="20" height="20" viewBox="0 0 24 24"
+            fill="none" stroke="rgba(240,230,208,0.6)" strokeWidth="1.2"
             style={{ display: "block", transition: "stroke 0.3s" }}
             onMouseEnter={(e) => (e.currentTarget.style.stroke = "#c9a96e")}
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.stroke = "rgba(240,230,208,0.6)")
-            }
+            onMouseLeave={(e) => (e.currentTarget.style.stroke = "rgba(240,230,208,0.6)")}
           >
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4.35-4.35" />
@@ -127,12 +130,8 @@ export default function Navbar() {
             style={{ background: "none", border: "none", cursor: "pointer", padding: 0, position: "relative" }}
           >
             <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="rgba(240,230,208,0.6)"
-              strokeWidth="1.2"
+              width="20" height="20" viewBox="0 0 24 24"
+              fill="none" stroke="rgba(240,230,208,0.6)" strokeWidth="1.2"
               style={{ display: "block", transition: "stroke 0.3s" }}
               onMouseEnter={(e) => (e.currentTarget.style.stroke = "#c9a96e")}
               onMouseLeave={(e) => (e.currentTarget.style.stroke = "rgba(240,230,208,0.6)")}
@@ -156,58 +155,79 @@ export default function Navbar() {
           </button>
         </div>
 
-        {isLoggedIn ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        {isUser ? (
+          <div ref={dropdownRef} style={{ position: "relative" }}>
             <button
-              onClick={() => navigate("/account/profile")}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-              }}
+              onClick={() => setProfileOpen((o) => !o)}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}
             >
               <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="rgba(240,230,208,0.6)"
-                strokeWidth="1.2"
+                width="20" height="20" viewBox="0 0 24 24"
+                fill="none" stroke={profileOpen ? "#c9a96e" : "rgba(240,230,208,0.6)"} strokeWidth="1.2"
                 style={{ display: "block", transition: "stroke 0.3s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.stroke = "#c9a96e")}
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.stroke = "rgba(240,230,208,0.6)")
-                }
+                onMouseLeave={(e) => { if (!profileOpen) e.currentTarget.style.stroke = "rgba(240,230,208,0.6)"; }}
               >
                 <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
             </button>
-            <button
-              onClick={handleLogout}
-              style={{
-                background: "none",
-                border: "1px solid rgba(201,169,110,0.2)",
-                cursor: "pointer",
-                padding: "6px 14px",
-                fontSize: 10,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "rgba(240,230,208,0.4)",
-                transition: "all 0.3s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#c9a96e";
-                e.currentTarget.style.borderColor = "#c9a96e";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "rgba(240,230,208,0.4)";
-                e.currentTarget.style.borderColor = "rgba(201,169,110,0.2)";
-              }}
-            >
-              Sign Out
-            </button>
+
+            {profileOpen && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 14px)", right: 0,
+                background: "#1a1916", border: "1px solid rgba(201,169,110,0.18)",
+                minWidth: 160, zIndex: 200,
+              }}>
+                <button
+                  onClick={() => { setProfileOpen(false); navigate("/account/profile"); }}
+                  style={{
+                    display: "block", width: "100%", textAlign: "left",
+                    padding: "12px 18px", background: "none", border: "none",
+                    borderBottom: "1px solid rgba(201,169,110,0.1)",
+                    color: "rgba(240,230,208,0.7)", fontSize: 11,
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
+                    transition: "color 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#c9a96e")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(240,230,208,0.7)")}
+                >
+                  My Profile
+                </button>
+                <button
+                  onClick={() => { setProfileOpen(false); navigate("/account/orders"); }}
+                  style={{
+                    display: "block", width: "100%", textAlign: "left",
+                    padding: "12px 18px", background: "none", border: "none",
+                    borderBottom: "1px solid rgba(201,169,110,0.1)",
+                    color: "rgba(240,230,208,0.7)", fontSize: 11,
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
+                    transition: "color 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#c9a96e")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(240,230,208,0.7)")}
+                >
+                  My Orders
+                </button>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    display: "block", width: "100%", textAlign: "left",
+                    padding: "12px 18px", background: "none", border: "none",
+                    color: "rgba(190,110,110,0.75)", fontSize: 11,
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
+                    transition: "color 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(220,130,130,0.9)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(190,110,110,0.75)")}
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <button

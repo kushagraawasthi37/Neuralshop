@@ -11,13 +11,18 @@ export const getDashboardStatsService = async (sellerId = null) => {
       where: ordersQuery,
     });
 
-    // Total Revenue
-    const revenueQuery = sellerId ? { items: { some: { sellerId } } } : {};
+    // Total Revenue (exclude cancelled orders)
+    const revenueQuery = sellerId
+      ? { items: { some: { sellerId } }, status: { not: "CANCELLED" } }
+      : { status: { not: "CANCELLED" } };
     const revenueResult = await prisma.order.aggregate({
       _sum: { totalAmount: true },
       where: revenueQuery,
     });
     const totalRevenue = revenueResult._sum.totalAmount || 0;
+
+    // Non-cancelled order count for avg calculation
+    const nonCancelledCount = await prisma.order.count({ where: revenueQuery });
 
     // Total Customers (unique)
     const customersQuery = sellerId ? { items: { some: { sellerId } } } : {};
@@ -40,7 +45,7 @@ export const getDashboardStatsService = async (sellerId = null) => {
       totalRevenue,
       totalCustomers,
       pendingOrders,
-      avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+      avgOrderValue: nonCancelledCount > 0 ? totalRevenue / nonCancelledCount : 0,
     };
   } catch (error) {
     throw error;
@@ -100,8 +105,21 @@ export const getSalesAnalyticsService = async (
       },
     });
 
+    // Aggregate raw groupBy results into per-day buckets (Prisma groups by exact timestamp)
+    const dailyMap = {};
+    for (const d of dailySales) {
+      const dateKey = new Date(d.createdAt).toISOString().split("T")[0];
+      if (!dailyMap[dateKey]) dailyMap[dateKey] = { date: dateKey, revenue: 0, orders: 0 };
+      dailyMap[dateKey].revenue += d._sum?.price || 0;
+      const cnt = typeof d._count === "number" ? d._count : (d._count?._all || 0);
+      dailyMap[dateKey].orders += cnt;
+    }
+    const aggregatedDailySales = Object.values(dailyMap).sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
+
     return {
-      dailySales,
+      dailySales: aggregatedDailySales,
       topProducts,
       revenueByStatus,
     };

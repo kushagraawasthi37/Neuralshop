@@ -101,20 +101,14 @@ export const getAllReturns = asyncHandler(async (req, res) => {
     );
 });
 
-// Approve return request
+// Approve return request — refundAmount is optional, defaults to 0
 export const approveReturn = asyncHandler(async (req, res) => {
   const { returnId } = req.params;
-  const { refundAmount } = req.body;
-
-  if (!refundAmount) {
-    throw new ApiError(400, "Refund amount is required", [], "return");
-  }
+  const refundAmount = req.body.refundAmount ?? 0;
 
   const returnRequest = await approveReturnService(returnId, refundAmount);
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, returnRequest, "Return request approved"));
+  res.status(200).json(new ApiResponse(200, returnRequest, "Return request approved"));
 });
 
 // Reject return request

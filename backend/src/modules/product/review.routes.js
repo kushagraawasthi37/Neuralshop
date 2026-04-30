@@ -11,6 +11,7 @@ import {
   getAllReviews,
   toggleReviewVisibility,
   respondToReview,
+  deleteReviewAdmin,
 } from "./review.controller.js";
 
 const reviewRoutes = express.Router();
@@ -57,6 +58,9 @@ reviewRoutes.patch(
   isAuthAdmin,
   toggleReviewVisibility,
 );
+
+// Admin: Delete any review
+reviewRoutes.delete("/admin/:reviewId", isAuthAdmin, deleteReviewAdmin);
 
 // Respond to review
 reviewRoutes.post(

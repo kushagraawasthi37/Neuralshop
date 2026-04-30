@@ -17,44 +17,71 @@ export default function AnalyticsPanel() {
     queryFn: () => analyticsApi.dashboard().then((r) => r.data.data),
   });
 
-  const { data: salesData } = useQuery({
+  const { data: salesData, isLoading: salesLoading } = useQuery({
     queryKey: ["admin-sales"],
-    queryFn: () => analyticsApi.sales().then((r) => r.data.data),
+    queryFn: () => {
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
+      return analyticsApi.sales({ startDate: start, endDate: end }).then((r) => r.data.data);
+    },
   });
 
   const { data: orderStatus } = useQuery({
     queryKey: ["admin-order-status"],
-    queryFn: () => analyticsApi.orderStatus().then((r) => r.data.data),
+    queryFn: () => {
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
+      return analyticsApi.orderStatus({ startDate: start, endDate: end }).then((r) => r.data.data);
+    },
   });
 
   const { data: custData } = useQuery({
     queryKey: ["admin-customers"],
-    queryFn: () => analyticsApi.customers().then((r) => r.data.data),
+    queryFn: () => {
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
+      return analyticsApi.customers({ startDate: start, endDate: end }).then((r) => r.data.data);
+    },
     enabled: tab === "customers",
   });
 
   const salesChartData = useMemo(() => {
-    if (!salesData) return [];
-    if (Array.isArray(salesData)) return salesData;
-    if (Array.isArray(salesData.dailySales)) {
-      return salesData.dailySales.map((d) => ({
-        date: new Date(d.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
-        revenue: d._sum?.price ?? 0,
-        orders: d._count ?? 0,
-      }));
-    }
-    return salesData.daily || salesData.weekly || [];
+    if (!salesData) return null;
+    const list = Array.isArray(salesData.dailySales) ? salesData.dailySales
+      : Array.isArray(salesData) ? salesData
+      : [];
+    return list.map((d) => ({
+      date: d.date
+        ? new Date(d.date + "T00:00:00").toLocaleDateString("en-IN", { month: "short", day: "numeric" })
+        : new Date(d.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
+      revenue: d.revenue ?? d._sum?.price ?? 0,
+      orders: d.orders ?? (typeof d._count === "number" ? d._count : d._count?._all) ?? 0,
+    }));
   }, [salesData]);
 
   const ordersByStatus = useMemo(() => {
     if (!orderStatus) return null;
-    if (Array.isArray(orderStatus)) return Object.fromEntries(orderStatus.map((o) => [o.status, o._count]));
+    if (Array.isArray(orderStatus)) {
+      return Object.fromEntries(orderStatus.map((o) => [
+        o.status,
+        typeof o._count === "number" ? o._count : (o._count?._all ?? 0),
+      ]));
+    }
     return orderStatus;
   }, [orderStatus]);
 
   const topProducts = salesData?.topProducts || [];
-  const maxRevenue = topProducts.reduce((max, p) => Math.max(max, p._sum?.price || 0), 1);
+  const maxRevenue = Math.max(1, topProducts.reduce((max, p) => Math.max(max, p._sum?.price || 0), 0));
   const pendingOrders = dashboard?.pendingOrders || 0;
+
+  const ChartEmpty = ({ height = 220, loading }) => (
+    <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 13 }}>
+      {loading ? "Loading…" : "No data for this period"}
+    </div>
+  );
 
   return (
     <div className="ns-content">
@@ -86,7 +113,9 @@ export default function AnalyticsPanel() {
           <div className="two-col mt-2">
             <div className="card">
               <div className="card-label" style={{ marginBottom: 20 }}>Revenue Over Time</div>
-              {salesChartData.length > 0 ? (
+              {salesLoading || salesChartData === null ? (
+                <ChartEmpty height={220} loading />
+              ) : salesChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <AreaChart data={salesChartData}>
                     <XAxis dataKey="date" tick={axisTickProps} axisLine={false} tickLine={false} />
@@ -96,12 +125,14 @@ export default function AnalyticsPanel() {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>No data</div>
+                <ChartEmpty height={220} />
               )}
             </div>
             <div className="card">
               <div className="card-label" style={{ marginBottom: 20 }}>Daily Orders Volume</div>
-              {salesChartData.length > 0 ? (
+              {salesLoading || salesChartData === null ? (
+                <ChartEmpty height={220} loading />
+              ) : salesChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={salesChartData}>
                     <XAxis dataKey="date" tick={axisTickProps} axisLine={false} tickLine={false} />
@@ -111,7 +142,7 @@ export default function AnalyticsPanel() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>No data</div>
+                <ChartEmpty height={220} />
               )}
             </div>
           </div>

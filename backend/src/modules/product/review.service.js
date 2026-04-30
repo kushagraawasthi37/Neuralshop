@@ -292,6 +292,24 @@ export const respondToReviewService = async (
 };
 
 // ============================================
+// ADMIN: DELETE ANY REVIEW
+// ============================================
+export const deleteReviewAdminService = async (reviewId) => {
+  try {
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      throw new ApiError(404, "Review not found", [], "review");
+    }
+    const productId = review.productId;
+    await Review.deleteOne({ _id: reviewId });
+    await updateProductRating(productId);
+    return { message: "Review deleted successfully" };
+  } catch (error) {
+    throw error;
+  }
+};
+
+// ============================================
 // HELPER: UPDATE PRODUCT RATING
 // ============================================
 const updateProductRating = async (productId) => {

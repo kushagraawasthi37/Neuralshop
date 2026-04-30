@@ -28,68 +28,40 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
 // Sales analytics
 export const getSalesAnalytics = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
-
-  if (!startDate || !endDate) {
-    throw new ApiError(
-      400,
-      "Start date and end date are required",
-      [],
-      "analytics",
-    );
-  }
+  const endDate = req.query.endDate || new Date().toISOString().split("T")[0];
+  const startDate =
+    req.query.startDate ||
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const sellerId = req.adminId || null;
 
-  const analytics = await getSalesAnalyticsService(
-    startDate,
-    endDate,
-    sellerId,
-  );
+  const analytics = await getSalesAnalyticsService(startDate, endDate, sellerId);
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, analytics, "Sales analytics retrieved"));
+  res.status(200).json(new ApiResponse(200, analytics, "Sales analytics retrieved"));
 });
 
 // Payment analytics
 export const getPaymentAnalytics = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
-
-  if (!startDate || !endDate) {
-    throw new ApiError(
-      400,
-      "Start date and end date are required",
-      [],
-      "analytics",
-    );
-  }
+  const endDate = req.query.endDate || new Date().toISOString().split("T")[0];
+  const startDate =
+    req.query.startDate ||
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const analytics = await getPaymentAnalyticsService(startDate, endDate);
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, analytics, "Payment analytics retrieved"));
+  res.status(200).json(new ApiResponse(200, analytics, "Payment analytics retrieved"));
 });
 
 // Customer analytics
 export const getCustomerAnalytics = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
-
-  if (!startDate || !endDate) {
-    throw new ApiError(
-      400,
-      "Start date and end date are required",
-      [],
-      "analytics",
-    );
-  }
+  const endDate = req.query.endDate || new Date().toISOString().split("T")[0];
+  const startDate =
+    req.query.startDate ||
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const analytics = await getCustomerAnalyticsService(startDate, endDate);
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, analytics, "Customer analytics retrieved"));
+  res.status(200).json(new ApiResponse(200, analytics, "Customer analytics retrieved"));
 });
 
 // Inventory analytics
@@ -105,72 +77,38 @@ export const getInventoryAnalytics = asyncHandler(async (req, res) => {
 
 // Order status distribution
 export const getOrderStatusDistribution = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
-
-  if (!startDate || !endDate) {
-    throw new ApiError(
-      400,
-      "Start date and end date are required",
-      [],
-      "analytics",
-    );
-  }
+  const endDate = req.query.endDate || new Date().toISOString().split("T")[0];
+  const startDate =
+    req.query.startDate ||
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const sellerId = req.adminId || null;
 
-  const distribution = await getOrderStatusDistributionService(
-    startDate,
-    endDate,
-    sellerId,
-  );
+  const distribution = await getOrderStatusDistributionService(startDate, endDate, sellerId);
 
-  res
-    .status(200)
-    .json(
-      new ApiResponse(200, distribution, "Order status distribution retrieved"),
-    );
+  res.status(200).json(new ApiResponse(200, distribution, "Order status distribution retrieved"));
 });
 
 // Coupon analytics
 export const getCouponAnalytics = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
-
-  if (!startDate || !endDate) {
-    throw new ApiError(
-      400,
-      "Start date and end date are required",
-      [],
-      "analytics",
-    );
-  }
+  const endDate = req.query.endDate || new Date().toISOString().split("T")[0];
+  const startDate =
+    req.query.startDate ||
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const analytics = await getCouponAnalyticsService(startDate, endDate);
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, analytics, "Coupon analytics retrieved"));
+  res.status(200).json(new ApiResponse(200, analytics, "Coupon analytics retrieved"));
 });
 
 // Seller analytics
 export const getSellerAnalytics = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
+  const endDate = req.query.endDate || new Date().toISOString().split("T")[0];
+  const startDate =
+    req.query.startDate ||
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-  if (!startDate || !endDate) {
-    throw new ApiError(
-      400,
-      "Start date and end date are required",
-      [],
-      "analytics",
-    );
-  }
+  const analytics = await getSellerAnalyticsService(req.adminId, startDate, endDate);
 
-  const analytics = await getSellerAnalyticsService(
-    req.adminId,
-    startDate,
-    endDate,
-  );
-
-  res
-    .status(200)
-    .json(new ApiResponse(200, analytics, "Seller analytics retrieved"));
+  res.status(200).json(new ApiResponse(200, analytics, "Seller analytics retrieved"));
 });

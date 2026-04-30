@@ -69,6 +69,8 @@ model OrderItem {
   id        String @id @default(uuid())
   orderId   String
   productId String // Reference to MongoDB Product
+  name      String @default("") // Product name at purchase time
+  image     String @default("") // Product image URL at purchase time
   size      String @default("M") // Size variant (XS, S, M, L, XL, XXL)
   sellerId  String // 🔥 Reference to seller (admin user)
   quantity  Int

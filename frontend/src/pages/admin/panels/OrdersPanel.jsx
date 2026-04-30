@@ -3,9 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { analyticsApi, adminOrdersApi } from "../../../api/admin";
 import { fmt, fmtNum, Badge } from "../adminUtils";
 
+const STATUSES = ["PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+
 export default function OrdersPanel({ showToast }) {
   const qc = useQueryClient();
   const [statusModal, setStatusModal] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All Statuses");
 
   const { data: dashboard } = useQuery({
     queryKey: ["admin-dashboard"],
@@ -14,17 +18,39 @@ export default function OrdersPanel({ showToast }) {
 
   const { data: orderStatus } = useQuery({
     queryKey: ["admin-order-status"],
-    queryFn: () => analyticsApi.orderStatus().then((r) => r.data.data),
+    queryFn: () => {
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
+      return analyticsApi.orderStatus({ startDate: start, endDate: end }).then((r) => r.data.data);
+    },
   });
 
-  const { data: orders = [] } = useQuery({
+  const { data: rawOrders = [] } = useQuery({
     queryKey: ["admin-orders"],
-    queryFn: () => adminOrdersApi.list().then((r) => r.data.data || []),
+    queryFn: () => adminOrdersApi.list().then((r) => {
+      const d = r.data.data;
+      if (Array.isArray(d)) return d;
+      if (Array.isArray(d?.orders)) return d.orders;
+      return [];
+    }),
+  });
+
+  // Filter orders by search and status
+  const orders = rawOrders.filter((o) => {
+    const matchSearch = !search || (o.id || "").toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === "All Statuses" || o.status === filterStatus;
+    return matchSearch && matchStatus;
   });
 
   const ordersByStatus = (() => {
     if (!orderStatus) return {};
-    if (Array.isArray(orderStatus)) return Object.fromEntries(orderStatus.map((o) => [o.status, o._count]));
+    if (Array.isArray(orderStatus)) {
+      return Object.fromEntries(orderStatus.map((o) => [
+        o.status,
+        typeof o._count === "number" ? o._count : (o._count?._all ?? 0),
+      ]));
+    }
     return orderStatus;
   })();
 
@@ -37,7 +63,7 @@ export default function OrdersPanel({ showToast }) {
       setStatusModal(null);
       showToast("Status updated");
     },
-    onError: () => showToast("Failed to update status"),
+    onError: (err) => showToast(err.response?.data?.message || "Failed to update status"),
   });
 
   return (
@@ -46,13 +72,23 @@ export default function OrdersPanel({ showToast }) {
         <div className="modal-overlay" onClick={() => setStatusModal(null)}>
           <div className="modal" style={{ minWidth: 380 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="modal-title">Update Order Status</div>
+              <div className="modal-title">Update Item Status</div>
               <button className="modal-close" onClick={() => setStatusModal(null)}>×</button>
             </div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
+              Item: <span style={{ color: "var(--champagne)", fontFamily: "'DM Mono',monospace" }}>#{String(statusModal.itemId || "").slice(0, 12)}</span>
+            </div>
+            {statusModal.currentStatus && (
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 12 }}>
+                Current: <span style={{ color: "var(--gold)" }}>{statusModal.currentStatus}</span>
+              </div>
+            )}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {["PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].map((s) => (
-                <button key={s} className="ns-btn ns-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px" }}
-                  onClick={() => updateItemStatusMutation.mutate({ itemId: statusModal.itemId, status: s })}>
+              {STATUSES.map((s) => (
+                <button key={s} className="ns-btn ns-btn-ghost"
+                  style={{ justifyContent: "flex-start", padding: "12px 16px", opacity: s === statusModal.currentStatus ? 0.4 : 1 }}
+                  disabled={updateItemStatusMutation.isPending || s === statusModal.currentStatus}
+                  onClick={() => updateItemStatusMutation.mutate({ itemId: String(statusModal.itemId), status: s })}>
                   {s}
                 </button>
               ))}
@@ -64,7 +100,7 @@ export default function OrdersPanel({ showToast }) {
       <div className="page-header">
         <div className="page-eyebrow">03 — Commerce</div>
         <div className="page-title">Order <em>Management</em></div>
-        <div className="page-sub">{orders.length} orders loaded</div>
+        <div className="page-sub">{rawOrders.length} orders loaded</div>
       </div>
 
       <div className="stat-row">
@@ -80,11 +116,17 @@ export default function OrdersPanel({ showToast }) {
             style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.4 }}>
             <circle cx="9" cy="9" r="6" /><path d="M16 16l-3-3" />
           </svg>
-          <input className="ns-input" placeholder="Search by Order ID…" style={{ paddingLeft: 36 }} />
+          <input
+            className="ns-input" placeholder="Search by Order ID…" style={{ paddingLeft: 36 }}
+            value={search} onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-        <select className="ns-select" style={{ width: 160 }}>
+        <select className="ns-select" style={{ width: 160 }}
+          value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option>All Statuses</option>
-          {["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].map((s) => <option key={s}>{s}</option>)}
+          {["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].map((s) => (
+            <option key={s}>{s}</option>
+          ))}
         </select>
       </div>
 
@@ -96,27 +138,32 @@ export default function OrdersPanel({ showToast }) {
             </thead>
             <tbody>
               {orders.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", padding: "40px 16px", color: "var(--text-muted)" }}>No orders found</td></tr>
+                <tr><td colSpan={6} style={{ textAlign: "center", padding: "40px 16px", color: "var(--text-muted)" }}>
+                  {rawOrders.length === 0 ? "No orders found" : "No orders match filter"}
+                </td></tr>
               ) : (
-                orders.map((o) => (
-                  <tr key={o.id}>
-                    <td className="primary"><span className="ns-code">#{(o.id || "").slice(0, 10)}</span></td>
-                    <td>{o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-IN") : "—"}</td>
-                    <td>{(o.items || o.orderItems || []).length} items</td>
-                    <td className="primary">{fmt(o.totalAmount || o.sellerTotal)}</td>
-                    <td><Badge status={o.status} /></td>
-                    <td>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        {(o.items || o.orderItems || []).slice(0, 2).map((item, i) => (
-                          <button key={i} className="ns-btn ns-btn-ghost" style={{ padding: "5px 10px", fontSize: 10 }}
-                            onClick={() => setStatusModal({ itemId: item.id, orderNum: o.id })}>
-                            Item {i + 1}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                orders.map((o) => {
+                  const items = o.items || o.orderItems || [];
+                  return (
+                    <tr key={o.id}>
+                      <td className="primary"><span className="ns-code">#{(o.id || "").slice(0, 10)}</span></td>
+                      <td>{o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-IN") : "—"}</td>
+                      <td>{items.length} items</td>
+                      <td className="primary">{fmt(o.totalAmount || o.sellerTotal)}</td>
+                      <td><Badge status={o.status} /></td>
+                      <td>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {items.map((item, i) => (
+                            <button key={i} className="ns-btn ns-btn-ghost" style={{ padding: "5px 10px", fontSize: 10 }}
+                              onClick={() => setStatusModal({ itemId: item.id || item._id, orderNum: o.id, currentStatus: item.status })}>
+                              Item {i + 1} {item.status ? `(${item.status.slice(0,3)})` : ""}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

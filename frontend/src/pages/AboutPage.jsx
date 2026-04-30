@@ -31,9 +31,10 @@ const STATS = [
 ];
 
 const TEAM = [
-  { initials: "AK", name: "Arjun Kapoor", role: "Founder & Chief Curator" },
-  { initials: "MS", name: "Meera Sethi", role: "Head of AI & Curation" },
-  { initials: "RV", name: "Rohan Verma", role: "Luxury Partnerships" },
+  { initials: "AK", name: "Kushagra Awasthi", role: "Founder & Chief Curator" },
+  { initials: "MS", name: "Shivanshu Sharma", role: "Head of AI & Curation" },
+  { initials: "RV", name: "Avneesh ", role: "Luxury Partnerships" },
+  { initials: "RV", name: "Aditya", role: "Tech Head" },
 ];
 
 export default function AboutPage() {
@@ -58,7 +59,10 @@ export default function AboutPage() {
         <div
           style={{
             position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             background:
               "radial-gradient(ellipse 80% 60% at 60% 40%, rgba(201,169,110,0.055) 0%, transparent 70%)",
             pointerEvents: "none",
@@ -78,9 +82,23 @@ export default function AboutPage() {
               marginBottom: 22,
             }}
           >
-            <span style={{ width: 36, height: 1, background: "linear-gradient(to right, transparent, #c9a96e)", display: "inline-block" }} />
+            <span
+              style={{
+                width: 36,
+                height: 1,
+                background: "linear-gradient(to right, transparent, #c9a96e)",
+                display: "inline-block",
+              }}
+            />
             Our Story
-            <span style={{ width: 36, height: 1, background: "linear-gradient(to left, transparent, #c9a96e)", display: "inline-block" }} />
+            <span
+              style={{
+                width: 36,
+                height: 1,
+                background: "linear-gradient(to left, transparent, #c9a96e)",
+                display: "inline-block",
+              }}
+            />
           </div>
           <h1
             className="about-fade"
@@ -242,37 +260,44 @@ export default function AboutPage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {["Sourced from verified partners only", "AI-scored quality assessment on every listing", "Real-time pricing benchmarked against 14 global markets", "White-glove delivery with live tracking"].map(
-                (pt, i) => (
-                  <div
-                    key={i}
+              {[
+                "Sourced from verified partners only",
+                "AI-scored quality assessment on every listing",
+                "Real-time pricing benchmarked against 14 global markets",
+                "White-glove delivery with live tracking",
+              ].map((pt, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 16,
+                    padding: "20px 24px",
+                    background: "rgba(201,169,110,0.025)",
+                    border: "1px solid rgba(201,169,110,0.1)",
+                  }}
+                >
+                  <span
                     style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 16,
-                      padding: "20px 24px",
-                      background: "rgba(201,169,110,0.025)",
-                      border: "1px solid rgba(201,169,110,0.1)",
+                      width: 6,
+                      height: 6,
+                      background: "#c9a96e",
+                      borderRadius: "50%",
+                      marginTop: 6,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: "rgba(240,230,208,0.55)",
+                      lineHeight: 1.6,
                     }}
                   >
-                    <span
-                      style={{
-                        width: 6,
-                        height: 6,
-                        background: "#c9a96e",
-                        borderRadius: "50%",
-                        marginTop: 6,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span
-                      style={{ fontSize: 13, color: "rgba(240,230,208,0.55)", lineHeight: 1.6 }}
-                    >
-                      {pt}
-                    </span>
-                  </div>
-                ),
-              )}
+                    {pt}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -307,9 +332,7 @@ export default function AboutPage() {
               }}
             >
               Four{" "}
-              <em style={{ fontStyle: "italic", color: "#c9a96e" }}>
-                Pillars
-              </em>{" "}
+              <em style={{ fontStyle: "italic", color: "#c9a96e" }}>Pillars</em>{" "}
               of NeuralShop
             </h2>
           </div>
@@ -492,9 +515,23 @@ export default function AboutPage() {
               marginBottom: 20,
             }}
           >
-            <span style={{ width: 32, height: 1, background: "rgba(201,169,110,0.35)", display: "inline-block" }} />
+            <span
+              style={{
+                width: 32,
+                height: 1,
+                background: "rgba(201,169,110,0.35)",
+                display: "inline-block",
+              }}
+            />
             Begin Your Journey
-            <span style={{ width: 32, height: 1, background: "rgba(201,169,110,0.35)", display: "inline-block" }} />
+            <span
+              style={{
+                width: 32,
+                height: 1,
+                background: "rgba(201,169,110,0.35)",
+                display: "inline-block",
+              }}
+            />
           </div>
           <h2
             style={{
@@ -523,7 +560,14 @@ export default function AboutPage() {
             marketplaces don't attempt. Step inside and see what that difference
             looks like.
           </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              justifyContent: "center",
+              flexWrap: "wrap",
+            }}
+          >
             <button
               onClick={() => navigate("/collections")}
               style={{
@@ -539,8 +583,12 @@ export default function AboutPage() {
                 fontFamily: "'DM Sans',sans-serif",
                 transition: "all 0.3s",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#b8954a"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#c9a96e"; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#b8954a";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#c9a96e";
+              }}
             >
               Explore the Collection
             </button>
@@ -558,8 +606,12 @@ export default function AboutPage() {
                 fontFamily: "'DM Sans',sans-serif",
                 transition: "all 0.3s",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(201,169,110,0.35)"; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#c9a96e";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "rgba(201,169,110,0.35)";
+              }}
             >
               Search Products
             </button>

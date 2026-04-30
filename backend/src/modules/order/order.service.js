@@ -107,7 +107,9 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
     totalAmount += item.quantity * item.priceAtAdd;
     orderItems.push({
       productId: cleanProductId,
-      size: item.size, // ✅ NEW: Include size
+      name: item.name || product.name || "",
+      image: item.image || product.images?.[0] || "",
+      size: item.size,
       sellerId: product.owner.toString(),
       quantity: item.quantity,
       price: item.priceAtAdd,

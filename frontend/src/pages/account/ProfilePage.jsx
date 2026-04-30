@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { userApi } from '../../api/user'
+import { useAuthStore } from '../../store/authStore'
 
 function FormField({ label, register, name, type = 'text', ...props }) {
   return (
@@ -41,6 +42,17 @@ export default function ProfilePage() {
   const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000) }
 
   const navigate = useNavigate()
+  const { isLoggedIn, role } = useAuthStore()
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      showToast('Login required to view your profile')
+      setTimeout(() => navigate('/login'), 1500)
+    } else if (role === 'admin') {
+      showToast('Admin accounts cannot access user profile')
+      setTimeout(() => navigate('/admin/dashboard'), 1500)
+    }
+  }, [isLoggedIn, role, navigate])
 
   const { data: profile, isLoading } = useQuery({ queryKey: ['profile'], queryFn: () => userApi.getProfile().then(r => r.data.data) })
   const { data: addresses = [] } = useQuery({ queryKey: ['addresses'], queryFn: () => userApi.getAddresses().then(r => r.data.data || []) })

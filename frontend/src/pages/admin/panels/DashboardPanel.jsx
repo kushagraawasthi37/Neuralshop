@@ -15,19 +15,34 @@ export default function DashboardPanel({ onNavigate }) {
     queryFn: () => analyticsApi.dashboard().then((r) => r.data.data),
   });
 
-  const { data: salesData } = useQuery({
+  const { data: salesData, isLoading: salesLoading } = useQuery({
     queryKey: ["admin-sales"],
-    queryFn: () => analyticsApi.sales().then((r) => r.data.data),
+    queryFn: () => {
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
+      return analyticsApi.sales({ startDate: start, endDate: end }).then((r) => r.data.data);
+    },
   });
 
   const { data: orderStatus } = useQuery({
     queryKey: ["admin-order-status"],
-    queryFn: () => analyticsApi.orderStatus().then((r) => r.data.data),
+    queryFn: () => {
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString();
+      return analyticsApi.orderStatus({ startDate: start, endDate: end }).then((r) => r.data.data);
+    },
   });
 
   const { data: orders = [] } = useQuery({
     queryKey: ["admin-orders"],
-    queryFn: () => adminOrdersApi.list().then((r) => r.data.data || []),
+    queryFn: () => adminOrdersApi.list().then((r) => {
+      const d = r.data.data;
+      if (Array.isArray(d)) return d;
+      if (Array.isArray(d?.orders)) return d.orders;
+      return [];
+    }),
   });
 
   const { data: inventory = [] } = useQuery({
@@ -46,21 +61,27 @@ export default function DashboardPanel({ onNavigate }) {
   });
 
   const salesChartData = useMemo(() => {
-    if (!salesData) return [];
-    if (Array.isArray(salesData)) return salesData;
-    if (Array.isArray(salesData.dailySales)) {
-      return salesData.dailySales.map((d) => ({
-        date: new Date(d.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
-        revenue: d._sum?.price ?? 0,
-        orders: d._count ?? 0,
-      }));
-    }
-    return salesData.daily || salesData.weekly || [];
+    if (!salesData) return null; // null = still loading
+    const list = Array.isArray(salesData.dailySales) ? salesData.dailySales
+      : Array.isArray(salesData) ? salesData
+      : [];
+    return list.map((d) => ({
+      date: d.date
+        ? new Date(d.date + "T00:00:00").toLocaleDateString("en-IN", { month: "short", day: "numeric" })
+        : new Date(d.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
+      revenue: d.revenue ?? d._sum?.price ?? 0,
+      orders: d.orders ?? (typeof d._count === "number" ? d._count : d._count?._all) ?? 0,
+    }));
   }, [salesData]);
 
   const ordersByStatus = useMemo(() => {
     if (!orderStatus) return null;
-    if (Array.isArray(orderStatus)) return Object.fromEntries(orderStatus.map((o) => [o.status, o._count]));
+    if (Array.isArray(orderStatus)) {
+      return Object.fromEntries(orderStatus.map((o) => [
+        o.status,
+        typeof o._count === "number" ? o._count : (o._count?._all ?? 0),
+      ]));
+    }
     return orderStatus;
   }, [orderStatus]);
 
@@ -101,7 +122,11 @@ export default function DashboardPanel({ onNavigate }) {
               <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 22, fontWeight: 300 }}>{fmt(dashboard?.totalRevenue)}</div>
             </div>
           </div>
-          {salesChartData.length > 0 ? (
+          {salesLoading || salesChartData === null ? (
+            <div style={{ height: 180, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 13 }}>
+              Loading…
+            </div>
+          ) : salesChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={salesChartData}>
                 <defs>
@@ -118,7 +143,7 @@ export default function DashboardPanel({ onNavigate }) {
             </ResponsiveContainer>
           ) : (
             <div style={{ height: 180, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 13 }}>
-              Loading chart data…
+              No sales data for this period
             </div>
           )}
         </div>

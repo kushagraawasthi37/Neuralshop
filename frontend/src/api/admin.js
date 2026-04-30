@@ -3,12 +3,12 @@ import api from './axios'
 export const analyticsApi = {
   dashboard: () => api.get('/analytics/dashboard'),
   sales: (params) => api.get('/analytics/sales', { params }),
-  payments: () => api.get('/analytics/payments'),
-  customers: () => api.get('/analytics/customers'),
+  payments: (params) => api.get('/analytics/payments', { params }),
+  customers: (params) => api.get('/analytics/customers', { params }),
   inventory: () => api.get('/analytics/inventory'),
-  orderStatus: () => api.get('/analytics/orders/status'),
-  coupons: () => api.get('/analytics/coupons'),
-  seller: () => api.get('/analytics/seller'),
+  orderStatus: (params) => api.get('/analytics/orders/status', { params }),
+  coupons: (params) => api.get('/analytics/coupons', { params }),
+  seller: (params) => api.get('/analytics/seller', { params }),
 }
 
 export const adminOrdersApi = {
@@ -25,6 +25,12 @@ export const adminInventoryApi = {
     api.get('/admin/inventory/low-stock', { params: { threshold } }),
   update: (productId, totalStock, reason) =>
     api.patch(`/admin/inventory/${productId}`, { totalStock, reason }),
+  importCsv: (formData) =>
+    api.post('/admin/inventory/bulk/csv', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  importJson: (inventory) =>
+    api.post('/admin/inventory/bulk/json', { inventory }),
 }
 
 export const adminCouponsApi = {
@@ -49,6 +55,8 @@ export const adminReviewsApi = {
     api.patch(`/reviews/admin/${reviewId}/visibility`),
   respond: (reviewId, comment) =>
     api.post(`/reviews/admin/${reviewId}/respond`, { comment }),
+  deleteAny: (reviewId) => api.delete(`/reviews/admin/${reviewId}`),
+  markHelpful: (reviewId) => api.post(`/reviews/${reviewId}/helpful`),
 }
 
 export const adminProductsApi = {

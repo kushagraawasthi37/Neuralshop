@@ -10,6 +10,7 @@ import {
   getAllReviewsService,
   toggleReviewVisibilityService,
   respondToReviewService,
+  deleteReviewAdminService,
 } from "./review.service.js";
 
 // Checked
@@ -94,16 +95,24 @@ export const getAllReviews = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, result, "All reviews retrieved"));
 });
 
-// Admin: Hide/show review
+// Admin: Hide/show review — auto-flips current visibility
 export const toggleReviewVisibility = asyncHandler(async (req, res) => {
   const { reviewId } = req.params;
-  const { isVisible } = req.body;
 
-  const review = await toggleReviewVisibilityService(reviewId, isVisible);
+  const { Review } = await import("./review.model.js");
+  const current = await Review.findById(reviewId);
+  if (!current) throw new ApiError(404, "Review not found", [], "review");
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, review, "Review visibility toggled"));
+  const review = await toggleReviewVisibilityService(reviewId, !current.isVisible);
+
+  res.status(200).json(new ApiResponse(200, review, "Review visibility toggled"));
+});
+
+// Admin: Delete any review regardless of ownership
+export const deleteReviewAdmin = asyncHandler(async (req, res) => {
+  const { reviewId } = req.params;
+  const result = await deleteReviewAdminService(reviewId);
+  res.status(200).json(new ApiResponse(200, result, "Review deleted successfully"));
 });
 
 // Admin: Respond to review

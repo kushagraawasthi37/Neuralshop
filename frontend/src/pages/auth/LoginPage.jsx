@@ -47,7 +47,7 @@ export default function LoginPage() {
     try {
       const { data } = await authApi.login({ email, password });
       setPendingRole("user");
-      setAuth(data.user, data.token);
+      setAuth(data.user, data.token, "user");
 
       // Merge guest cart if the user had items saved while browsing unauthenticated
       if (guestItems.length > 0) {
