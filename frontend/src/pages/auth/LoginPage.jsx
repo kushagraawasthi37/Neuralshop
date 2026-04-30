@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +17,8 @@ import {
 } from "../../components/auth/AuthField";
 import { authApi } from "../../api/auth";
 import { useAuthStore } from "../../store/authStore";
+import { cartApi } from "../../api/cart";
+import { useGuestCartStore } from "../../store/guestCartStore";
 
 const schema = z.object({
   email: z.string().email("Valid email required"),
@@ -25,8 +27,11 @@ const schema = z.object({
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
   const setPendingRole = useAuthStore((s) => s.setPendingRole);
+  const guestItems = useGuestCartStore((s) => s.items);
+  const clearGuestCart = useGuestCartStore((s) => s.clear);
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +48,19 @@ export default function LoginPage() {
       const { data } = await authApi.login({ email, password });
       setPendingRole("user");
       setAuth(data.user, data.token);
-      navigate("/");
+
+      // Merge guest cart if the user had items saved while browsing unauthenticated
+      if (guestItems.length > 0) {
+        try {
+          await cartApi.merge({ items: guestItems });
+          clearGuestCart();
+        } catch (_) {
+          // Non-fatal: continue even if merge fails
+        }
+      }
+
+      const returnTo = searchParams.get("return") || "/";
+      navigate(returnTo);
     } catch (err) {
       setServerError(err.response?.data?.message || "Invalid credentials.");
     } finally {

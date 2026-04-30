@@ -212,10 +212,12 @@ export default function WishlistPage() {
             }}
           >
             {wishlist.map((item) => {
-              const product = item.product || item;
+              // populated field is "productId" on the wishlist item
+              const product = item.productId || item.product || item;
+              const productId = (product._id || product.id)?.toString();
               return (
                 <div
-                  key={product._id || product.id}
+                  key={productId || Math.random()}
                   style={{
                     background: "#1a1916",
                     border: "1px solid rgba(201,169,110,0.18)",
@@ -232,13 +234,11 @@ export default function WishlistPage() {
                       overflow: "hidden",
                       cursor: "pointer",
                     }}
-                    onClick={() =>
-                      navigate(`/product/${product._id || product.id}`)
-                    }
+                    onClick={() => navigate(`/product/${productId}`)}
                   >
-                    {product.image?.[0] || product.image ? (
+                    {product.images?.[0] ? (
                       <img
-                        src={product.image?.[0] || product.image}
+                        src={product.images[0]}
                         alt={product.name}
                         style={{
                           width: "100%",
@@ -278,7 +278,7 @@ export default function WishlistPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeMutation.mutate(product._id || product.id);
+                        removeMutation.mutate(productId);
                       }}
                       style={{
                         position: "absolute",
@@ -356,7 +356,7 @@ export default function WishlistPage() {
                         )}
                     </div>
                     <button
-                      onClick={() => goToProduct(product._id || product.id)}
+                      onClick={() => goToProduct(productId)}
                       style={{
                         width: "100%",
                         padding: "12px",

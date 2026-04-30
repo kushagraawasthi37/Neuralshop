@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Wishlist } from "./wishlist.model.js";
 import { Product } from "../product/product.model.js";
+import { ApiError } from "../../utils/api-error.js";
 
 // ============================================
 // GET WISHLIST
@@ -33,7 +34,7 @@ export const addToWishlistService = async (userId, productId) => {
   try {
     const product = await Product.findById(productId);
     if (!product) {
-      throw new Error("Product not found");
+      throw new ApiError(404, "Product not found", [], "wishlist");
     }
 
     let wishlist = await Wishlist.findOne({ userId });
@@ -50,7 +51,7 @@ export const addToWishlistService = async (userId, productId) => {
       );
 
       if (exists) {
-        throw new Error("Product already in wishlist");
+        throw new ApiError(409, "Product already in wishlist", [], "wishlist");
       }
 
       wishlist.items.push({ productId });
@@ -74,7 +75,7 @@ export const removeFromWishlistService = async (userId, productId) => {
     const wishlist = await Wishlist.findOne({ userId });
 
     if (!wishlist) {
-      throw new Error("Wishlist not found");
+      throw new ApiError(404, "Wishlist not found", [], "wishlist");
     }
 
     wishlist.items = wishlist.items.filter(
@@ -120,7 +121,7 @@ export const clearWishlistService = async (userId) => {
     );
 
     if (!wishlist) {
-      throw new Error("Wishlist not found");
+      throw new ApiError(404, "Wishlist not found", [], "wishlist");
     }
 
     return wishlist;

@@ -98,7 +98,7 @@ export default function OrderConfirmationPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, marginBottom: 52, textAlign: 'left', animation: 'slideUp 0.6s cubic-bezier(0.23,1,0.32,1) both 1.2s', opacity: 0 }}>
             {[
               { label: 'Total Amount', val: fmt(total), sub: 'Inclusive of taxes' },
-              { label: 'Payment Status', val: order?.paymentStatus || 'Pending', sub: 'Razorpay secured' },
+              { label: 'Payment Status', val: order?.payment?.status ? order.payment.status.charAt(0).toUpperCase() + order.payment.status.slice(1) : 'Pending', sub: 'Razorpay secured' },
               { label: 'Estimated Delivery', val: '3–5 Business Days', sub: 'Standard shipping' },
             ].map((box, i) => (
               <div key={i} style={{ padding: 24, background: '#1a1916', border: '1px solid rgba(201,169,110,0.18)' }}>

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Review } from "./review.model.js";
 import { Product } from "./product.model.js";
+import { ApiError } from "../../utils/api-error.js";
 
 // ============================================
 // CREATE REVIEW
@@ -15,21 +16,25 @@ export const createReviewService = async (
     // Check if product exists
     const product = await Product.findById(productId);
     if (!product) {
-      throw new Error("Product not found");
+      throw new ApiError(404, "Product not found", [], "review");
     }
 
     // Check if user already reviewed this product
     const existingReview = await Review.findOne({ productId, userId });
     if (existingReview) {
-      throw new Error("You have already reviewed this product");
+      throw new ApiError(409, "You have already reviewed this product", [], "review");
     }
+
+    // Auto-generate title from comment if not provided
+    const reviewTitle = title?.trim() ||
+      (comment.length <= 60 ? comment.trim() : comment.trim().substring(0, 57) + "…");
 
     // Create review
     const review = await Review.create({
       productId,
       userId,
       rating,
-      title,
+      title: reviewTitle,
       comment,
       verifiedPurchase,
     });
@@ -53,7 +58,7 @@ export const getProductReviewsService = async (
   try {
     const product = await Product.findById(productId);
     if (!product) {
-      throw new Error("Product not found");
+      throw new ApiError(404, "Product not found", [], "review");
     }
 
     let sortOption = {};
@@ -138,11 +143,11 @@ export const updateReviewService = async (
   try {
     const review = await Review.findById(reviewId);
     if (!review) {
-      throw new Error("Review not found");
+      throw new ApiError(404, "Review not found", [], "review");
     }
 
     if (review.userId.toString() !== userId) {
-      throw new Error("Unauthorized: Cannot update another user's review");
+      throw new ApiError(403, "Unauthorized: Cannot update another user's review", [], "review");
     }
 
     review.rating = rating || review.rating;
@@ -167,11 +172,11 @@ export const deleteReviewService = async (reviewId, userId) => {
   try {
     const review = await Review.findById(reviewId);
     if (!review) {
-      throw new Error("Review not found");
+      throw new ApiError(404, "Review not found", [], "review");
     }
 
     if (review.userId.toString() !== userId) {
-      throw new Error("Unauthorized: Cannot delete another user's review");
+      throw new ApiError(403, "Unauthorized: Cannot delete another user's review", [], "review");
     }
 
     const productId = review.productId;
@@ -198,7 +203,7 @@ export const markReviewHelpfulService = async (reviewId) => {
     );
 
     if (!review) {
-      throw new Error("Review not found");
+      throw new ApiError(404, "Review not found", [], "review");
     }
 
     return review;
@@ -243,7 +248,7 @@ export const toggleReviewVisibilityService = async (reviewId, isVisible) => {
     );
 
     if (!review) {
-      throw new Error("Review not found");
+      throw new ApiError(404, "Review not found", [], "review");
     }
 
     // Update product rating
@@ -277,7 +282,7 @@ export const respondToReviewService = async (
     );
 
     if (!review) {
-      throw new Error("Review not found");
+      throw new ApiError(404, "Review not found", [], "review");
     }
 
     return review;

@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 
 const footerLinks = {
-  Shop: [['Collections', '/collections'], ['New Arrivals', '/new-arrivals'], ['Bestsellers', '/collections?filter=bestseller'], ['Trending', '/collections?filter=trending']],
-  Help: [['Track Order', '/orders'], ['Returns', '/returns'], ['FAQ', '/faq'], ['Contact', '/contact']],
+  Shop: [['Collections', '/collections'], ['New Arrivals', '/products?sort=newest'], ['Bestsellers', '/collections?filter=bestseller'], ['Trending', '/collections?filter=trending']],
+  Help: [['Track Order', '/account/orders'], ['Returns', '/account/returns'], ['FAQ', '/faq'], ['Contact', '/contact']],
   Company: [['About', '/about'], ['Journal', '/journal'], ['Careers', '/careers'], ['Press', '/press']],
 }
 

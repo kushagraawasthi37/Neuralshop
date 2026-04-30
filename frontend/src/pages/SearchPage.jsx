@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/products";
-import { useCartStore } from "../store/cartStore";
+import { cartApi } from "../api/cart";
+import { useAuthStore } from "../store/authStore";
+import { useGuestCartStore } from "../store/guestCartStore";
 
 const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
@@ -14,62 +16,105 @@ const SORT_OPTIONS = [
   { label: "Newest", value: "newest" },
 ];
 
-function ProductCard({ product }) {
-  const { addItem } = useCartStore();
-  const [adding, setAdding] = useState(false);
+function SizePicker({ sizes, onSelect, onClose }) {
+  const available = (sizes || []).filter((s) => s.stock > 0);
+  if (!available.length) return null;
+  return (
+    <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: 0, right: 0, background: "#1a1916", border: "1px solid rgba(201,169,110,0.35)", padding: "10px 12px", zIndex: 100 }}
+      onClick={(e) => e.stopPropagation()}>
+      <div style={{ fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(201,169,110,0.55)", marginBottom: 8 }}>Select Size</div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {available.map((s) => (
+          <button key={s.size} onClick={(e) => { e.stopPropagation(); onSelect(s.size); }}
+            style={{ padding: "5px 10px", border: "1px solid rgba(201,169,110,0.35)", background: "none", color: "#c9a96e", fontSize: 11, cursor: "pointer", letterSpacing: "0.08em", fontFamily: "'DM Sans',sans-serif" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#c9a96e"; e.currentTarget.style.color = "#0d0c0b"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#c9a96e"; }}>
+            {s.size}
+          </button>
+        ))}
+      </div>
+      <button onClick={(e) => { e.stopPropagation(); onClose(); }}
+        style={{ marginTop: 8, background: "none", border: "none", fontSize: 10, color: "rgba(240,230,208,0.3)", cursor: "pointer", padding: 0 }}>
+        Cancel
+      </button>
+    </div>
+  );
+}
 
-  const handleAddToCart = async (e) => {
-    e.preventDefault();
+function ProductCard({ product }) {
+  const navigate = useNavigate();
+  const { isLoggedIn } = useAuthStore();
+  const guestAddItem = useGuestCartStore((s) => s.addItem);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [showSizePicker, setShowSizePicker] = useState(false);
+
+  const availableSizes = (product.sizes || []).filter((s) => s.stock > 0);
+  const price = product.offerPrice || product.price || 0;
+  const img = product.images?.[0] || product.image?.[0];
+
+  const doAddToCart = async (size) => {
     setAdding(true);
-    try { await addItem(product.id || product._id, 1, {}); } catch (_) {}
+    setShowSizePicker(false);
+    try {
+      if (isLoggedIn) {
+        await cartApi.addItem(product.id || product._id, 1, size, price, product.name, img || "");
+      } else {
+        guestAddItem({ productId: product.id || product._id, quantity: 1, size, priceAtAdd: price, name: product.name, image: img || "" });
+      }
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (_) {}
     setAdding(false);
   };
 
-  const price = product.offerPrice || product.price || 0;
-  const original = product.originalPrice || product.comparePrice;
-  const discount = original && original > price ? Math.round(((original - price) / original) * 100) : null;
-  const img = product.image?.[0] || product.images?.[0];
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    if (!availableSizes.length) { navigate(`/product/${product.id || product._id}`); return; }
+    if (availableSizes.length === 1) { doAddToCart(availableSizes[0].size); return; }
+    setShowSizePicker((v) => !v);
+  };
 
   return (
-    <Link to={`/product/${product.id || product._id}`} style={{ textDecoration: "none" }}>
-      <div style={{ background: "#1a1916", border: "1px solid rgba(201,169,110,0.18)", overflow: "hidden", transition: "all 0.4s cubic-bezier(0.23,1,0.32,1)" }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(201,169,110,0.42)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(201,169,110,0.18)"; e.currentTarget.style.transform = "none"; }}>
-        <div style={{ position: "relative", aspectRatio: "3/4", background: "#0d0c0b", overflow: "hidden" }}>
-          {img ? (
-            <img src={img} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
-                <rect x="10" y="10" width="40" height="40" stroke="rgba(201,169,110,0.25)" strokeWidth="0.8" />
-                <path d="M20 30h20M30 20v20" stroke="rgba(201,169,110,0.15)" strokeWidth="0.8" />
-              </svg>
-            </div>
-          )}
-          {discount && (
-            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,169,110,0.9)", color: "#0d0c0b", fontSize: 9, letterSpacing: "0.1em", padding: "2px 7px", fontWeight: 500 }}>
-              -{discount}%
-            </div>
-          )}
-        </div>
-        <div style={{ padding: "14px 14px 18px" }}>
-          <div style={{ fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(201,169,110,0.45)", marginBottom: 5 }}>{product.category || ""}</div>
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 15, fontWeight: 300, color: "#f0e6d0", marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product.name}</div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
-            <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 18, fontWeight: 300, color: "#c9a96e" }}>{fmt(price)}</span>
-            {original && original > price && (
-              <span style={{ fontSize: 11, color: "rgba(240,230,208,0.3)", textDecoration: "line-through" }}>{fmt(original)}</span>
-            )}
+    <div onClick={() => navigate(`/product/${product.id || product._id}`)}
+      style={{ background: "#1a1916", border: "1px solid rgba(201,169,110,0.18)", overflow: "visible", transition: "all 0.4s cubic-bezier(0.23,1,0.32,1)", cursor: "pointer", position: "relative" }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(201,169,110,0.42)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(201,169,110,0.18)"; e.currentTarget.style.transform = "none"; }}>
+      <div style={{ position: "relative", aspectRatio: "3/4", background: "#0d0c0b", overflow: "hidden" }}>
+        {img ? (
+          <img src={img} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
+              <rect x="10" y="10" width="40" height="40" stroke="rgba(201,169,110,0.25)" strokeWidth="0.8" />
+              <path d="M20 30h20M30 20v20" stroke="rgba(201,169,110,0.15)" strokeWidth="0.8" />
+            </svg>
           </div>
+        )}
+      </div>
+      <div style={{ padding: "14px 14px 18px", position: "relative" }}>
+        <div style={{ fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(201,169,110,0.45)", marginBottom: 5 }}>{product.category || ""}</div>
+        <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 15, fontWeight: 300, color: "#f0e6d0", marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product.name}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+          {[1,2,3,4,5].map((s) => (
+            <span key={s} style={{ fontSize: 10, color: s <= Math.round(product.rating || 0) ? "#c9a96e" : "rgba(201,169,110,0.2)" }}>★</span>
+          ))}
+          {product.reviewCount > 0 && <span style={{ fontSize: 10, color: "rgba(240,230,208,0.35)" }}>({product.reviewCount})</span>}
+        </div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
+          <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 18, fontWeight: 300, color: "#c9a96e" }}>{fmt(price)}</span>
+        </div>
+        <div style={{ position: "relative" }}>
+          {showSizePicker && <SizePicker sizes={product.sizes} onSelect={doAddToCart} onClose={() => setShowSizePicker(false)} />}
           <button onClick={handleAddToCart} disabled={adding}
-            style={{ width: "100%", padding: "9px", background: "rgba(201,169,110,0.07)", border: "1px solid rgba(201,169,110,0.2)", color: "#c9a96e", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.25s ease", fontFamily: "'DM Sans',sans-serif" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#c9a96e"; e.currentTarget.style.color = "#0d0c0b"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(201,169,110,0.07)"; e.currentTarget.style.color = "#c9a96e"; }}>
-            {adding ? "Adding…" : "Add to Cart"}
+            style={{ width: "100%", padding: "9px", background: added ? "#c9a96e" : "rgba(201,169,110,0.07)", border: "1px solid rgba(201,169,110,0.2)", color: added ? "#0d0c0b" : "#c9a96e", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.25s ease", fontFamily: "'DM Sans',sans-serif" }}
+            onMouseEnter={(e) => { if (!added) { e.currentTarget.style.background = "#c9a96e"; e.currentTarget.style.color = "#0d0c0b"; } }}
+            onMouseLeave={(e) => { if (!added) { e.currentTarget.style.background = "rgba(201,169,110,0.07)"; e.currentTarget.style.color = "#c9a96e"; } }}>
+            {adding ? "Adding…" : added ? "Added ✓" : "Add to Cart"}
           </button>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -102,9 +147,9 @@ export default function SearchPage() {
 
   const queryParams = {
     search: q,
-    ...(sortBy ? { sortBy } : {}),
+    ...(sortBy ? { sort: sortBy } : {}),
     ...(category ? { category } : {}),
-    ...(priceMax > 0 ? { price_max: priceMax } : {}),
+    ...(priceMax > 0 ? { priceMax } : {}),
     skip: (page - 1) * limit,
     limit,
   };

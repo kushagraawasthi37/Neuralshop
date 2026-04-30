@@ -29,6 +29,7 @@ import ProductsPage from "./pages/ProductsPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import SearchPage from "./pages/SearchPage";
 import CollectionPage from "./pages/CollectionPage";
+import AboutPage from "./pages/AboutPage";
 
 const AUTH_PATHS = [
   "/login",
@@ -168,7 +169,7 @@ function AppShell() {
         {/* Placeholder pages */}
         <Route path="/collections" element={<CollectionPage />} />
         <Route path="/account" element={<PlaceholderPage title="Account" />} />
-        <Route path="/about" element={<PlaceholderPage title="About" />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="*" element={<PlaceholderPage title="404 — Not Found" />} />
       </Routes>
 

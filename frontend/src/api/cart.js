@@ -21,6 +21,11 @@ export const cartApi = {
 
   clear: () => api.delete('/cart/clear-cart'),
 
+  merge: (guestCart) =>
+    api.post('/cart/merge', { guestCart }, {
+      headers: { 'Idempotency-Key': uuid() },
+    }),
+
   validate: () => api.post('/cart/validate'),
 
   checkout: (addressId, couponCode) =>

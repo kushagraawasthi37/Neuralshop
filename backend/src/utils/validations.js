@@ -227,6 +227,16 @@ export const productValidations = {
       .optional()
       .isInt({ min: 0 })
       .withMessage("Skip must be a non-negative integer"),
+
+    query().custom((value, { req }) => {
+      const { priceMin, priceMax } = req.query;
+      if (priceMin !== undefined && priceMax !== undefined) {
+        if (parseFloat(priceMin) > parseFloat(priceMax)) {
+          throw new Error("Price min cannot be greater than price max");
+        }
+      }
+      return true;
+    }),
   ],
 
   browseProducts: [

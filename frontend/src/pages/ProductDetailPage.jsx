@@ -78,13 +78,13 @@ export default function ProductDetailPage() {
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ["product", id],
-    queryFn: () => productApi.getById(id).then((r) => r.data.data || r.data),
+    queryFn: () => productApi.getById(id).then((r) => r.data.product || r.data.data || r.data),
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: reviews = [] } = useQuery({
     queryKey: ["product-reviews", id],
-    queryFn: () => fetch(`/api/reviews/product/${id}`).then((r) => r.json()).then((r) => r.data || []).catch(() => []),
+    queryFn: () => fetch(`/api/reviews/product/${id}`).then((r) => r.json()).then((r) => r.data?.reviews || r.data || []).catch(() => []),
     staleTime: 2 * 60 * 1000,
   });
 
@@ -97,7 +97,7 @@ export default function ProductDetailPage() {
 
   const { data: wishlistStatus } = useQuery({
     queryKey: ["wishlist-check", id],
-    queryFn: () => wishlistApi.check(id).then((r) => r.data.data?.isWishlisted ?? false).catch(() => false),
+    queryFn: () => wishlistApi.check(id).then((r) => r.data.data?.inWishlist ?? false).catch(() => false),
   });
 
   const wishlistMutation = useMutation({

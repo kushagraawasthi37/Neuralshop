@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cartApi } from '../api/cart'
 import { couponsApi } from '../api/orders'
+import { useAuthStore } from '../store/authStore'
+import { useGuestCartStore } from '../store/guestCartStore'
 
 const fmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN')
 
@@ -38,13 +40,19 @@ function Toast({ msg, show }) {
 export default function CartPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { isLoggedIn } = useAuthStore()
+  const guestItems = useGuestCartStore((s) => s.items)
+  const guestRemove = useGuestCartStore((s) => s.removeItem)
+  const guestUpdate = useGuestCartStore((s) => s.updateItem)
+  const guestClear = useGuestCartStore((s) => s.clear)
   const [couponCode, setCouponCode] = useState('')
   const [coupon, setCoupon] = useState(null)
   const [toast, setToast] = useState({ show: false, msg: '' })
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: () => cartApi.get().then(r => r.data.data),
+    enabled: isLoggedIn,
     retry: 1,
   })
 
@@ -54,20 +62,27 @@ export default function CartPage() {
   }
 
   const updateMutation = useMutation({
-    mutationFn: ({ productId, quantity, size }) => cartApi.updateItem(productId, quantity, size),
-    onSuccess: () => qc.invalidateQueries(['cart']),
+    mutationFn: ({ productId, quantity, size }) =>
+      isLoggedIn
+        ? cartApi.updateItem(productId, quantity, size)
+        : (guestUpdate(productId, size, quantity), Promise.resolve()),
+    onSuccess: () => { if (isLoggedIn) qc.invalidateQueries(['cart']) },
     onError: () => showToast('Failed to update quantity'),
   })
 
   const removeMutation = useMutation({
-    mutationFn: ({ productId, size }) => cartApi.removeItem(productId, size),
-    onSuccess: () => { qc.invalidateQueries(['cart']); showToast('Item removed') },
+    mutationFn: ({ productId, size }) =>
+      isLoggedIn
+        ? cartApi.removeItem(productId, size)
+        : (guestRemove(productId, size), Promise.resolve()),
+    onSuccess: () => { if (isLoggedIn) qc.invalidateQueries(['cart']); showToast('Item removed') },
     onError: () => showToast('Failed to remove item'),
   })
 
   const clearMutation = useMutation({
-    mutationFn: () => cartApi.clear(),
-    onSuccess: () => { qc.invalidateQueries(['cart']); showToast('Cart cleared') },
+    mutationFn: () =>
+      isLoggedIn ? cartApi.clear() : (guestClear(), Promise.resolve()),
+    onSuccess: () => { if (isLoggedIn) qc.invalidateQueries(['cart']); showToast('Cart cleared') },
   })
 
   const handleApplyCoupon = async () => {
@@ -82,7 +97,7 @@ export default function CartPage() {
     }
   }
 
-  const items = data?.items || []
+  const items = isLoggedIn ? (data?.items || []) : guestItems.map((i) => ({ ...i, priceAtAdd: i.priceAtAdd || 0 }))
   const subtotal = data?.subtotal || items.reduce((s, i) => s + (i.priceAtAdd || 0) * i.quantity, 0)
   const shipping = data?.shippingCost || 0
   const tax = data?.tax || Math.round(subtotal * 0.18)
@@ -91,7 +106,7 @@ export default function CartPage() {
     : 0
   const total = subtotal + shipping + tax - discount
 
-  if (isLoading) return (
+  if (isLoggedIn && isLoading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 80 }}>
       <div style={{ width: 48, height: 48, border: '1px solid rgba(201,169,110,0.3)', borderTopColor: '#c9a96e', borderRadius: '50%', animation: 'spin 1.2s linear infinite' }} />
     </div>
@@ -199,10 +214,21 @@ export default function CartPage() {
                 </div>
 
                 <button
-                  onClick={() => navigate('/checkout', { state: { coupon, total } })}
+                  onClick={() => {
+                    if (!isLoggedIn) {
+                      navigate('/login?return=/checkout')
+                    } else {
+                      navigate('/checkout', { state: { coupon, total } })
+                    }
+                  }}
                   style={{ width: '100%', marginTop: 28, padding: 18, background: '#c9a96e', color: '#0d0c0b', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 500, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.3s' }}>
-                  Proceed to Checkout →
+                  {isLoggedIn ? 'Proceed to Checkout →' : 'Sign In to Checkout →'}
                 </button>
+                {!isLoggedIn && (
+                  <div style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: 'rgba(240,230,208,0.35)', letterSpacing: '0.06em' }}>
+                    Your cart is saved — log in to complete your order
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, justifyContent: 'center', fontSize: 10, color: 'rgba(240,230,208,0.38)', letterSpacing: '0.08em' }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>

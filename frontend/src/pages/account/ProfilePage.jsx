@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 import { userApi } from '../../api/user'
 
 function FormField({ label, register, name, type = 'text', ...props }) {
@@ -24,6 +25,9 @@ const NAV_TABS = [
   { id: 'personal', label: 'Personal Info', icon: '👤' },
   { id: 'addresses', label: 'Addresses', icon: '📍' },
   { id: 'security', label: 'Security', icon: '🔒' },
+  { id: 'orders', label: 'Orders', icon: '📦' },
+  { id: 'return', label: 'Returns', icon: '' },
+  { id: 'wishlist', label: 'Wishlist', icon: '♡' },
 ]
 
 export default function ProfilePage() {
@@ -35,6 +39,8 @@ export default function ProfilePage() {
   const [addrForm, setAddrForm] = useState({ label: 'Home', phone: '', street: '', city: '', state: '', zipCode: '', country: 'India' })
 
   const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000) }
+
+  const navigate = useNavigate()
 
   const { data: profile, isLoading } = useQuery({ queryKey: ['profile'], queryFn: () => userApi.getProfile().then(r => r.data.data) })
   const { data: addresses = [] } = useQuery({ queryKey: ['addresses'], queryFn: () => userApi.getAddresses().then(r => r.data.data || []) })
@@ -179,6 +185,52 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+
+            {activeTab === 'orders' && (
+              <div>
+                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 28, fontWeight: 300, color: '#f0e6d0', marginBottom: 32 }}>My Orders</div>
+                <div style={{ padding: '32px 24px', background: '#1a1916', border: '1px solid rgba(201,169,110,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: 14, color: '#f0e6d0', marginBottom: 4 }}>Order History</div>
+                    <div style={{ fontSize: 12, color: 'rgba(240,230,208,0.38)' }}>View and track all your past orders</div>
+                  </div>
+                  <button onClick={() => navigate('/account/orders')} style={{ padding: '12px 28px', background: '#c9a96e', border: 'none', color: '#0d0c0b', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>
+                    View Orders
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'return' && (
+              <div>
+                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 28, fontWeight: 300, color: '#f0e6d0', marginBottom: 32 }}>My Returns</div>
+                <div style={{ padding: '32px 24px', background: '#1a1916', border: '1px solid rgba(201,169,110,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: 14, color: '#f0e6d0', marginBottom: 4 }}>Return Requests</div>
+                    <div style={{ fontSize: 12, color: 'rgba(240,230,208,0.38)' }}>Manage and track your return requests</div>
+                  </div>
+                  <button onClick={() => navigate('/account/returns')} style={{ padding: '12px 28px', background: 'none', border: '1px solid rgba(201,169,110,0.4)', color: '#c9a96e', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>
+                    View Returns
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'wishlist' && (
+              <div>
+                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 28, fontWeight: 300, color: '#f0e6d0', marginBottom: 32 }}>My Wishlist</div>
+                <div style={{ padding: '32px 24px', background: '#1a1916', border: '1px solid rgba(201,169,110,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: 14, color: '#f0e6d0', marginBottom: 4 }}>Saved Pieces</div>
+                    <div style={{ fontSize: 12, color: 'rgba(240,230,208,0.38)' }}>Items you've saved for later — ready when you are</div>
+                  </div>
+                  <button onClick={() => navigate('/account/wishlist')} style={{ padding: '12px 28px', background: '#c9a96e', border: 'none', color: '#0d0c0b', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>
+                    View Wishlist ♡
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>

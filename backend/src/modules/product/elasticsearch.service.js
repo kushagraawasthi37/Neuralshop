@@ -6,6 +6,22 @@ const getClient = async () => {
 
 const PRODUCT_INDEX = "products";
 
+const INDEX_MAPPINGS = {
+  name: { type: "text", analyzer: "standard" },
+  description: { type: "text", analyzer: "standard" },
+  category: { type: "keyword" },
+  subCategory: { type: "keyword" },
+  price: { type: "float" },
+  rating: { type: "float" },
+  reviewCount: { type: "integer" },
+  bestseller: { type: "boolean" },
+  tags: { type: "keyword" },
+  images: { type: "keyword", index: false },
+  owner: { type: "keyword" },
+  createdAt: { type: "date" },
+  updatedAt: { type: "date" },
+};
+
 export const createProductIndex = async () => {
   try {
     const elasticsearchClient = await getClient();
@@ -15,25 +31,15 @@ export const createProductIndex = async () => {
     if (!exists) {
       await elasticsearchClient.indices.create({
         index: PRODUCT_INDEX,
-
-        mappings: {
-          properties: {
-            name: { type: "text", analyzer: "standard" },
-            description: { type: "text", analyzer: "standard" },
-            category: { type: "keyword" },
-            subCategory: { type: "keyword" },
-            price: { type: "float" },
-            rating: { type: "float" },
-            reviewCount: { type: "integer" },
-            bestseller: { type: "boolean" },
-            tags: { type: "keyword" },
-            owner: { type: "keyword" },
-            createdAt: { type: "date" },
-            updatedAt: { type: "date" },
-          },
-        },
+        mappings: { properties: INDEX_MAPPINGS },
       });
       console.log("Product index created");
+    } else {
+      // Ensure mappings are up-to-date on existing index
+      await elasticsearchClient.indices.putMapping({
+        index: PRODUCT_INDEX,
+        properties: INDEX_MAPPINGS,
+      });
     }
   } catch (error) {
     console.error("Error creating product index:", error);
@@ -57,6 +63,7 @@ export const indexProduct = async (product) => {
         reviewCount: product.reviewCount,
         bestseller: product.bestseller,
         tags: product.tags,
+        images: product.images || [],
         owner: product.owner.toString(),
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
@@ -115,20 +122,29 @@ export const searchProducts = async (
       size: limit,
     };
 
-    // Search query with fuzzy matching
+    // Search query: fuzzy match for complete words + phrase_prefix for real-time typing
     if (query) {
       body.query.bool.must.push({
-        multi_match: {
-          query,
-          fields: [
-            "name^3",
-            "description^2",
-            "category",
-            "subCategory",
-            "tags",
+        bool: {
+          should: [
+            {
+              multi_match: {
+                query,
+                fields: ["name^3", "description^2", "category", "subCategory", "tags"],
+                fuzziness: "AUTO",
+                prefix_length: 1,
+              },
+            },
+            {
+              multi_match: {
+                query,
+                type: "phrase_prefix",
+                fields: ["name^3", "description^2", "category", "subCategory", "tags"],
+                max_expansions: 50,
+              },
+            },
           ],
-          fuzziness: "AUTO", // Enables fuzzy search for approximate matches
-          prefix_length: 2, // Don't fuzz the first 2 characters
+          minimum_should_match: 1,
         },
       });
     }
@@ -170,19 +186,19 @@ export const searchProducts = async (
     // Sorting
     if (sort) {
       if (sort === "price_asc") {
-        body.sort.push({ price: { order: "asc" } });
+        body.sort.push({ price: { order: "asc", unmapped_type: "float" } });
       } else if (sort === "price_desc") {
-        body.sort.push({ price: { order: "desc" } });
+        body.sort.push({ price: { order: "desc", unmapped_type: "float" } });
       } else if (sort === "newest" || sort === "createdAt_desc") {
-        body.sort.push({ createdAt: { order: "desc" } });
+        body.sort.push({ createdAt: { order: "desc", unmapped_type: "date" } });
       } else if (sort === "createdAt_asc") {
-        body.sort.push({ createdAt: { order: "asc" } });
+        body.sort.push({ createdAt: { order: "asc", unmapped_type: "date" } });
       } else if (sort === "rating" || sort === "rating_desc") {
-        body.sort.push({ rating: { order: "desc" } });
+        body.sort.push({ rating: { order: "desc", unmapped_type: "float" } });
       } else if (sort === "name_asc") {
-        body.sort.push({ name: { order: "asc" } });
+        body.sort.push({ name: { order: "asc", unmapped_type: "keyword" } });
       } else if (sort === "name_desc") {
-        body.sort.push({ name: { order: "desc" } });
+        body.sort.push({ name: { order: "desc", unmapped_type: "keyword" } });
       }
     } else {
       body.sort.push({ _score: { order: "desc" } });

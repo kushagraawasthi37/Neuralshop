@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cartApi } from '../api/cart'
 import { userApi } from '../api/user'
 import { ordersApi } from '../api/orders'
@@ -55,6 +55,7 @@ function addrLine(addr) {
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const queryClient = useQueryClient()
   const [step, setStep] = useState(0)
   const [selectedAddress, setSelectedAddress] = useState(null)
   // newAddr fields match Prisma Address schema: label, street, city, state, zipCode, country, phone
@@ -117,11 +118,12 @@ export default function CheckoutPage() {
       const rzpData = payRes.data.data
       if (!rzpData?.razorpayOrderId) {
         setProcessing(false)
+        queryClient.invalidateQueries({ queryKey: ['cart'] })
         navigate('/order-confirmation', { state: { orderId: oid } })
         return
       }
       const options = {
-        key: rzpData.razorpayKeyId,
+        key: rzpData.key,
         amount: rzpData.amount,
         currency: rzpData.currency || 'INR',
         order_id: rzpData.razorpayOrderId,
@@ -129,6 +131,7 @@ export default function CheckoutPage() {
         description: 'Purchase',
         handler: () => {
           setProcessing(false)
+          queryClient.invalidateQueries({ queryKey: ['cart'] })
           navigate('/order-confirmation', { state: { orderId: oid } })
         },
         prefill: {
@@ -142,6 +145,7 @@ export default function CheckoutPage() {
       rzp.open()
     } catch {
       setProcessing(false)
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
       navigate('/order-confirmation', { state: { orderId: oid } })
     }
   }

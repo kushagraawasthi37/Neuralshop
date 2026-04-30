@@ -27,8 +27,8 @@ reviewRoutes.post(
   "/product/:productId",
   isAuth,
   asyncHandler(async (req, res, next) => {
-    if (!req.body.rating || !req.body.title || !req.body.comment) {
-      return res.status(400).json({ message: "Missing required fields" });
+    if (!req.body.rating || !req.body.comment) {
+      return res.status(400).json({ message: "Rating and comment are required" });
     }
     next();
   }),

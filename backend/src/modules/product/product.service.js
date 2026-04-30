@@ -108,8 +108,6 @@ export const listProductService = async (queryParams) => {
       limit = 10,
     } = queryParams;
 
-    console.log("Hitted", queryParams);
-
     const limitNum = parseInt(limit);
     const skipNum = skip !== undefined ? parseInt(skip) : 0;
     const pageNum = queryParams.page
@@ -118,20 +116,15 @@ export const listProductService = async (queryParams) => {
 
     const effectiveSort = sortBy && order ? `${sortBy}_${order}` : sort;
 
-    // 🔹 Build filters for ES
     const filters = {};
-
     if (category) filters.category = category;
     if (subCategory) filters.subCategory = subCategory;
-
     if (priceMin !== undefined) filters.priceMin = parseFloat(priceMin);
     if (priceMax !== undefined) filters.priceMax = parseFloat(priceMax);
-
     if (ratingMin !== undefined) filters.ratingMin = parseFloat(ratingMin);
-
     if (bestseller !== undefined) filters.bestseller = bestseller === "true";
 
-    // 🔥 Try Elasticsearch FIRST
+    // Try Elasticsearch first — only use results if it actually finds products
     try {
       const result = await searchProducts(
         search,
@@ -141,15 +134,34 @@ export const listProductService = async (queryParams) => {
         limitNum,
       );
 
-      return result;
+      if (result.total > 0) {
+        // Enrich ALL ES results with full MongoDB data so prices/reviews/sizes are always fresh
+        const productIds = result.products.map((p) => p._id);
+        const dbProducts = await Product.find({ _id: { $in: productIds } })
+          .select("name price as offerPrice images category rating reviewCount bestseller sizes createdAt")
+          .lean();
+
+        const productMap = Object.fromEntries(
+          dbProducts.map((p) => [p._id.toString(), p]),
+        );
+
+        // Merge ES doc (for _id/score) with MongoDB fields (for fresh data)
+        result.products = result.products.map((p) => {
+          const db = productMap[p._id] || {};
+          const { price, ...restDb } = db;
+          return { ...p, ...restDb, offerPrice: price, _id: p._id };
+        });
+
+        return result;
+      }
+      // ES returned 0 — fall through to MongoDB (index may be empty or stale)
     } catch (esError) {
-      console.warn("Elasticsearch failed, falling back to MongoDB");
+      console.warn("Elasticsearch unavailable, falling back to MongoDB:", esError.message);
     }
 
-    // 🔹 MongoDB Fallback
+    // MongoDB fallback — always runs when ES returns nothing or errors
     const query = {};
 
-    // 🔍 Search
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
@@ -160,11 +172,9 @@ export const listProductService = async (queryParams) => {
       ];
     }
 
-    console.log("🔍 MongoDB query:", query);
-
-    // 🔹 Filters
-    if (category) query.category = category;
-    if (subCategory) query.subCategory = subCategory;
+    // Case-insensitive exact match for category/subCategory
+    if (category) query.category = { $regex: `^${category}$`, $options: "i" };
+    if (subCategory) query.subCategory = { $regex: `^${subCategory}$`, $options: "i" };
 
     if (priceMin !== undefined || priceMax !== undefined) {
       query.price = {};
@@ -180,113 +190,31 @@ export const listProductService = async (queryParams) => {
       query.bestseller = bestseller === "true";
     }
 
-    // 🔹 Sorting
     const sortOptions = {};
-
     switch (effectiveSort) {
-      case "price_asc":
-        sortOptions.price = 1;
-        break;
-      case "price_desc":
-        sortOptions.price = -1;
-        break;
+      case "price_asc":   sortOptions.price = 1;      break;
+      case "price_desc":  sortOptions.price = -1;     break;
       case "newest":
-      case "createdAt_desc":
-        sortOptions.createdAt = -1;
-        break;
-      case "createdAt_asc":
-        sortOptions.createdAt = 1;
-        break;
+      case "createdAt_desc": sortOptions.createdAt = -1; break;
+      case "createdAt_asc":  sortOptions.createdAt = 1;  break;
       case "rating":
-      case "rating_desc":
-        sortOptions.rating = -1;
-        break;
-      case "name_asc":
-        sortOptions.name = 1;
-        break;
-      case "name_desc":
-        sortOptions.name = -1;
-        break;
-      default:
-        // Default sort by newest (createdAt desc) for consistent pagination
-        sortOptions.createdAt = -1;
-        break;
+      case "rating_desc": sortOptions.rating = -1;   break;
+      case "name_asc":    sortOptions.name = 1;       break;
+      case "name_desc":   sortOptions.name = -1;      break;
+      default:            sortOptions.createdAt = -1; break;
     }
 
-    // 🔹 Fetch products
-    const products = await Product.find(query)
-      .sort(sortOptions)
-      .skip(skipNum)
-      .limit(limitNum)
-      .lean(); // 🔥 better performance
+    const [products, total] = await Promise.all([
+      Product.find(query)
+        .sort(sortOptions)
+        .skip(skipNum)
+        .limit(limitNum)
+        .select("name price as offerPrice images category rating reviewCount bestseller sizes createdAt")
+        .lean(),
+      Product.countDocuments(query),
+    ]);
 
-    const total = await Product.countDocuments(query);
-
-    console.log(
-      "🔍 MongoDB result: products.length =",
-      products.length,
-      "total =",
-      total,
-    );
-
-    // If no products found, return sample products for testing
-    if (products.length === 0) {
-      const sampleProducts = [
-        {
-          _id: "sample1",
-          name: "Sample T-Shirt",
-          description: "A comfortable cotton t-shirt",
-          price: 19.99,
-          category: "Clothing",
-          subCategory: "T-Shirts",
-          images: ["https://via.placeholder.com/300"],
-          rating: 4.5,
-          reviewCount: 10,
-          bestseller: true,
-        },
-        {
-          _id: "sample2",
-          name: "Sample Jeans",
-          description: "Classic blue jeans",
-          price: 49.99,
-          category: "Clothing",
-          subCategory: "Pants",
-          images: ["https://via.placeholder.com/300"],
-          rating: 4.0,
-          reviewCount: 5,
-          bestseller: false,
-        },
-      ];
-
-      let filteredSamples = sampleProducts;
-      if (search) {
-        // Filter sample products based on search
-        const searchLower = search.toLowerCase();
-        filteredSamples = sampleProducts.filter(
-          (product) =>
-            product.name.toLowerCase().includes(searchLower) ||
-            product.description.toLowerCase().includes(searchLower) ||
-            product.category.toLowerCase().includes(searchLower) ||
-            product.subCategory.toLowerCase().includes(searchLower),
-        );
-      }
-
-      return {
-        products: filteredSamples,
-        total: filteredSamples.length,
-        page: pageNum,
-        skip: skipNum,
-        limit: limitNum,
-      };
-    }
-
-    return {
-      products,
-      total,
-      page: pageNum,
-      skip: skipNum,
-      limit: limitNum,
-    };
+    return { products, total, page: pageNum, skip: skipNum, limit: limitNum };
   } catch (error) {
     console.error("Error in listProductService:", error);
     throw error;
@@ -492,7 +420,7 @@ export const browseProductsService = async (skip = 0, limit = 12) => {
 
     const products = await Product.find()
       .select(
-        "name price images category rating reviewCount bestseller createdAt",
+        "name price images category rating reviewCount bestseller sizes createdAt",
       )
       .sort({ createdAt: -1 })
       .skip(skipNum)
