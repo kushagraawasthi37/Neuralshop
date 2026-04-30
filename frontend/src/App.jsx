@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { useCursor } from "./hooks/useCursor";
+import { useAuthStore } from "./store/authStore";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import LandingPage from "./pages/LandingPage";
@@ -15,6 +16,19 @@ import AdminLoginPage from "./pages/auth/AdminLoginPage";
 import AdminRegisterPage from "./pages/auth/AdminRegisterPage";
 import LogoutPage from "./pages/auth/LogoutPage";
 import LoggedOutPage from "./pages/auth/LoggedOutPage";
+import CartPage from "./pages/CartPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage";
+import OrderTrackingPage from "./pages/OrderTrackingPage";
+import OrderHistoryPage from "./pages/account/OrderHistoryPage";
+import ProfilePage from "./pages/account/ProfilePage";
+import WishlistPage from "./pages/account/WishlistPage";
+import ReturnsPage from "./pages/account/ReturnsPage";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import ProductsPage from "./pages/ProductsPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import SearchPage from "./pages/SearchPage";
+import CollectionPage from "./pages/CollectionPage";
 
 const AUTH_PATHS = [
   "/login",
@@ -29,10 +43,13 @@ const AUTH_PATHS = [
   "/logged-out",
 ];
 
+const NO_NAV_PATHS = ["/admin/dashboard"];
+
 function AppShell() {
   useCursor();
   const { pathname } = useLocation();
   const isAuth = AUTH_PATHS.some((p) => pathname.startsWith(p));
+  const isAdmin = NO_NAV_PATHS.some((p) => pathname.startsWith(p));
 
   return (
     <>
@@ -40,7 +57,7 @@ function AppShell() {
       <div id="cursor-ring" />
       <div className="grid-bg" />
 
-      {!isAuth && <Navbar />}
+      {!isAuth && !isAdmin && <Navbar />}
 
       <Routes>
         {/* Landing */}
@@ -128,27 +145,34 @@ function AppShell() {
           }
         />
 
-        {/* App pages */}
-        <Route
-          path="/collections"
-          element={<PlaceholderPage title="Collections" />}
-        />
-        <Route
-          path="/product/:id"
-          element={<PlaceholderPage title="Product Detail" />}
-        />
-        <Route path="/cart" element={<PlaceholderPage title="Cart" />} />
-        <Route
-          path="/checkout"
-          element={<PlaceholderPage title="Checkout" />}
-        />
+        {/* Commerce pages Checked */}
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+        <Route path="/orders/:orderId/track" element={<OrderTrackingPage />} />
+
+        {/* Account pages CHECKED */}
+        <Route path="/account/orders" element={<OrderHistoryPage />} />
+        <Route path="/account/profile" element={<ProfilePage />} />
+        <Route path="/account/wishlist" element={<WishlistPage />} />
+        <Route path="/account/returns" element={<ReturnsPage />} />
+
+        {/* Admin */}
+        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+
+        {/* Product pages */}
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/product/:id" element={<ProductDetailPage />} />
+        <Route path="/search" element={<SearchPage />} />
+
+        {/* Placeholder pages */}
+        <Route path="/collections" element={<CollectionPage />} />
         <Route path="/account" element={<PlaceholderPage title="Account" />} />
-        <Route path="/orders" element={<PlaceholderPage title="Orders" />} />
         <Route path="/about" element={<PlaceholderPage title="About" />} />
         <Route path="*" element={<PlaceholderPage title="404 — Not Found" />} />
       </Routes>
 
-      {!isAuth && <Footer />}
+      {!isAuth && !isAdmin && <Footer />}
     </>
   );
 }
@@ -244,6 +268,12 @@ function Sep() {
       style={{ width: 1, height: 14, background: "rgba(201,169,110,0.18)" }}
     />
   );
+}
+
+function ProtectedRoute({ children }) {
+  const { isLoggedIn } = useAuthStore();
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
+  return children;
 }
 
 function PlaceholderPage({ title }) {

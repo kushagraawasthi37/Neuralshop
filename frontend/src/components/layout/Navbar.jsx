@@ -1,12 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../../store/authStore";
-import { authApi } from "../../api/auth";
+import { cartApi } from "../../api/cart";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
-  const { isLoggedIn, pendingRole, logout } = useAuthStore();
+  const { isLoggedIn } = useAuthStore();
+
+  const { data: cartSummary } = useQuery({
+    queryKey: ["cart-summary"],
+    queryFn: () => cartApi.summary().then((r) => r.data.data),
+    enabled: isLoggedIn,
+    staleTime: 30000,
+  });
+  const cartCount = cartSummary?.itemCount || 0;
 
   const handleLogout = () => {
     navigate("/logout");
@@ -56,9 +65,9 @@ export default function Navbar() {
       <ul style={{ display: "flex", gap: 40, listStyle: "none" }}>
         {[
           ["Collections", "/collections"],
-          ["New Arrivals", "/new-arrivals"],
+          ["New Arrivals", "/products?sort=newest"],
+          ["Search", "/search"],
           ["About", "/about"],
-          ["Journal", "/journal"],
         ].map(([label, path]) => (
           <li key={label}>
             <Link
@@ -112,21 +121,10 @@ export default function Navbar() {
           </svg>
         </button>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            position: "relative",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "flex-start", position: "relative" }}>
           <button
             onClick={() => navigate("/cart")}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-            }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, position: "relative" }}
           >
             <svg
               width="20"
@@ -137,21 +135,31 @@ export default function Navbar() {
               strokeWidth="1.2"
               style={{ display: "block", transition: "stroke 0.3s" }}
               onMouseEnter={(e) => (e.currentTarget.style.stroke = "#c9a96e")}
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.stroke = "rgba(240,230,208,0.6)")
-              }
+              onMouseLeave={(e) => (e.currentTarget.style.stroke = "rgba(240,230,208,0.6)")}
             >
               <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
               <line x1="3" y1="6" x2="21" y2="6" />
               <path d="M16 10a4 4 0 01-8 0" />
             </svg>
+            {cartCount > 0 && (
+              <span style={{
+                position: "absolute", top: -6, right: -6,
+                minWidth: 16, height: 16, background: "#c9a96e",
+                borderRadius: "50%", display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 9, fontWeight: 600,
+                color: "#0d0c0b", fontFamily: "'DM Sans',sans-serif",
+                letterSpacing: 0, padding: "0 3px",
+              }}>
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
           </button>
         </div>
 
         {isLoggedIn ? (
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <button
-              onClick={() => navigate("/account")}
+              onClick={() => navigate("/account/profile")}
               style={{
                 background: "none",
                 border: "none",

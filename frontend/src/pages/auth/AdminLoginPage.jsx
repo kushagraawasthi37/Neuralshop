@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
       const { data } = await authApi.adminLogin({ email, password });
       setPendingRole("admin");
       setAuth(data.user, data.token);
-      navigate("/account");
+      navigate("/admin/dashboard");
     } catch (err) {
       setServerError(err.response?.data?.message || "Invalid credentials.");
     } finally {

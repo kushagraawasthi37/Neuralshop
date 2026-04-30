@@ -16,24 +16,11 @@ import {
 const returnRoutes = express.Router();
 
 // ============================================
-// USER ROUTES
+// ADMIN ROUTES (must come before dynamic :returnId routes)
 // ============================================
 
-// Request return
-returnRoutes.post("/request", isAuth, requestReturn);
-
-// Get user's return requests
-returnRoutes.get("/", isAuth, getUserReturns);
-
-// Get specific return request
-returnRoutes.get("/:returnId", isAuth, getReturnRequest);
-
-// Cancel return request
-returnRoutes.patch("/:returnId/cancel", isAuth, cancelReturn);
-
-// ============================================
-// ADMIN ROUTES
-// ============================================
+// Get return statistics
+returnRoutes.get("/admin/stats", isAuthAdmin, getReturnStats);
 
 // Get all return requests (for admin dashboard)
 returnRoutes.get("/admin/all", isAuthAdmin, getAllReturns);
@@ -54,7 +41,20 @@ returnRoutes.patch(
   markRefundFailed,
 );
 
-// Get return statistics
-returnRoutes.get("/admin/stats", isAuthAdmin, getReturnStats);
+// ============================================
+// USER ROUTES
+// ============================================
+
+// Request return
+returnRoutes.post("/request", isAuth, requestReturn);
+
+// Get user's return requests
+returnRoutes.get("/", isAuth, getUserReturns);
+
+// Get specific return request
+returnRoutes.get("/:returnId", isAuth, getReturnRequest);
+
+// Cancel return request
+returnRoutes.patch("/:returnId/cancel", isAuth, cancelReturn);
 
 export default returnRoutes;

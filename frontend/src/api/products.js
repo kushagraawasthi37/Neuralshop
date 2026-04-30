@@ -11,3 +11,7 @@ export const productApi = {
   related: (id) => api.get(`/recommendations/related/${id}`),
   personalized: () => api.get('/recommendations/personalized'),
 }
+
+export const reviewApi = {
+  submit: (productId, data) => api.post(`/reviews/product/${productId}`, data),
+}

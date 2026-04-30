@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(grep -E \"\\\\.\\(js|json\\)$\")",
+      "Bash(dir \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\docs\")"
     ]
   }
 }

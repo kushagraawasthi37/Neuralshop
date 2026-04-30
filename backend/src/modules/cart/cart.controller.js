@@ -10,123 +10,90 @@ import {
   mergeCartService,
   getCartSummaryService,
 } from "./cart.service.js";
+import ApiResponse from "../../utils/api-response.js";
+import { asyncHandler } from "../../utils/async-handler.js";
 
-//Checked
-export const getCart = async (req, res) => {
-  try {
-    const cart = await getCartService(req.userId);
-    return res.status(200).json({ cart });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
+export const getCart = asyncHandler(async (req, res) => {
+  const cart = await getCartService(req.userId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cart, "Cart retrieved successfully"));
+});
 
-//Checked
-export const addItem = async (req, res) => {
-  try {
-    let { productId, size, quantity, priceAtAdd, name, image } = req.body;
+export const addItem = asyncHandler(async (req, res) => {
+  let { productId, size, quantity, priceAtAdd, name, image } = req.body;
 
-    quantity = Number(quantity);
-    priceAtAdd = Number(priceAtAdd);
+  quantity = Number(quantity);
+  priceAtAdd = Number(priceAtAdd);
 
-    const cart = await addItemToCartService(req.userId, {
-      productId,
-      size,
-      quantity,
-      priceAtAdd,
-      name,
-      image,
-    });
-    return res.status(201).json({ cart });
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
-  }
-};
+  const cart = await addItemToCartService(req.userId, {
+    productId,
+    size,
+    quantity,
+    priceAtAdd,
+    name,
+    image,
+  });
+  return res
+    .status(201)
+    .json(new ApiResponse(201, cart, "Item added to cart successfully"));
+});
 
-//Checked
-export const updateItem = async (req, res) => {
-  try {
-    let { productId, size, quantity } = req.body;
-    quantity = Number(quantity);
-    const cart = await updateCartItemService(
-      req.userId,
-      productId,
-      size,
-      quantity,
-    );
-    return res.status(200).json({ cart });
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
-  }
-};
+export const updateItem = asyncHandler(async (req, res) => {
+  let { productId, size, quantity } = req.body;
+  quantity = Number(quantity);
+  const cart = await updateCartItemService(req.userId, productId, size, quantity);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cart, "Cart item updated successfully"));
+});
 
-//Checked
-export const removeItem = async (req, res) => {
-  try {
-    const { productId, size } = req.body;
-    const cart = await removeCartItemService(req.userId, productId, size);
-    return res.status(200).json({ cart });
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
-  }
-};
+export const removeItem = asyncHandler(async (req, res) => {
+  const { productId, size } = req.body;
+  const cart = await removeCartItemService(req.userId, productId, size);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cart, "Item removed from cart successfully"));
+});
 
-//Checked
-export const clearCart = async (req, res) => {
-  try {
-    const cart = await clearCartService(req.userId);
-    return res.status(200).json({ cart });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
+export const clearCart = asyncHandler(async (req, res) => {
+  const cart = await clearCartService(req.userId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cart, "Cart cleared successfully"));
+});
 
-//Checked
-export const validateCart = async (req, res) => {
-  try {
-    const result = await validateCartService(req.userId);
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
-  }
-};
+export const validateCart = asyncHandler(async (req, res) => {
+  const result = await validateCartService(req.userId);
+  return res.status(200).json(new ApiResponse(200, result, "Cart validated"));
+});
 
-//Checked
-export const checkout = async (req, res) => {
-  try {
-    const orderPayload = await checkoutCartService(req.userId);
-    return res.status(200).json({ order: orderPayload });
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
-  }
-};
+export const checkout = asyncHandler(async (req, res) => {
+  const orderPayload = await checkoutCartService(req.userId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { order: orderPayload }, "Checkout successful"));
+});
 
-export const syncCart = async (req, res) => {
-  try {
-    const cart = await syncCartService(req.userId);
-    return res.status(200).json({ cart });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
+export const syncCart = asyncHandler(async (req, res) => {
+  const cart = await syncCartService(req.userId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cart, "Cart synced successfully"));
+});
 
-//User login nahi hai aur guest cart hai, toh usko user cart ke sath merge karna hai. User login hone ke baad ye endpoint call hoga with guest cart data.
-//For future use when we want to merge guest cart with user cart after login/signup
-export const mergeCart = async (req, res) => {
-  try {
-    const { guestCart } = req.body;
-    const cart = await mergeCartService(req.userId, guestCart);
-    return res.status(200).json({ cart });
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
-  }
-};
+// For future use: merge guest cart with user cart after login
+export const mergeCart = asyncHandler(async (req, res) => {
+  const { guestCart } = req.body;
+  const cart = await mergeCartService(req.userId, guestCart);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cart, "Cart merged successfully"));
+});
 
-export const summary = async (req, res) => {
-  try {
-    const summaryResponse = await getCartSummaryService(req.userId);
-    return res.status(200).json(summaryResponse);
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
+export const summary = asyncHandler(async (req, res) => {
+  const summaryResponse = await getCartSummaryService(req.userId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, summaryResponse, "Cart summary retrieved"));
+});

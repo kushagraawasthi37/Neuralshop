@@ -9,86 +9,53 @@ import {
   getUserDefaultAddressService,
 } from "./user.service.js";
 import ApiResponse from "../../utils/api-response.js";
+import { asyncHandler } from "../../utils/async-handler.js";
 
-export const getCurrentUser = async (req, res) => {
-  try {
-    const user = await getCurrentUserService(req.userId);
-    const token = req.token;
+export const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = await getCurrentUserService(req.userId);
+  const token = req.token;
 
-    return res.status(200).json({
-      user,
-      token,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Something went wrong.Login again",
-    });
-  }
-};
+  return res.status(200).json({
+    user,
+    token,
+  });
+});
 
 // ============================================
 // USER PROFILE MANAGEMENT
 // ============================================
 
-export const getUserProfile = async (req, res) => {
-  try {
-    const user = await getUserProfileService(req.userId);
-    return res
-      .status(200)
-      .json(new ApiResponse(200, user, "Profile fetched successfully"));
-  } catch (error) {
-    return res
-      .status(500)
-      .json(
-        new ApiResponse(500, null, error.message || "Failed to fetch profile"),
-      );
-  }
-};
+export const getUserProfile = asyncHandler(async (req, res) => {
+  const user = await getUserProfileService(req.userId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Profile fetched successfully"));
+});
 
-export const updateUserProfile = async (req, res) => {
-  try {
-    const { name, phone, profilePicture } = req.body;
+export const updateUserProfile = asyncHandler(async (req, res) => {
+  const { name, phone, profilePicture } = req.body;
 
-    const user = await updateUserProfileService(req.userId, {
-      name,
-      phone,
-      profilePicture,
-    });
+  const user = await updateUserProfileService(req.userId, {
+    name,
+    phone,
+    profilePicture,
+  });
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, user, "Profile updated successfully"));
-  } catch (error) {
-    return res
-      .status(400)
-      .json(
-        new ApiResponse(400, null, error.message || "Failed to update profile"),
-      );
-  }
-};
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Profile updated successfully"));
+});
 
 // ============================================
 // ADDRESS MANAGEMENT
 // ============================================
 
-export const getUserAddresses = async (req, res) => {
-  try {
-    const addresses = await getUserAddressesService(req.userId);
-    return res
-      .status(200)
-      .json(new ApiResponse(200, addresses, "Addresses fetched successfully"));
-  } catch (error) {
-    return res
-      .status(500)
-      .json(
-        new ApiResponse(
-          500,
-          null,
-          error.message || "Failed to fetch addresses",
-        ),
-      );
-  }
-};
+export const getUserAddresses = asyncHandler(async (req, res) => {
+  const addresses = await getUserAddressesService(req.userId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, addresses, "Addresses fetched successfully"));
+});
 
 export const createUserAddress = async (req, res) => {
   try {
