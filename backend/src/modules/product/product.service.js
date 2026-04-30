@@ -138,7 +138,9 @@ export const listProductService = async (queryParams) => {
         // Enrich ALL ES results with full MongoDB data so prices/reviews/sizes are always fresh
         const productIds = result.products.map((p) => p._id);
         const dbProducts = await Product.find({ _id: { $in: productIds } })
-          .select("name price as offerPrice images category rating reviewCount bestseller sizes createdAt")
+          .select(
+            "name price as offerPrice images category rating reviewCount bestseller sizes createdAt",
+          )
           .lean();
 
         const productMap = Object.fromEntries(
@@ -156,7 +158,10 @@ export const listProductService = async (queryParams) => {
       }
       // ES returned 0 — fall through to MongoDB (index may be empty or stale)
     } catch (esError) {
-      console.warn("Elasticsearch unavailable, falling back to MongoDB:", esError.message);
+      console.warn(
+        "Elasticsearch unavailable, falling back to MongoDB:",
+        esError.message,
+      );
     }
 
     // MongoDB fallback — always runs when ES returns nothing or errors
@@ -174,7 +179,8 @@ export const listProductService = async (queryParams) => {
 
     // Case-insensitive exact match for category/subCategory
     if (category) query.category = { $regex: `^${category}$`, $options: "i" };
-    if (subCategory) query.subCategory = { $regex: `^${subCategory}$`, $options: "i" };
+    if (subCategory)
+      query.subCategory = { $regex: `^${subCategory}$`, $options: "i" };
 
     if (priceMin !== undefined || priceMax !== undefined) {
       query.price = {};
@@ -192,16 +198,32 @@ export const listProductService = async (queryParams) => {
 
     const sortOptions = {};
     switch (effectiveSort) {
-      case "price_asc":   sortOptions.price = 1;      break;
-      case "price_desc":  sortOptions.price = -1;     break;
+      case "price_asc":
+        sortOptions.price = 1;
+        break;
+      case "price_desc":
+        sortOptions.price = -1;
+        break;
       case "newest":
-      case "createdAt_desc": sortOptions.createdAt = -1; break;
-      case "createdAt_asc":  sortOptions.createdAt = 1;  break;
+      case "createdAt_desc":
+        sortOptions.createdAt = -1;
+        break;
+      case "createdAt_asc":
+        sortOptions.createdAt = 1;
+        break;
       case "rating":
-      case "rating_desc": sortOptions.rating = -1;   break;
-      case "name_asc":    sortOptions.name = 1;       break;
-      case "name_desc":   sortOptions.name = -1;      break;
-      default:            sortOptions.createdAt = -1; break;
+      case "rating_desc":
+        sortOptions.rating = -1;
+        break;
+      case "name_asc":
+        sortOptions.name = 1;
+        break;
+      case "name_desc":
+        sortOptions.name = -1;
+        break;
+      default:
+        sortOptions.createdAt = -1;
+        break;
     }
 
     const [products, total] = await Promise.all([
@@ -209,7 +231,9 @@ export const listProductService = async (queryParams) => {
         .sort(sortOptions)
         .skip(skipNum)
         .limit(limitNum)
-        .select("name price as offerPrice images category rating reviewCount bestseller sizes createdAt")
+        .select(
+          "name price as offerPrice images category rating reviewCount bestseller sizes createdAt",
+        )
         .lean(),
       Product.countDocuments(query),
     ]);
