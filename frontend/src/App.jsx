@@ -1,8 +1,16 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { useCursor } from "./hooks/useCursor";
 import { useAuthStore } from "./store/authStore";
+import { userApi } from "./api/user";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import LandingPage from "./pages/LandingPage";
@@ -51,6 +59,26 @@ function AppShell() {
   const { pathname } = useLocation();
   const isAuth = AUTH_PATHS.some((p) => pathname.startsWith(p));
   const isAdmin = NO_NAV_PATHS.some((p) => pathname.startsWith(p));
+
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const logout = useAuthStore((s) => s.logout);
+
+  // ✅ ADD THIS BLOCK
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const res = await userApi.getMe(); // 🔥 important
+        setAuth(res.data.user, token, res.data.user.role);
+      } catch (err) {
+        logout(); // invalid token
+      }
+    };
+
+    initAuth();
+  }, []);
 
   return (
     <>

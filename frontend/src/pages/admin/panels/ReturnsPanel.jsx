@@ -31,6 +31,18 @@ export default function ReturnsPanel({ showToast }) {
     onSuccess: () => { qc.invalidateQueries(["admin-returns"]); showToast("Return rejected"); },
   });
 
+  const processRefundMutation = useMutation({
+    mutationFn: (id) => adminReturnsApi.processRefund(id),
+    onSuccess: () => { qc.invalidateQueries(["admin-returns"]); showToast("Refund processed"); },
+    onError: () => showToast("Failed to process refund"),
+  });
+
+  const refundFailedMutation = useMutation({
+    mutationFn: (id) => adminReturnsApi.markRefundFailed(id),
+    onSuccess: () => { qc.invalidateQueries(["admin-returns"]); showToast("Marked as refund failed"); },
+    onError: () => showToast("Failed to update status"),
+  });
+
   const pendingReturns = returnCounts.REQUESTED || 0;
 
   return (
@@ -82,10 +94,26 @@ export default function ReturnsPanel({ showToast }) {
                           <button className="ns-btn ns-btn-reject" style={{ padding: "5px 10px", fontSize: 10 }} onClick={() => rejectReturnMutation.mutate(r.id)}>Reject</button>
                         </div>
                       ) : r.status === "APPROVED" ? (
-                        <button className="ns-btn ns-btn-ghost" style={{ padding: "5px 10px", fontSize: 10, color: "var(--gold)", borderColor: "var(--border-gold)" }}
-                          onClick={() => adminReturnsApi.processRefund(r.id).then(() => { qc.invalidateQueries(["admin-returns"]); showToast("Refund processed"); })}>
-                          Process Refund
-                        </button>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button className="ns-btn ns-btn-ghost" style={{ padding: "5px 10px", fontSize: 10, color: "var(--gold)", borderColor: "var(--border-gold)" }}
+                            disabled={processRefundMutation.isPending}
+                            onClick={() => processRefundMutation.mutate(r.id)}>
+                            Process Refund
+                          </button>
+                          <button className="ns-btn ns-btn-ghost" style={{ padding: "5px 10px", fontSize: 10, color: "rgba(190,110,110,0.8)", borderColor: "rgba(190,110,110,0.25)" }}
+                            disabled={refundFailedMutation.isPending}
+                            onClick={() => refundFailedMutation.mutate(r.id)}>
+                            Mark Failed
+                          </button>
+                        </div>
+                      ) : r.status === "REFUND_FAILED" ? (
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button className="ns-btn ns-btn-ghost" style={{ padding: "5px 10px", fontSize: 10, color: "var(--gold)", borderColor: "var(--border-gold)" }}
+                            disabled={processRefundMutation.isPending}
+                            onClick={() => processRefundMutation.mutate(r.id)}>
+                            Retry Refund
+                          </button>
+                        </div>
                       ) : (
                         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Complete</span>
                       )}

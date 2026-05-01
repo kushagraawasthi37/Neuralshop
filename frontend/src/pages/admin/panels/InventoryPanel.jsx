@@ -3,6 +3,64 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminInventoryApi } from "../../../api/admin";
 import { fmtNum } from "../adminUtils";
 
+function ProductInventoryLookup({ showToast }) {
+  const [pid, setPid] = useState("");
+  const [lookupId, setLookupId] = useState(null);
+
+  const { data: detail, isFetching, error } = useQuery({
+    queryKey: ["inventory-detail", lookupId],
+    queryFn: () => adminInventoryApi.getById(lookupId).then((r) => r.data.data || r.data),
+    enabled: !!lookupId,
+    retry: false,
+  });
+
+  return (
+    <div className="card" style={{ marginBottom: 2 }}>
+      <div className="card-label">Lookup Product Inventory</div>
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <input
+          className="ns-input"
+          placeholder="Enter product ID…"
+          value={pid}
+          onChange={(e) => setPid(e.target.value.trim())}
+          style={{ flex: 1, fontFamily: "'DM Mono',monospace", fontSize: 12 }}
+        />
+        <button
+          className="ns-btn ns-btn-ghost"
+          disabled={!pid || isFetching}
+          onClick={() => { setLookupId(pid); }}
+        >
+          {isFetching ? "…" : "Lookup"}
+        </button>
+        {lookupId && (
+          <button className="ns-btn ns-btn-ghost" onClick={() => { setLookupId(null); setPid(""); }}>
+            Clear
+          </button>
+        )}
+      </div>
+      {error && <div style={{ marginTop: 10, fontSize: 11, color: "rgba(190,110,110,0.8)" }}>Product not found or no inventory record.</div>}
+      {detail && (
+        <div style={{ marginTop: 16, padding: 16, background: "rgba(201,169,110,0.03)", border: "1px solid rgba(201,169,110,0.12)" }}>
+          <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
+            {[
+              ["Product ID", detail.productId || lookupId],
+              ["Total Stock", detail.totalStock ?? "—"],
+              ["Reserved", detail.reservedStock ?? "—"],
+              ["Available", detail.availableStock ?? detail.totalStock ?? "—"],
+              ["Size", detail.size || "—"],
+            ].map(([label, val]) => (
+              <div key={label}>
+                <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 20, color: "var(--champagne)" }}>{val}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function InventoryPanel({ showToast }) {
   const qc = useQueryClient();
   const [sliderVal, setSliderVal] = useState(10); // local slider display value
@@ -71,6 +129,8 @@ export default function InventoryPanel({ showToast }) {
         <div className="page-title">Inventory <em>Intelligence</em></div>
         <div className="page-sub">{inventory.length} items at or below {threshold} units</div>
       </div>
+
+      <ProductInventoryLookup showToast={showToast} />
 
       <div className="two-col mt-2" style={{ marginBottom: 2 }}>
         <div className="card">

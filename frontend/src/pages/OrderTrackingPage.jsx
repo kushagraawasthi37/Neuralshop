@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ordersApi } from '../api/orders'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ordersApi, couponsApi } from '../api/orders'
 
 const fmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN')
 
@@ -32,6 +33,21 @@ function TimelineDot({ state }) {
 export default function OrderTrackingPage() {
   const { orderId } = useParams()
   const navigate = useNavigate()
+  const qc = useQueryClient()
+
+  const [couponCode, setCouponCode] = useState('')
+  const [couponMsg, setCouponMsg] = useState({ text: '', ok: false })
+
+  const applyMutation = useMutation({
+    mutationFn: (code) => couponsApi.apply(orderId, code),
+    onSuccess: (res) => {
+      setCouponMsg({ text: res.data?.message || 'Coupon applied!', ok: true })
+      qc.invalidateQueries(['order', orderId])
+    },
+    onError: (err) => {
+      setCouponMsg({ text: err?.response?.data?.message || 'Invalid coupon', ok: false })
+    },
+  })
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', orderId],
@@ -133,6 +149,29 @@ export default function OrderTrackingPage() {
                 </div>
               ))}
             </div>
+
+            {overallStatus === 'PENDING' && !order?.couponCode && (
+              <div style={{ background: '#1a1916', border: '1px solid rgba(201,169,110,0.18)', padding: 28, marginBottom: 16 }}>
+                <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#c9a96e', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(201,169,110,0.18)' }}>Apply Coupon</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={couponCode}
+                    onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponMsg({ text: '', ok: false }) }}
+                    placeholder="Enter coupon code"
+                    style={{ flex: 1, padding: '10px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(201,169,110,0.18)', color: '#f0e6d0', fontSize: 12, fontFamily: "'DM Mono',monospace", outline: 'none', letterSpacing: '0.08em' }}
+                  />
+                  <button
+                    disabled={!couponCode.trim() || applyMutation.isPending}
+                    onClick={() => applyMutation.mutate(couponCode.trim())}
+                    style={{ padding: '10px 16px', background: '#c9a96e', color: '#0d0c0b', border: 'none', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: !couponCode.trim() ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans',sans-serif", opacity: !couponCode.trim() ? 0.5 : 1 }}>
+                    {applyMutation.isPending ? '…' : 'Apply'}
+                  </button>
+                </div>
+                {couponMsg.text && (
+                  <div style={{ marginTop: 8, fontSize: 11, color: couponMsg.ok ? 'rgba(138,173,135,0.85)' : 'rgba(190,110,110,0.85)' }}>{couponMsg.text}</div>
+                )}
+              </div>
+            )}
 
             {address && (
               <div style={{ background: '#1a1916', border: '1px solid rgba(201,169,110,0.18)', padding: 28, marginBottom: 16 }}>

@@ -15,6 +15,7 @@ import inventoryRoutes from "../modules/inventory/inventory.admin.routes.js";
 import userRoutes from "../modules/user/user.routes.js";
 import wishlistRoutes from "../modules/user/wishlist.routes.js";
 import analyticsRoutes from "../modules/admin/analytics.routes.js";
+import adminProfileRoutes from "../modules/admin/admin.profile.routes.js";
 
 export const setupRoutes = (app) => {
   app.use("/api/healthCheck", healthRoute);
@@ -48,4 +49,7 @@ export const setupRoutes = (app) => {
 
   // Analytics routes
   app.use("/api/analytics", analyticsRoutes);
+
+  // Admin profile routes
+  app.use("/api/admin", adminProfileRoutes);
 };

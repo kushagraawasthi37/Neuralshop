@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx prisma *)"
+      "Bash(npx prisma *)",
+      "Read(//c/Users/kusha/.claude/projects/c--Users-kusha-OneDrive-Desktop-WebDevelopment-PROJECTs-NeuralShop/memory/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\kusha\\.claude\\projects\\c--Users-kusha-OneDrive-Desktop-WebDevelopment-PROJECTs-NeuralShop\\memory"
     ]
   }
 }

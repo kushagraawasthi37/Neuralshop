@@ -49,6 +49,8 @@ export default function LoginPage() {
       setPendingRole("user");
       setAuth(data.user, data.token, "user");
 
+      console.log(data.user);
+
       // Merge guest cart if the user had items saved while browsing unauthenticated
       if (guestItems.length > 0) {
         try {

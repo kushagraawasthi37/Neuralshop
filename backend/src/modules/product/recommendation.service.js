@@ -14,17 +14,23 @@ export const getSimilarProductsService = async (
     if (!product) {
       throw new Error("Product not found");
     }
+    console.log("Similar products query:", {
+      productId,
+      category: product.category,
+      limit,
+    });
 
     // Find similar products in same category
     const similarProducts = await Product.find({
       _id: { $ne: productId }, // Exclude current product
       category: product.category,
-      isActive: true,
     })
       .limit(limit)
       .select(
         "name price images category subCategory rating reviewCount bestseller",
       );
+
+    console.log("Similar products found:", similarProducts);
 
     return similarProducts;
   } catch (error) {
@@ -53,7 +59,6 @@ export const getRelatedProductsService = async (
         { category: product.category },
         { subCategory: product.subCategory },
       ],
-      isActive: true,
     })
       .limit(limit)
       .select(
@@ -86,7 +91,6 @@ export const getRecommendedProductsService = async (
     if (recommendedProducts.length < limit) {
       const bestsellers = await Product.find({
         bestseller: true,
-        isActive: true,
       })
         .limit(limit)
         .select(
@@ -111,7 +115,6 @@ export const getRecommendedProductsService = async (
 export const getTopRatedProductsService = async ({ limit = 10 } = {}) => {
   try {
     const topRated = await Product.find({
-      isActive: true,
       rating: { $gt: 0 },
     })
       .sort({ rating: -1, reviewCount: -1 })
@@ -135,7 +138,6 @@ export const getTrendingProductsService = async ({ limit = 10 } = {}) => {
 
     // Products with high reviews in last 7 days
     const trending = await Product.find({
-      isActive: true,
       updatedAt: { $gte: sevenDaysAgo },
     })
       .sort({ reviewCount: -1, rating: -1 })
@@ -163,8 +165,11 @@ export const getYouMayLikeService = async (productId, { limit = 10 } = {}) => {
     // Get products from same category but different price range
     const similar = await Product.find({
       _id: { $ne: productId },
-      category: product.category,
-      isActive: true,
+      $or: [
+        { tags: { $in: product.tags } },
+        { category: product.category },
+        { subCategory: product.subCategory },
+      ],
       price: {
         $gte: product.price * 0.7, // 70% of current price
         $lte: product.price * 1.3, // 130% of current price
@@ -194,7 +199,7 @@ export const getPersonalizedRecommendationsService = async (
     // For now, return top-rated products from various categories
 
     const recommendations = await Product.aggregate([
-      { $match: { isActive: true, rating: { $gt: 3 } } },
+      { $match: { rating: { $gt: 3 } } },
       { $group: { _id: "$category", products: { $push: "$$ROOT" } } },
       { $limit: limit },
     ]);

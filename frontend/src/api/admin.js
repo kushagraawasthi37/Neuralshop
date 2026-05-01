@@ -21,6 +21,7 @@ export const adminOrdersApi = {
 
 export const adminInventoryApi = {
   getAll: () => api.get('/admin/inventory'),
+  getById: (productId) => api.get(`/admin/inventory/${productId}`),
   getLowStock: (threshold = 10) =>
     api.get('/admin/inventory/low-stock', { params: { threshold } }),
   update: (productId, totalStock, reason) =>
@@ -47,6 +48,7 @@ export const adminReturnsApi = {
   approve: (returnId) => api.patch(`/returns/admin/${returnId}/approve`),
   reject: (returnId, reason) => api.patch(`/returns/admin/${returnId}/reject`, { reason }),
   processRefund: (returnId) => api.patch(`/returns/admin/${returnId}/refund`),
+  markRefundFailed: (returnId) => api.patch(`/returns/admin/${returnId}/refund-failed`),
 }
 
 export const adminReviewsApi = {
@@ -61,9 +63,9 @@ export const adminReviewsApi = {
 
 export const adminProductsApi = {
   list: (params) => api.get('/product/admin/list', { params }),
-  create: (data) => api.post('/product/admin/create', data),
-  update: (id, data) => api.patch(`/product/admin/${id}`, data),
-  delete: (id) => api.delete(`/product/admin/${id}`),
+  create: (data) => api.post('/product/addproduct', data),
+  update: (id, data) => api.put(`/product/update/${id}`, data),
+  delete: (id) => api.post(`/product/remove/${id}`),
 }
 
 export const adminProfileApi = {
