@@ -35,6 +35,8 @@ export const validateCoupon = asyncHandler(async (req, res) => {
     req.userId,
   );
 
+  // console.log("Coupon validation result:", result.finalAmount);
+
   res
     .status(200)
     .json(new ApiResponse(200, result, "Coupon validated successfully"));
@@ -144,6 +146,8 @@ export const deleteCoupon = asyncHandler(async (req, res) => {
 export const toggleCouponStatus = asyncHandler(async (req, res) => {
   const { couponId } = req.params;
   const { isActive } = req.body;
+
+  console.log("Toggling coupon status:", { couponId, isActive });
 
   const coupon = await toggleCouponStatusService(couponId, isActive);
 

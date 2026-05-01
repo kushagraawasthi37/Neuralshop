@@ -24,7 +24,7 @@ export const ordersApi = {
 
 export const couponsApi = {
   validate: (code, orderAmount) =>
-    api.post('/coupons/validate', { code, orderAmount }),
+    api.post('/coupons/validate', { couponCode: code, orderAmount }),
 
   getByCode: (code) => api.get(`/coupons/${code}`),
 }

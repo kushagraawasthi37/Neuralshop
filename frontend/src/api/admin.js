@@ -37,7 +37,7 @@ export const adminCouponsApi = {
   list: () => api.get('/coupons/admin/all'),
   create: (data) => api.post('/coupons/admin/create', data),
   update: (couponId, data) => api.patch(`/coupons/admin/${couponId}`, data),
-  toggle: (couponId) => api.patch(`/coupons/admin/${couponId}/toggle`),
+  toggle: (couponId,isActive) => api.patch(`/coupons/admin/${couponId}/toggle`),
   delete: (couponId) => api.delete(`/coupons/admin/${couponId}`),
 }
 

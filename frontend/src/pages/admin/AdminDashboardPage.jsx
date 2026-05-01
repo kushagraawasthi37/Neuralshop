@@ -263,7 +263,7 @@ export default function AdminDashboardPage() {
       // continue even if API call fails
     }
     logout();
-    navigate("/admin-login");
+    navigate("/admin/login");
   };
 
   /* Badge queries — always active for sidebar counts */
