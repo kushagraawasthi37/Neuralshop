@@ -51,7 +51,7 @@ export default function AboutPage() {
       <section
         style={{
           position: "relative",
-          padding: "100px 52px 96px",
+          padding: "clamp(60px,8vw,100px) var(--page-px) clamp(48px,6vw,96px)",
           borderBottom: "1px solid rgba(201,169,110,0.1)",
           overflow: "hidden",
         }}
@@ -140,7 +140,7 @@ export default function AboutPage() {
       {/* Stats */}
       <section
         style={{
-          padding: "72px 52px",
+          padding: "clamp(40px,5vw,72px) var(--page-px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
         }}
       >
@@ -193,7 +193,7 @@ export default function AboutPage() {
       {/* Mission */}
       <section
         style={{
-          padding: "96px 52px",
+          padding: "clamp(48px,6vw,96px) var(--page-px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
         }}
       >
@@ -201,8 +201,8 @@ export default function AboutPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 80,
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))",
+              gap: "clamp(32px,5vw,80px)",
               alignItems: "center",
             }}
           >
@@ -306,7 +306,7 @@ export default function AboutPage() {
       {/* Pillars */}
       <section
         style={{
-          padding: "96px 52px",
+          padding: "clamp(48px,6vw,96px) var(--page-px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
         }}
       >
@@ -404,7 +404,7 @@ export default function AboutPage() {
       {/* Team */}
       <section
         style={{
-          padding: "96px 52px",
+          padding: "clamp(48px,6vw,96px) var(--page-px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
         }}
       >
@@ -500,7 +500,7 @@ export default function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: "96px 52px" }}>
+      <section style={{ padding: "clamp(48px,6vw,96px) var(--page-px)" }}>
         <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
           <div
             style={{

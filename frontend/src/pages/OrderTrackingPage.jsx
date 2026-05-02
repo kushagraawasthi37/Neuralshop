@@ -83,7 +83,7 @@ export default function OrderTrackingPage() {
 
   return (
     <div style={{ minHeight: '100vh', paddingTop: 100 }}>
-      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 52px' }}>
+      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 var(--page-px)' }}>
         <div style={{ padding: '60px 0 48px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c9a96e', marginBottom: 14 }}>
             <div style={{ width: 28, height: 1, background: '#c9a96e' }} />Order Tracking

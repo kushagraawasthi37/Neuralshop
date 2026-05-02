@@ -1,5 +1,6 @@
 import { User } from "./user.model.js";
 import prisma from "../../prisma/client.js";
+import { deleteCache } from "../../utils/cache.js";
 
 export const getCurrentUserService = async (userId) => {
   try {
@@ -60,6 +61,8 @@ export const updateUserProfileService = async (userId, updateData) => {
     if (!user) {
       throw new Error("User not found");
     }
+
+    await deleteCache(`user:${userId}`);
 
     return user;
   } catch (error) {

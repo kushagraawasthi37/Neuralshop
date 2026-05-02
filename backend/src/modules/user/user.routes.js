@@ -13,6 +13,7 @@ import {
   deleteUserAddress,
   getUserDefaultAddress,
 } from "./user.controller.js";
+import { cacheMiddleware } from "../../middlewares/cache.middleware.js";
 
 const userRoutes = express.Router();
 
@@ -24,7 +25,12 @@ userRoutes.post("/getcurrentadmin", isAuthAdmin, getCurrentAdmin);
 // USER PROFILE ROUTES
 // ============================================
 
-userRoutes.get("/profile", isAuth, getUserProfile);
+userRoutes.get(
+  "/profile",
+  isAuth,
+  cacheMiddleware((req) => `user:${req.userId}`, 3600),
+  getUserProfile,
+);
 
 userRoutes.patch(
   "/profile",

@@ -80,8 +80,8 @@ export default function ProfilePage() {
 
   return (
     <div style={{ minHeight: '100vh', paddingTop: 100 }}>
-      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 52px' }}>
-        <div style={{ padding: '52px 0 44px', borderBottom: '1px solid rgba(201,169,110,0.18)', marginBottom: 52 }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 var(--page-px)' }}>
+        <div style={{ padding: 'clamp(32px,4vw,52px) 0 44px', borderBottom: '1px solid rgba(201,169,110,0.18)', marginBottom: 52 }}>
           <div style={{ fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c9a96e', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <div style={{ width: 26, height: 1, background: '#c9a96e' }} />My Account
           </div>
@@ -90,7 +90,7 @@ export default function ProfilePage() {
           </h1>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 40, paddingBottom: 100, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,280px),1fr))', gap: 40, paddingBottom: 100, alignItems: 'start' }}>
           <div style={{ background: '#1a1916', border: '1px solid rgba(201,169,110,0.18)', padding: 32, position: 'sticky', top: 100 }}>
             <div style={{ width: 88, height: 88, border: '1px solid rgba(201,169,110,0.18)', margin: '0 auto 20px', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
               <div style={{ width: '100%', height: '100%', background: '#252320', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cormorant Garamond',serif", fontSize: 32, fontWeight: 300, color: '#c9a96e' }}>{initials}</div>

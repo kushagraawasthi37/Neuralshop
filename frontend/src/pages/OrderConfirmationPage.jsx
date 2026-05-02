@@ -61,7 +61,7 @@ export default function OrderConfirmationPage() {
         ))}
       </div>
 
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 52px 100px', textAlign: 'center' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: 'clamp(32px,5vw,60px) var(--page-px) 100px', textAlign: 'center' }}>
         <div style={{ width: 100, height: 100, margin: '0 auto 40px', position: 'relative' }}>
           <div style={{ width: '100%', height: '100%', border: '1px solid rgba(201,169,110,0.18)', borderRadius: '50%', background: 'rgba(201,169,110,0.04)', animation: 'checkAppear 0.6s cubic-bezier(0.23,1,0.32,1) both 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="40" height="40" viewBox="0 0 50 50" fill="none">

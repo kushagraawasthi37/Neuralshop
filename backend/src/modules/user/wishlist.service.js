@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Wishlist } from "./wishlist.model.js";
 import { Product } from "../product/product.model.js";
 import { ApiError } from "../../utils/api-error.js";
+import { deleteCache } from "../../utils/cache.js";
 
 // ============================================
 // GET WISHLIST
@@ -58,6 +59,8 @@ export const addToWishlistService = async (userId, productId) => {
       await wishlist.save();
     }
 
+    await deleteCache(`wishlist:${userId}`);
+
     return await Wishlist.findOne({ userId }).populate(
       "items.productId",
       "name price category subCategory images rating reviewCount bestseller",
@@ -83,6 +86,8 @@ export const removeFromWishlistService = async (userId, productId) => {
     );
 
     await wishlist.save();
+
+    await deleteCache(`wishlist:${userId}`);
 
     return await Wishlist.findOne({ userId }).populate(
       "items.productId",
@@ -123,6 +128,8 @@ export const clearWishlistService = async (userId) => {
     if (!wishlist) {
       throw new ApiError(404, "Wishlist not found", [], "wishlist");
     }
+
+    await deleteCache(`wishlist:${userId}`);
 
     return wishlist;
   } catch (error) {

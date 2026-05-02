@@ -12,10 +12,10 @@ export default function StorySection() {
   const rightRef = useReveal(0.1)
 
   return (
-    <section id="story" style={{ position: 'relative', padding: '180px 52px', background: 'linear-gradient(to bottom, #0d0c0b 0%, #0f0e0c 100%)', overflow: 'hidden' }}>
-      <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 120, alignItems: 'center' }}>
+    <section id="story" className="landing-section-xl" style={{ position: 'relative', background: 'linear-gradient(to bottom, #0d0c0b 0%, #0f0e0c 100%)', overflow: 'hidden' }}>
+      <div className="story-two-col">
         {/* Visual: framed stats */}
-        <div ref={leftRef} className="reveal" style={{ position: 'relative', height: 500 }}>
+        <div ref={leftRef} className="reveal story-visual">
           <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(201,169,110,0.1)' }}>
             {/* corner accents */}
             <div style={{ position: 'absolute', top: -20, left: -20, width: 60, height: 60, borderTop: '1px solid #c9a96e', borderLeft: '1px solid #c9a96e' }} />

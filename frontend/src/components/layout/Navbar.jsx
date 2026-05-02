@@ -4,9 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../../store/authStore";
 import { cartApi } from "../../api/cart";
 
+const NAV_LINKS = [
+  ["Collections", "/collections"],
+  ["New Arrivals", "/products?sort=newest"],
+  ["Search", "/search"],
+  ["About", "/about"],
+];
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const { isLoggedIn, role } = useAuthStore();
@@ -22,6 +30,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     setProfileOpen(false);
+    setMobileOpen(false);
     navigate("/logout");
   };
 
@@ -31,7 +40,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -42,220 +50,166 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Don't show navbar for admin users
+  /* Lock body scroll when mobile menu is open */
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
   if (isLoggedIn && role === "admin") return null;
 
   return (
-    <nav
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: scrolled ? "18px 52px" : "28px 52px",
-        background: scrolled
-          ? "rgba(13,12,11,0.92)"
-          : "linear-gradient(to bottom, rgba(13,12,11,0.9) 0%, transparent 100%)",
-        backdropFilter: scrolled ? "blur(20px)" : "blur(0px)",
-        borderBottom: scrolled ? "1px solid rgba(201,169,110,0.1)" : "none",
-        transition: "all 0.6s ease",
-      }}
-    >
-      <Link
-        to="/"
-        style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize: 22,
-          fontWeight: 300,
-          letterSpacing: "0.18em",
-          color: "#f0e6d0",
-          textTransform: "uppercase",
-          textDecoration: "none",
-        }}
-      >
-        Neural<span style={{ color: "#c9a96e" }}>·</span>Shop
-      </Link>
+    <>
+      <nav className={`navbar${scrolled ? " navbar--scrolled" : ""}`}>
+        {/* Logo */}
+        <Link to="/" className="navbar__logo">
+          Neural<span style={{ color: "#c9a96e" }}>·</span>Shop
+        </Link>
 
-      <ul style={{ display: "flex", gap: 40, listStyle: "none" }}>
-        {[
-          ["Collections", "/collections"],
-          ["New Arrivals", "/products?sort=newest"],
-          ["Search", "/search"],
-          ["About", "/about"],
-        ].map(([label, path]) => (
-          <li key={label}>
-            <Link
-              to={path}
-              style={{
-                fontSize: 12,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "rgba(240,230,208,0.6)",
-                textDecoration: "none",
-                position: "relative",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#c9a96e"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(240,230,208,0.6)"; }}
-            >
-              {label}
-            </Link>
-          </li>
-        ))}
-      </ul>
+        {/* Desktop links */}
+        <ul className="navbar__links">
+          {NAV_LINKS.map(([label, path]) => (
+            <li key={label}>
+              <Link to={path} className="navbar__link">{label}</Link>
+            </li>
+          ))}
+        </ul>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
-        <button
-          onClick={() => navigate("/search")}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-        >
-          <svg
-            width="20" height="20" viewBox="0 0 24 24"
-            fill="none" stroke="rgba(240,230,208,0.6)" strokeWidth="1.2"
-            style={{ display: "block", transition: "stroke 0.3s" }}
-            onMouseEnter={(e) => (e.currentTarget.style.stroke = "#c9a96e")}
-            onMouseLeave={(e) => (e.currentTarget.style.stroke = "rgba(240,230,208,0.6)")}
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.35-4.35" />
-          </svg>
-        </button>
+        {/* Desktop actions */}
+        <div className="navbar__actions">
+          {/* Search */}
+          <button onClick={() => navigate("/search")} className="navbar__icon-btn" aria-label="Search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+          </button>
 
-        <div style={{ display: "flex", alignItems: "flex-start", position: "relative" }}>
-          <button
-            onClick={() => navigate("/cart")}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, position: "relative" }}
-          >
-            <svg
-              width="20" height="20" viewBox="0 0 24 24"
-              fill="none" stroke="rgba(240,230,208,0.6)" strokeWidth="1.2"
-              style={{ display: "block", transition: "stroke 0.3s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.stroke = "#c9a96e")}
-              onMouseLeave={(e) => (e.currentTarget.style.stroke = "rgba(240,230,208,0.6)")}
-            >
+          {/* Cart */}
+          <button onClick={() => navigate("/cart")} className="navbar__icon-btn navbar__cart-btn" aria-label="Cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
               <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
               <line x1="3" y1="6" x2="21" y2="6" />
               <path d="M16 10a4 4 0 01-8 0" />
             </svg>
             {cartCount > 0 && (
-              <span style={{
-                position: "absolute", top: -6, right: -6,
-                minWidth: 16, height: 16, background: "#c9a96e",
-                borderRadius: "50%", display: "flex", alignItems: "center",
-                justifyContent: "center", fontSize: 9, fontWeight: 600,
-                color: "#0d0c0b", fontFamily: "'DM Sans',sans-serif",
-                letterSpacing: 0, padding: "0 3px",
-              }}>
+              <span className="navbar__cart-badge">
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
           </button>
-        </div>
 
-        {isUser ? (
-          <div ref={dropdownRef} style={{ position: "relative" }}>
-            <button
-              onClick={() => setProfileOpen((o) => !o)}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}
-            >
-              <svg
-                width="20" height="20" viewBox="0 0 24 24"
-                fill="none" stroke={profileOpen ? "#c9a96e" : "rgba(240,230,208,0.6)"} strokeWidth="1.2"
-                style={{ display: "block", transition: "stroke 0.3s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.stroke = "#c9a96e")}
-                onMouseLeave={(e) => { if (!profileOpen) e.currentTarget.style.stroke = "rgba(240,230,208,0.6)"; }}
+          {/* Profile / Sign In */}
+          {isUser ? (
+            <div ref={dropdownRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => setProfileOpen((o) => !o)}
+                className={`navbar__icon-btn${profileOpen ? " navbar__icon-btn--active" : ""}`}
+                aria-label="Profile"
               >
-                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </button>
+              {profileOpen && (
+                <div className="navbar__dropdown">
+                  <button onClick={() => { setProfileOpen(false); navigate("/account/profile"); }} className="navbar__dropdown-item">
+                    My Profile
+                  </button>
+                  <button onClick={() => { setProfileOpen(false); navigate("/account/orders"); }} className="navbar__dropdown-item">
+                    My Orders
+                  </button>
+                  <button onClick={handleLogout} className="navbar__dropdown-item navbar__dropdown-item--danger">
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button onClick={() => navigate("/login")} className="navbar__signin-btn">
+              Sign In
             </button>
+          )}
 
-            {profileOpen && (
-              <div style={{
-                position: "absolute", top: "calc(100% + 14px)", right: 0,
-                background: "#1a1916", border: "1px solid rgba(201,169,110,0.18)",
-                minWidth: 160, zIndex: 200,
-              }}>
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileOpen((o) => !o)}
+            className="navbar__hamburger"
+            aria-label="Menu"
+          >
+            <span className={`navbar__hamburger-line${mobileOpen ? " open" : ""}`} />
+            <span className={`navbar__hamburger-line${mobileOpen ? " open" : ""}`} />
+            <span className={`navbar__hamburger-line${mobileOpen ? " open" : ""}`} />
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile drawer */}
+      <div className={`mobile-menu${mobileOpen ? " mobile-menu--open" : ""}`}>
+        <div className="mobile-menu__inner">
+          <nav className="mobile-menu__nav">
+            {NAV_LINKS.map(([label, path]) => (
+              <Link
+                key={label}
+                to={path}
+                className="mobile-menu__link"
+                onClick={() => setMobileOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="mobile-menu__divider" />
+
+          <div className="mobile-menu__actions">
+            <button
+              onClick={() => { setMobileOpen(false); navigate("/search"); }}
+              className="mobile-menu__action-btn"
+            >
+              Search
+            </button>
+            <button
+              onClick={() => { setMobileOpen(false); navigate("/cart"); }}
+              className="mobile-menu__action-btn"
+            >
+              Cart{cartCount > 0 && ` (${cartCount})`}
+            </button>
+            {isUser ? (
+              <>
                 <button
-                  onClick={() => { setProfileOpen(false); navigate("/account/profile"); }}
-                  style={{
-                    display: "block", width: "100%", textAlign: "left",
-                    padding: "12px 18px", background: "none", border: "none",
-                    borderBottom: "1px solid rgba(201,169,110,0.1)",
-                    color: "rgba(240,230,208,0.7)", fontSize: 11,
-                    letterSpacing: "0.12em", textTransform: "uppercase",
-                    cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#c9a96e")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(240,230,208,0.7)")}
+                  onClick={() => { setMobileOpen(false); navigate("/account/profile"); }}
+                  className="mobile-menu__action-btn"
                 >
                   My Profile
                 </button>
                 <button
-                  onClick={() => { setProfileOpen(false); navigate("/account/orders"); }}
-                  style={{
-                    display: "block", width: "100%", textAlign: "left",
-                    padding: "12px 18px", background: "none", border: "none",
-                    borderBottom: "1px solid rgba(201,169,110,0.1)",
-                    color: "rgba(240,230,208,0.7)", fontSize: 11,
-                    letterSpacing: "0.12em", textTransform: "uppercase",
-                    cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#c9a96e")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(240,230,208,0.7)")}
+                  onClick={() => { setMobileOpen(false); navigate("/account/orders"); }}
+                  className="mobile-menu__action-btn"
                 >
                   My Orders
                 </button>
-                <button
-                  onClick={handleLogout}
-                  style={{
-                    display: "block", width: "100%", textAlign: "left",
-                    padding: "12px 18px", background: "none", border: "none",
-                    color: "rgba(190,110,110,0.75)", fontSize: 11,
-                    letterSpacing: "0.12em", textTransform: "uppercase",
-                    cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(220,130,130,0.9)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(190,110,110,0.75)")}
-                >
+                <button onClick={handleLogout} className="mobile-menu__action-btn mobile-menu__action-btn--danger">
                   Sign Out
                 </button>
-              </div>
+              </>
+            ) : (
+              <button
+                onClick={() => { setMobileOpen(false); navigate("/login"); }}
+                className="mobile-menu__signin"
+              >
+                Sign In
+              </button>
             )}
           </div>
-        ) : (
-          <button
-            onClick={() => navigate("/login")}
-            style={{
-              background: "none",
-              border: "1px solid rgba(201,169,110,0.25)",
-              cursor: "pointer",
-              padding: "8px 20px",
-              fontSize: 10,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "#c9a96e",
-              transition: "all 0.3s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(201,169,110,0.08)";
-              e.currentTarget.style.borderColor = "#c9a96e";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "none";
-              e.currentTarget.style.borderColor = "rgba(201,169,110,0.25)";
-            }}
-          >
-            Sign In
-          </button>
-        )}
+        </div>
       </div>
-    </nav>
+
+      {/* Backdrop */}
+      {mobileOpen && (
+        <div className="mobile-menu__backdrop" onClick={() => setMobileOpen(false)} />
+      )}
+    </>
   );
 }

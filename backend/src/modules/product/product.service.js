@@ -12,6 +12,7 @@ import {
   initializeInventoryService,
   updateTotalStockService,
 } from "../inventory/inventory.service.js";
+import { deleteCache, deleteByPattern } from "../../utils/cache.js";
 
 const parseSizes = (sizesInput) => {
   if (!sizesInput) return [];
@@ -85,6 +86,11 @@ export const addProductService = async (productData, adminEmail, files) => {
   }
 
   indexProduct(product).catch(() => {});
+
+  await deleteByPattern("products:*");
+  await deleteByPattern("search:*");
+  await deleteCache("trending_products");
+  await deleteCache("recommended_products");
 
   return product;
 };
@@ -281,6 +287,15 @@ export const removeProductService = async (productId, adminEmail) => {
     // Delete from Elasticsearch index
     await deleteProductIndex(productId);
 
+    await deleteCache(`product:${productId}`);
+    await deleteByPattern("products:*");
+    await deleteByPattern("search:*");
+    await deleteByPattern("similar:*");
+    await deleteByPattern("related:*");
+    await deleteCache("trending_products");
+    await deleteCache("recommended_products");
+    await deleteCache("top_rated_products");
+
     return { message: "Product deleted successfully" };
   } catch (error) {
     throw error;
@@ -383,6 +398,15 @@ export const updateProductService = async (
   }
 
   updateProductIndex(productId, updateFields).catch(() => {});
+
+  await deleteCache(`product:${productId}`);
+  await deleteByPattern("products:*");
+  await deleteByPattern("search:*");
+  await deleteByPattern("similar:*");
+  await deleteByPattern("related:*");
+  await deleteCache("trending_products");
+  await deleteCache("recommended_products");
+  await deleteCache("top_rated_products");
 
   return updatedProduct;
 };

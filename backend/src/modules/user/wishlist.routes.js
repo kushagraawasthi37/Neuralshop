@@ -7,11 +7,17 @@ import {
   checkInWishlist,
   clearWishlist,
 } from "./wishlist.controller.js";
+import { cacheMiddleware } from "../../middlewares/cache.middleware.js";
 
 const wishlistRoutes = express.Router();
 
 // Get wishlist
-wishlistRoutes.get("/", isAuth, getWishlist);
+wishlistRoutes.get(
+  "/",
+  isAuth,
+  cacheMiddleware((req) => `wishlist:${req.userId}`, 3600),
+  getWishlist,
+);
 
 // Add to wishlist
 wishlistRoutes.post("/add", isAuth, addToWishlist);

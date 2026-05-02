@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/products";
 import { wishlistApi } from "../api/user";
 import { useCartStore } from "../store/cartStore";
+import StarRating from "../components/ui/StarRating";
 
 const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
@@ -407,76 +408,41 @@ export default function ProductsPage() {
     setPage(1);
   }, [category, sortBy, priceMin, priceMax]);
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
-    <div style={{ minHeight: "100vh", paddingTop: 80 }}>
+    <div className="listing-page">
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
 
       {/* Page Header */}
-      <div
-        style={{
-          padding: "48px 52px 32px",
-          borderBottom: "1px solid rgba(201,169,110,0.08)",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 9,
-            letterSpacing: "0.28em",
-            textTransform: "uppercase",
-            color: "#c9a96e",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            marginBottom: 12,
-          }}
-        >
-          <span
-            style={{
-              width: 24,
-              height: 1,
-              background: "#c9a96e",
-              display: "inline-block",
-            }}
-          />
+      <div className="listing-header">
+        <div className="listing-header__eyebrow">
+          <span style={{ width: 24, height: 1, background: "#c9a96e", display: "inline-block" }} />
           Collection
         </div>
-        <h1
-          style={{
-            fontFamily: "'Cormorant Garamond',serif",
-            fontSize: "clamp(32px,4vw,52px)",
-            fontWeight: 300,
-            color: "#f0e6d0",
-            lineHeight: 1.1,
-            marginBottom: 8,
-          }}
-        >
+        <h1 className="listing-header__title">
           {category && category !== "All" ? (
             category
           ) : (
-            <>
-              <em style={{ fontStyle: "italic", color: "#c9a96e" }}>All</em>{" "}
-              Products
-            </>
+            <><em style={{ fontStyle: "italic", color: "#c9a96e" }}>All</em> Products</>
           )}
         </h1>
-        <p style={{ fontSize: 13, color: "rgba(240,230,208,0.38)" }}>
-          {isLoading
-            ? "Loading…"
-            : `${total.toLocaleString("en-IN")} pieces in collection`}
+        <p className="listing-header__count">
+          {isLoading ? "Loading…" : `${total.toLocaleString("en-IN")} pieces in collection`}
         </p>
       </div>
 
-      <div style={{ display: "flex", padding: "0 52px" }}>
+      {/* Mobile filter toggle */}
+      <button className="listing-filter-toggle" onClick={() => setSidebarOpen((o) => !o)}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="14" y2="12" /><line x1="4" y1="18" x2="10" y2="18" />
+        </svg>
+        {sidebarOpen ? "Hide Filters" : "Show Filters"}
+      </button>
+
+      <div className="listing-layout">
         {/* Sidebar */}
-        <aside
-          style={{
-            width: 240,
-            flexShrink: 0,
-            paddingTop: 40,
-            paddingRight: 40,
-            borderRight: "1px solid rgba(201,169,110,0.08)",
-          }}
-        >
+        <aside className={`listing-sidebar${sidebarOpen ? " listing-sidebar--open" : ""}`}>
           {/* Search */}
           <div style={{ marginBottom: 40 }}>
             <div
@@ -691,7 +657,7 @@ export default function ProductsPage() {
         </aside>
 
         {/* Main content */}
-        <div style={{ flex: 1, paddingLeft: 40, paddingTop: 32 }}>
+        <div className="listing-content">
           {/* Filter chips + sort bar */}
           <div
             style={{
@@ -761,13 +727,7 @@ export default function ProductsPage() {
 
           {/* Grid */}
           {isLoading ? (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                gap: 2,
-              }}
-            >
+            <div className="listing-grid">
               {Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} />
               ))}
@@ -818,14 +778,7 @@ export default function ProductsPage() {
             </div>
           ) : (
             <>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                  gap: 2,
-                  marginBottom: 48,
-                }}
-              >
+              <div className="listing-grid">
                 {products.map((p, i) => (
                   <ProductCard key={p.id || p._id || i} product={p} />
                 ))}

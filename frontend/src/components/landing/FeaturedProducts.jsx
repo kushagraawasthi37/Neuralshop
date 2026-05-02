@@ -22,25 +22,25 @@ export default function FeaturedProducts() {
   }
 
   return (
-    <section id="featured" style={{ position: 'relative', padding: '140px 52px', background: '#0d0c0b' }}>
-      <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-        <div ref={headerRef} className="reveal" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 60 }}>
+    <section id="featured" className="landing-section" style={{ position: 'relative', background: '#0d0c0b' }}>
+      <div className="landing-inner">
+        <div ref={headerRef} className="reveal" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 'clamp(32px,5vw,60px)', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
               <div style={{ width: 30, height: 1, background: '#c9a96e' }} />
               <span style={{ fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#c9a96e' }}>Neural Picks</span>
             </div>
-            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(36px, 4vw, 60px)', fontWeight: 300, color: '#f0e6d0', lineHeight: 1.1 }}>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(28px, 4vw, 60px)', fontWeight: 300, color: '#f0e6d0', lineHeight: 1.1 }}>
               Objects of <em style={{ fontStyle: 'italic', color: 'rgba(240,230,208,0.4)' }}>distinction</em>
             </h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <button onClick={() => scroll(-1)} style={{ width: 44, height: 44, border: '1px solid rgba(201,169,110,0.2)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+            <button className="feat-nav-btn" onClick={() => scroll(-1)} style={{ width: 44, height: 44, border: '1px solid rgba(201,169,110,0.2)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = '#c9a96e'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,169,110,0.2)'}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
-            <button onClick={() => scroll(1)} style={{ width: 44, height: 44, border: '1px solid rgba(201,169,110,0.2)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+            <button className="feat-nav-btn" onClick={() => scroll(1)} style={{ width: 44, height: 44, border: '1px solid rgba(201,169,110,0.2)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = '#c9a96e'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,169,110,0.2)'}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>

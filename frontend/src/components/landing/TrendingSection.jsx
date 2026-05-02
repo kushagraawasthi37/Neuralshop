@@ -23,19 +23,19 @@ export default function TrendingSection() {
   const featuredProduct = featured || (products.length > 0 ? products[0] : null)
 
   return (
-    <section id="trending" style={{ padding: '140px 52px', background: '#0d0c0b' }}>
-      <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-        <div ref={headerRef} className="reveal" style={{ marginBottom: 60 }}>
+    <section id="trending" className="landing-section" style={{ background: '#0d0c0b' }}>
+      <div className="landing-inner">
+        <div ref={headerRef} className="reveal" style={{ marginBottom: 'clamp(32px,5vw,60px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
             <div style={{ width: 30, height: 1, background: '#c9a96e' }} />
             <span style={{ fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#c9a96e' }}>Right Now</span>
           </div>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(36px, 4vw, 60px)', fontWeight: 300, color: '#f0e6d0', lineHeight: 1.1 }}>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(28px, 4vw, 60px)', fontWeight: 300, color: '#f0e6d0', lineHeight: 1.1 }}>
             What's <em style={{ fontStyle: 'italic', color: 'rgba(240,230,208,0.4)' }}>trending</em>
           </h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }}>
+        <div className="trending-two-col">
           {/* Trending list */}
           <div>
             {isLoading
@@ -78,7 +78,7 @@ export default function TrendingSection() {
           </div>
 
           {/* Featured card */}
-          <div style={{ position: 'sticky', top: 120 }}>
+          <div className="trending-sticky">
             {featuredProduct && (
               <div onClick={() => navigate(`/product/${featuredProduct._id || featuredProduct.id}`)} style={{ cursor: 'pointer' }}>
                 <div style={{ width: '100%', aspectRatio: '3/4', background: '#1a1916', border: '1px solid rgba(201,169,110,0.1)', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

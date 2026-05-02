@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -13,31 +14,33 @@ import { useAuthStore } from "./store/authStore";
 import { userApi } from "./api/user";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
-import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
-import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
-import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import NewPasswordPage from "./pages/auth/NewPasswordPage";
-import AdminLoginPage from "./pages/auth/AdminLoginPage";
-import AdminRegisterPage from "./pages/auth/AdminRegisterPage";
-import LogoutPage from "./pages/auth/LogoutPage";
-import LoggedOutPage from "./pages/auth/LoggedOutPage";
-import CartPage from "./pages/CartPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import OrderConfirmationPage from "./pages/OrderConfirmationPage";
-import OrderTrackingPage from "./pages/OrderTrackingPage";
-import OrderHistoryPage from "./pages/account/OrderHistoryPage";
-import ProfilePage from "./pages/account/ProfilePage";
-import WishlistPage from "./pages/account/WishlistPage";
-import ReturnsPage from "./pages/account/ReturnsPage";
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
-import ProductsPage from "./pages/ProductsPage";
-import ProductDetailPage from "./pages/ProductDetailPage";
-import SearchPage from "./pages/SearchPage";
-import CollectionPage from "./pages/CollectionPage";
-import AboutPage from "./pages/AboutPage";
+
+/* Route-level lazy imports — each page loads only when navigated to */
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
+const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage"));
+const NewPasswordPage = lazy(() => import("./pages/auth/NewPasswordPage"));
+const AdminLoginPage = lazy(() => import("./pages/auth/AdminLoginPage"));
+const AdminRegisterPage = lazy(() => import("./pages/auth/AdminRegisterPage"));
+const LogoutPage = lazy(() => import("./pages/auth/LogoutPage"));
+const LoggedOutPage = lazy(() => import("./pages/auth/LoggedOutPage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const OrderConfirmationPage = lazy(() => import("./pages/OrderConfirmationPage"));
+const OrderTrackingPage = lazy(() => import("./pages/OrderTrackingPage"));
+const OrderHistoryPage = lazy(() => import("./pages/account/OrderHistoryPage"));
+const ProfilePage = lazy(() => import("./pages/account/ProfilePage"));
+const WishlistPage = lazy(() => import("./pages/account/WishlistPage"));
+const ReturnsPage = lazy(() => import("./pages/account/ReturnsPage"));
+const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
+const ProductsPage = lazy(() => import("./pages/ProductsPage"));
+const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
+const SearchPage = lazy(() => import("./pages/SearchPage"));
+const CollectionPage = lazy(() => import("./pages/CollectionPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
 
 const AUTH_PATHS = [
   "/login",
@@ -54,6 +57,31 @@ const AUTH_PATHS = [
 
 const NO_NAV_PATHS = ["/admin/dashboard"];
 
+function PageLoader() {
+  return (
+    <div
+      style={{
+        minHeight: "60vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          border: "1px solid rgba(201,169,110,0.25)",
+          borderTopColor: "#c9a96e",
+          borderRadius: "50%",
+          animation: "spin 1s linear infinite",
+        }}
+      />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+
 function AppShell() {
   useCursor();
   const { pathname } = useLocation();
@@ -63,20 +91,17 @@ function AppShell() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const logout = useAuthStore((s) => s.logout);
 
-  // ✅ ADD THIS BLOCK
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem("token");
       if (!token) return;
-
       try {
-        const res = await userApi.getMe(); // 🔥 important
+        const res = await userApi.getMe();
         setAuth(res.data.user, token, res.data.user.role);
-      } catch (err) {
-        logout(); // invalid token
+      } catch {
+        logout();
       }
     };
-
     initAuth();
   }, []);
 
@@ -88,166 +113,135 @@ function AppShell() {
 
       {!isAuth && !isAdmin && <Navbar />}
 
-      <Routes>
-        {/* Landing */}
-        <Route path="/" element={<LandingPage />} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Landing */}
+          <Route path="/" element={<LandingPage />} />
 
-        {/* Auth — own nav, no footer, no scroll */}
-        <Route
-          path="/login"
-          element={
-            <AuthPage>
-              <LoginPage />
-            </AuthPage>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <AuthPage>
-              <RegisterPage />
-            </AuthPage>
-          }
-        />
-        <Route
-          path="/verify-email"
-          element={
-            <AuthPage>
-              <VerifyEmailPage />
-            </AuthPage>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <AuthPage>
-              <ForgotPasswordPage />
-            </AuthPage>
-          }
-        />
-        <Route
-          path="/reset-password"
-          element={
-            <AuthPage>
-              <ResetPasswordPage />
-            </AuthPage>
-          }
-        />
-        <Route
-          path="/new-password"
-          element={
-            <AuthPage>
-              <NewPasswordPage />
-            </AuthPage>
-          }
-        />
-        <Route
-          path="/admin/login"
-          element={
-            <AuthPage admin>
-              <AdminLoginPage />
-            </AuthPage>
-          }
-        />
-        <Route
-          path="/admin/register"
-          element={
-            <AuthPage admin>
-              <AdminRegisterPage />
-            </AuthPage>
-          }
-        />
-        <Route
-          path="/logout"
-          element={
-            <AuthPage hideLinks>
-              <LogoutPage />
-            </AuthPage>
-          }
-        />
-        <Route
-          path="/logged-out"
-          element={
-            <AuthPage hideLinks>
-              <LoggedOutPage />
-            </AuthPage>
-          }
-        />
+          {/* Auth — own nav, no footer, no scroll */}
+          <Route
+            path="/login"
+            element={
+              <AuthPage>
+                <LoginPage />
+              </AuthPage>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <AuthPage>
+                <RegisterPage />
+              </AuthPage>
+            }
+          />
+          <Route
+            path="/verify-email"
+            element={
+              <AuthPage>
+                <VerifyEmailPage />
+              </AuthPage>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <AuthPage>
+                <ForgotPasswordPage />
+              </AuthPage>
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <AuthPage>
+                <ResetPasswordPage />
+              </AuthPage>
+            }
+          />
+          <Route
+            path="/new-password"
+            element={
+              <AuthPage>
+                <NewPasswordPage />
+              </AuthPage>
+            }
+          />
+          <Route
+            path="/admin/login"
+            element={
+              <AuthPage admin>
+                <AdminLoginPage />
+              </AuthPage>
+            }
+          />
+          <Route
+            path="/admin/register"
+            element={
+              <AuthPage admin>
+                <AdminRegisterPage />
+              </AuthPage>
+            }
+          />
+          <Route
+            path="/logout"
+            element={
+              <AuthPage hideLinks>
+                <LogoutPage />
+              </AuthPage>
+            }
+          />
+          <Route
+            path="/logged-out"
+            element={
+              <AuthPage hideLinks>
+                <LoggedOutPage />
+              </AuthPage>
+            }
+          />
 
-        {/* Commerce pages Checked */}
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
-        <Route path="/orders/:orderId/track" element={<OrderTrackingPage />} />
+          {/* Commerce pages */}
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+          <Route path="/orders/:orderId/track" element={<OrderTrackingPage />} />
 
-        {/* Account pages CHECKED */}
-        <Route path="/account/orders" element={<OrderHistoryPage />} />
-        <Route path="/account/profile" element={<ProfilePage />} />
-        <Route path="/account/wishlist" element={<WishlistPage />} />
-        <Route path="/account/returns" element={<ReturnsPage />} />
+          {/* Account pages */}
+          <Route path="/account/orders" element={<OrderHistoryPage />} />
+          <Route path="/account/profile" element={<ProfilePage />} />
+          <Route path="/account/wishlist" element={<WishlistPage />} />
+          <Route path="/account/returns" element={<ReturnsPage />} />
 
-        {/* Admin */}
-        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+          {/* Admin — heavy dashboard loads only for admin users */}
+          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
 
-        {/* Product pages */}
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/product/:id" element={<ProductDetailPage />} />
-        <Route path="/search" element={<SearchPage />} />
+          {/* Product pages */}
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/search" element={<SearchPage />} />
 
-        {/* Placeholder pages */}
-        <Route path="/collections" element={<CollectionPage />} />
-        <Route path="/account" element={<PlaceholderPage title="Account" />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="*" element={<PlaceholderPage title="404 — Not Found" />} />
-      </Routes>
+          {/* Other pages */}
+          <Route path="/collections" element={<CollectionPage />} />
+          <Route path="/account" element={<PlaceholderPage title="Account" />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="*" element={<PlaceholderPage title="404 — Not Found" />} />
+        </Routes>
+      </Suspense>
 
       {!isAuth && !isAdmin && <Footer />}
     </>
   );
 }
 
-/* Auth shell — fixed nav + no-scroll container */
 function AuthPage({ children, admin, hideLinks }) {
   return (
-    <div
-      style={{
-        height: "100vh",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        background: "#0e0d0b",
-      }}
-    >
-      {/* Auth nav */}
-      <nav
-        style={{
-          flexShrink: 0,
-          height: 60,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 52px",
-          borderBottom: "1px solid rgba(201,169,110,0.06)",
-          backdropFilter: "blur(20px)",
-          background: "rgba(14,13,11,0.88)",
-          zIndex: 100,
-        }}
-      >
-        <a
-          href="/"
-          style={{
-            fontFamily: "'Cormorant Garamond',serif",
-            fontSize: 22,
-            fontWeight: 300,
-            color: "#f0e6d0",
-            letterSpacing: "0.04em",
-            textDecoration: "none",
-          }}
-        >
+    <div className="auth-page-shell">
+      <nav className="auth-nav">
+        <a href="/" className="auth-logo">
           Neural<span style={{ color: "#c9a96e" }}>·</span>Shop
         </a>
         {!hideLinks && (
-          <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
+          <div className="auth-nav-links">
             {admin ? (
               <>
                 <NavLink href="/admin/login">Admin Sign In</NavLink>
@@ -264,73 +258,29 @@ function AuthPage({ children, admin, hideLinks }) {
           </div>
         )}
       </nav>
-      {/* Content fills remaining viewport exactly */}
-      <div style={{ flex: 1, overflow: "hidden" }}>{children}</div>
+      <div className="auth-content">{children}</div>
     </div>
   );
 }
 
 function NavLink({ href, children }) {
   return (
-    <a
-      href={href}
-      style={{
-        fontSize: 10,
-        letterSpacing: "0.22em",
-        textTransform: "uppercase",
-        color: "rgba(240,230,208,0.38)",
-        textDecoration: "none",
-        transition: "color 0.3s",
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = "#c9a96e")}
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.color = "rgba(240,230,208,0.38)")
-      }
-    >
+    <a href={href} className="auth-nav-link">
       {children}
     </a>
   );
 }
-function Sep() {
-  return (
-    <div
-      style={{ width: 1, height: 14, background: "rgba(201,169,110,0.18)" }}
-    />
-  );
-}
 
-function ProtectedRoute({ children }) {
-  const { isLoggedIn } = useAuthStore();
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
-  return children;
+function Sep() {
+  return <div className="auth-nav-sep" />;
 }
 
 function PlaceholderPage({ title }) {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingTop: 80,
-      }}
-    >
-      <div style={{ textAlign: "center" }}>
-        <div
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 52,
-            fontWeight: 300,
-            color: "#c9a96e",
-            marginBottom: 16,
-          }}
-        >
-          {title}
-        </div>
-        <div style={{ fontSize: 13, color: "rgba(240,230,208,0.4)" }}>
-          Being crafted — coming soon.
-        </div>
+    <div className="placeholder-page">
+      <div>
+        <div className="placeholder-title">{title}</div>
+        <div className="placeholder-sub">Being crafted — coming soon.</div>
       </div>
     </div>
   );

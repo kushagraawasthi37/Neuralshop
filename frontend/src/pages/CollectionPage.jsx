@@ -563,8 +563,10 @@ export default function CollectionPage() {
       : []),
   ];
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
-    <div style={{ minHeight: "100vh", paddingTop: 80 }}>
+    <div className="listing-page">
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes spin { to{transform:rotate(360deg)} }
@@ -573,7 +575,7 @@ export default function CollectionPage() {
       {/* Hero Header */}
       <div
         style={{
-          padding: "56px 52px 40px",
+          padding: "clamp(32px,5vw,56px) var(--page-px) clamp(24px,4vw,40px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
           position: "relative",
           overflow: "hidden",
@@ -671,21 +673,19 @@ export default function CollectionPage() {
         </p>
       </div>
 
-      <div style={{ display: "flex", padding: "0 52px" }}>
+      {/* Mobile filter toggle */}
+      <button className="listing-filter-toggle" onClick={() => setSidebarOpen((o) => !o)}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="14" y2="12" /><line x1="4" y1="18" x2="10" y2="18" />
+        </svg>
+        {sidebarOpen ? "Hide Filters" : "Show Filters"}
+      </button>
+
+      <div className="listing-layout">
         {/* Sticky Sidebar */}
         <aside
-          style={{
-            width: 240,
-            flexShrink: 0,
-            paddingTop: 40,
-            paddingRight: 40,
-            borderRight: "1px solid rgba(201,169,110,0.08)",
-            position: "sticky",
-            top: 80,
-            alignSelf: "flex-start",
-            maxHeight: "calc(100vh - 80px)",
-            overflowY: "auto",
-          }}
+          className={`listing-sidebar${sidebarOpen ? " listing-sidebar--open" : ""}`}
+          style={{ position: "sticky", top: 80, alignSelf: "flex-start" }}
         >
           {/* Search */}
           <div style={{ marginBottom: 40 }}>
@@ -914,7 +914,7 @@ export default function CollectionPage() {
         </aside>
 
         {/* Main Content */}
-        <div style={{ flex: 1, paddingLeft: 40, paddingTop: 32 }}>
+        <div className="listing-content">
           {/* Filter chips + count bar */}
           <div
             style={{
@@ -1044,13 +1044,7 @@ export default function CollectionPage() {
             </div>
           ) : (
             <>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                  gap: 2,
-                }}
-              >
+              <div className="listing-grid">
                 {allProducts.map((p, i) => (
                   <ProductCard key={p.id || p._id || i} product={p} />
                 ))}

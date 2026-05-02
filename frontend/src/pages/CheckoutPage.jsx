@@ -227,8 +227,8 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 52px' }}>
-        <div style={{ padding: '60px 0 48px' }}>
+      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 var(--page-px)' }}>
+        <div style={{ padding: 'clamp(32px,5vw,60px) 0 clamp(24px,4vw,48px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c9a96e', marginBottom: 14 }}>
             <div style={{ width: 28, height: 1, background: '#c9a96e' }} />Secure Checkout
           </div>
@@ -239,7 +239,7 @@ export default function CheckoutPage() {
 
         <Stepper step={step} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 52, paddingBottom: 100 }}>
+        <div className="checkout-layout" style={{ paddingLeft: 0, paddingRight: 0 }}>
           <div>
             {step === 0 && (
               <div>
@@ -247,7 +247,7 @@ export default function CheckoutPage() {
 
                 {/* Saved addresses */}
                 {addresses?.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16, marginBottom: 28 }}>
                     {addresses.map((addr) => (
                       <div
                         key={addr.id}

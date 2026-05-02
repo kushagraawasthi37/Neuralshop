@@ -111,12 +111,12 @@ export default function HeroSection() {
           zIndex: 10,
           maxWidth: 1400,
           margin: "0 auto",
-          padding: "100px 52px 0",
+          padding: "clamp(60px,7vw,100px) var(--page-px) 0",
           width: "100%",
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,340px),1fr))",
           alignItems: "center",
-          gap: 80,
+          gap: "clamp(32px,5vw,80px)",
         }}
       >
         {/* Left: Copy */}
@@ -186,10 +186,11 @@ export default function HeroSection() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 28,
-              marginTop: 52,
+              gap: "clamp(16px,3vw,28px)",
+              marginTop: "clamp(28px,4vw,52px)",
               opacity: 0,
               animation: "fadeUp 1s ease 1s forwards",
+              flexWrap: "wrap",
             }}
           >
             <Link to="/collections" className="btn-primary-hero">
@@ -225,12 +226,13 @@ export default function HeroSection() {
           <div
             style={{
               display: "flex",
-              gap: 40,
-              marginTop: 64,
-              paddingTop: 40,
+              gap: "clamp(20px,4vw,40px)",
+              marginTop: "clamp(32px,5vw,64px)",
+              paddingTop: "clamp(20px,3vw,40px)",
               borderTop: "1px solid rgba(201,169,110,0.12)",
               opacity: 0,
               animation: "fadeUp 1s ease 1.2s forwards",
+              flexWrap: "wrap",
             }}
           >
             {[
@@ -242,7 +244,7 @@ export default function HeroSection() {
                 <div
                   style={{
                     fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: 36,
+                    fontSize: "clamp(24px,3vw,36px)",
                     fontWeight: 300,
                     color: "#c9a96e",
                     lineHeight: 1,
@@ -266,14 +268,12 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Right: 3D Product Stage */}
+        {/* Right: 3D Product Stage — hidden on mobile via .hero-visual-wrap */}
         <div
+          className="hero-visual-wrap"
           style={{
             position: "relative",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: 600,
+            height: "clamp(420px, 50vw, 600px)",
             opacity: 0,
             animation: "fadeIn 1.4s ease 0.6s forwards",
           }}
@@ -327,8 +327,8 @@ export default function HeroSection() {
             ref={stageRef}
             style={{
               position: "relative",
-              width: 420,
-              height: 420,
+              width: "min(420px, 90%)",
+              height: "min(420px, 90vw)",
               transformStyle: "preserve-3d",
               animation: "stageFloat 6s ease-in-out infinite",
               transition: "transform 0.3s ease",
@@ -509,10 +509,11 @@ export default function HeroSection() {
 
       {/* Scroll indicator */}
       <div
+        className="hero-scroll-hint"
         style={{
           position: "absolute",
           bottom: 40,
-          left: 52,
+          left: "var(--page-px)",
           zIndex: 20,
           display: "flex",
           alignItems: "center",

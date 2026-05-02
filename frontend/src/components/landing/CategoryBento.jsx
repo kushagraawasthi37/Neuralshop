@@ -17,7 +17,8 @@ function CatCard({ cat, onClick }) {
   return (
     <div
       onClick={onClick}
-      style={{ position: 'relative', overflow: 'hidden', cursor: 'pointer', background: '#1a1916', gridRow: cat.large ? 'span 2' : undefined, height: cat.large ? 600 : 296 }}
+      className={cat.large ? 'cat-bento-large' : 'cat-bento-small'}
+      style={{ position: 'relative', overflow: 'hidden', cursor: 'pointer', background: '#1a1916' }}
       onMouseEnter={() => {
         if (innerRef.current) innerRef.current.style.transform = 'scale(1.04)'
         if (hoverRef.current) hoverRef.current.style.opacity = '1'
@@ -54,9 +55,9 @@ export default function CategoryBento() {
   const navigate = useNavigate()
 
   return (
-    <section id="categories" style={{ position: 'relative', padding: '140px 52px', background: 'linear-gradient(to bottom, #0d0c0b 0%, #111009 100%)', overflow: 'hidden' }}>
-      <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-        <div className="reveal" ref={sectionRef} style={{ marginBottom: 80 }}>
+    <section id="categories" className="landing-section" style={{ position: 'relative', background: 'linear-gradient(to bottom, #0d0c0b 0%, #111009 100%)', overflow: 'hidden' }}>
+      <div className="landing-inner">
+        <div className="reveal" ref={sectionRef} style={{ marginBottom: 'clamp(40px, 6vw, 80px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
             <div style={{ width: 30, height: 1, background: '#c9a96e' }} />
             <span style={{ fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#c9a96e' }}>Discover by World</span>
@@ -66,8 +67,8 @@ export default function CategoryBento() {
           </h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gridTemplateRows: 'auto auto', gap: 2 }}>
-          {categories.map((cat, i) => (
+        <div className="cat-bento-grid">
+          {categories.map((cat) => (
             <CatCard key={cat.query} cat={cat} onClick={() => navigate(`/collections?category=${cat.query}`)} />
           ))}
         </div>

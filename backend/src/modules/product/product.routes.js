@@ -13,6 +13,8 @@ import upload from "../../middlewares/multer.middleware.js";
 import isAuth, { isAuthAdmin } from "../../middlewares/auth.middleware.js";
 import validationErrorHandler from "../../middlewares/validation.middleware.js";
 import { productValidations } from "../../utils/validations.js";
+import { cacheMiddleware } from "../../middlewares/cache.middleware.js";
+import { stableHash } from "../../utils/cache.js";
 
 const productRoutes = express.Router();
 
@@ -72,6 +74,10 @@ productRoutes.get(
   "/browse/all",
   productValidations.browseProducts,
   validationErrorHandler,
+  cacheMiddleware(
+    (req) => `products:browse:${stableHash(req.query)}`,
+    900,
+  ),
   browseProducts,
 );
 
@@ -80,6 +86,13 @@ productRoutes.get(
   "/list",
   productValidations.listProduct,
   validationErrorHandler,
+  cacheMiddleware(
+    (req) =>
+      req.query.search
+        ? `search:${req.query.search}:${req.query.page || 1}`
+        : `products:${stableHash(req.query)}`,
+    (req) => (req.query.search ? 300 : 900),
+  ),
   listProduct,
 );
 
@@ -88,6 +101,7 @@ productRoutes.get(
   "/:id",
   productValidations.getProductById,
   validationErrorHandler,
+  cacheMiddleware((req) => `product:${req.params.id}`, 3600),
   getProductById,
 );
 

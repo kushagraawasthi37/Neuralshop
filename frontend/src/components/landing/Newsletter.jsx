@@ -16,7 +16,7 @@ export default function Newsletter() {
   }
 
   return (
-    <section id="newsletter" style={{ padding: '120px 52px', background: 'linear-gradient(135deg, #14120f 0%, #0d0c0b 100%)', position: 'relative', overflow: 'hidden', borderTop: '1px solid rgba(201,169,110,0.08)' }}>
+    <section id="newsletter" className="landing-section-sm" style={{ background: 'linear-gradient(135deg, #14120f 0%, #0d0c0b 100%)', position: 'relative', overflow: 'hidden', borderTop: '1px solid rgba(201,169,110,0.08)' }}>
       {/* Ambient glow */}
       <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', background: '#c9a96e', filter: 'blur(150px)', opacity: 0.04, top: '50%', left: '50%', transform: 'translate(-50%,-50%)', pointerEvents: 'none' }} />
 
@@ -39,7 +39,7 @@ export default function Newsletter() {
             You're in. Watch for something rare.
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', border: '1px solid rgba(201,169,110,0.2)', overflow: 'hidden', maxWidth: 480, margin: '0 auto', transition: 'border-color 0.3s' }}
+          <form onSubmit={handleSubmit} className="newsletter-form" style={{ display: 'flex', border: '1px solid rgba(201,169,110,0.2)', overflow: 'hidden', maxWidth: 480, margin: '0 auto', transition: 'border-color 0.3s' }}
             onFocus={e => e.currentTarget.style.borderColor = 'rgba(201,169,110,0.5)'}
             onBlur={e => e.currentTarget.style.borderColor = 'rgba(201,169,110,0.2)'}>
             <input

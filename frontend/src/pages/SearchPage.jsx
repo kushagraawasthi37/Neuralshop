@@ -462,13 +462,13 @@ export default function SearchPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", paddingTop: 80 }}>
+    <div className="listing-page">
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
 
       {/* Search Hero */}
       <div
         style={{
-          padding: "60px 52px 48px",
+          padding: "clamp(32px,5vw,60px) var(--page-px) clamp(24px,4vw,48px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
           background: "rgba(201,169,110,0.01)",
         }}
@@ -578,7 +578,7 @@ export default function SearchPage() {
       </div>
 
       {q.length > 0 && (
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 52px" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 var(--page-px)" }}>
           {/* Controls bar */}
           <div
             style={{
@@ -660,13 +660,7 @@ export default function SearchPage() {
           {/* Results */}
           <div style={{ paddingTop: 32 }}>
             {isLoading ? (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                  gap: 2,
-                }}
-              >
+              <div className="listing-grid">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <Skeleton key={i} />
                 ))}
@@ -745,15 +739,7 @@ export default function SearchPage() {
               </div>
             ) : (
               <>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(200px, 1fr))",
-                    gap: 2,
-                    marginBottom: 48,
-                  }}
-                >
+                <div className="listing-grid" style={{ marginBottom: 48 }}>
                   {products.map((p, i) => (
                     <ProductCard key={p.id || p._id || i} product={p} />
                   ))}
@@ -842,7 +828,7 @@ export default function SearchPage() {
           style={{
             maxWidth: 1400,
             margin: "0 auto",
-            padding: "80px 52px",
+            padding: "80px var(--page-px)",
             textAlign: "center",
           }}
         >

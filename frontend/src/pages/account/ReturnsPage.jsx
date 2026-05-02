@@ -390,13 +390,15 @@ export default function ReturnsPage() {
         </div>
       )}
 
-      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 52px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 var(--page-px)" }}>
         <div
           style={{
-            padding: "52px 0 44px",
+            padding: "clamp(32px,4vw,52px) 0 44px",
             display: "flex",
             alignItems: "flex-end",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
             borderBottom: "1px solid rgba(201,169,110,0.18)",
             marginBottom: 52,
           }}
