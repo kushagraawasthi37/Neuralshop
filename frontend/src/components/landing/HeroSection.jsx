@@ -158,7 +158,7 @@ export default function HeroSection() {
             }}
           >
             <span style={{ display: "block" }}>Objects of</span>
-            <span style={{ display: "block", position: "relative" }}>
+            <span className="hero-line-accent" style={{ display: "block", position: "relative" }}>
               <em style={{ fontStyle: "italic", color: "#c9a96e" }}>Rare</em>{" "}
               Desire
             </span>
@@ -562,6 +562,13 @@ export default function HeroSection() {
           0%, 100% { transform: translate(0,0) scale(1); }
           33% { transform: translate(30px,-20px) scale(1.05); }
           66% { transform: translate(-20px,30px) scale(0.95); }
+        }
+        @keyframes lineGrow { to { width: 100%; } }
+        .hero-line-accent::after {
+          content: '';
+          position: absolute; bottom: -4px; left: 0;
+          width: 0; height: 1px; background: #c9a96e;
+          animation: lineGrow 1.2s ease 1.6s forwards;
         }
         @keyframes gridDrift {
           0% { transform: translateY(0); }

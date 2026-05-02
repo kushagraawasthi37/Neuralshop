@@ -25,25 +25,6 @@ const SORT_OPTIONS = [
   { label: "Top Rated", value: "rating" },
 ];
 
-function StarRating({ rating = 0 }) {
-  return (
-    <div style={{ display: "flex", gap: 2 }}>
-      {[1, 2, 3, 4, 5].map((s) => (
-        <span
-          key={s}
-          style={{
-            fontSize: 11,
-            color:
-              s <= Math.round(rating) ? "#c9a96e" : "rgba(201,169,110,0.2)",
-          }}
-        >
-          ★
-        </span>
-      ))}
-    </div>
-  );
-}
-
 function ProductCard({ product }) {
   const { addItem } = useCartStore();
   const [adding, setAdding] = useState(false);
@@ -417,32 +398,58 @@ export default function ProductsPage() {
       {/* Page Header */}
       <div className="listing-header">
         <div className="listing-header__eyebrow">
-          <span style={{ width: 24, height: 1, background: "#c9a96e", display: "inline-block" }} />
+          <span
+            style={{
+              width: 24,
+              height: 1,
+              background: "#c9a96e",
+              display: "inline-block",
+            }}
+          />
           Collection
         </div>
         <h1 className="listing-header__title">
           {category && category !== "All" ? (
             category
           ) : (
-            <><em style={{ fontStyle: "italic", color: "#c9a96e" }}>All</em> Products</>
+            <>
+              <em style={{ fontStyle: "italic", color: "#c9a96e" }}>All</em>{" "}
+              Products
+            </>
           )}
         </h1>
         <p className="listing-header__count">
-          {isLoading ? "Loading…" : `${total.toLocaleString("en-IN")} pieces in collection`}
+          {isLoading
+            ? "Loading…"
+            : `${total.toLocaleString("en-IN")} pieces in collection`}
         </p>
       </div>
 
       {/* Mobile filter toggle */}
-      <button className="listing-filter-toggle" onClick={() => setSidebarOpen((o) => !o)}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="14" y2="12" /><line x1="4" y1="18" x2="10" y2="18" />
+      <button
+        className="listing-filter-toggle"
+        onClick={() => setSidebarOpen((o) => !o)}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <line x1="4" y1="6" x2="20" y2="6" />
+          <line x1="4" y1="12" x2="14" y2="12" />
+          <line x1="4" y1="18" x2="10" y2="18" />
         </svg>
         {sidebarOpen ? "Hide Filters" : "Show Filters"}
       </button>
 
       <div className="listing-layout">
         {/* Sidebar */}
-        <aside className={`listing-sidebar${sidebarOpen ? " listing-sidebar--open" : ""}`}>
+        <aside
+          className={`listing-sidebar${sidebarOpen ? " listing-sidebar--open" : ""}`}
+        >
           {/* Search */}
           <div style={{ marginBottom: 40 }}>
             <div
