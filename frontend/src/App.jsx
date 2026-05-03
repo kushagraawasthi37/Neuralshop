@@ -20,7 +20,9 @@ const LandingPage = lazy(() => import("./pages/LandingPage"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
 const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage"));
-const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
+const ForgotPasswordPage = lazy(
+  () => import("./pages/auth/ForgotPasswordPage"),
+);
 const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage"));
 const NewPasswordPage = lazy(() => import("./pages/auth/NewPasswordPage"));
 const AdminLoginPage = lazy(() => import("./pages/auth/AdminLoginPage"));
@@ -29,13 +31,17 @@ const LogoutPage = lazy(() => import("./pages/auth/LogoutPage"));
 const LoggedOutPage = lazy(() => import("./pages/auth/LoggedOutPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
-const OrderConfirmationPage = lazy(() => import("./pages/OrderConfirmationPage"));
+const OrderConfirmationPage = lazy(
+  () => import("./pages/OrderConfirmationPage"),
+);
 const OrderTrackingPage = lazy(() => import("./pages/OrderTrackingPage"));
 const OrderHistoryPage = lazy(() => import("./pages/account/OrderHistoryPage"));
 const ProfilePage = lazy(() => import("./pages/account/ProfilePage"));
 const WishlistPage = lazy(() => import("./pages/account/WishlistPage"));
 const ReturnsPage = lazy(() => import("./pages/account/ReturnsPage"));
-const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
+const AdminDashboardPage = lazy(
+  () => import("./pages/admin/AdminDashboardPage"),
+);
 const ProductsPage = lazy(() => import("./pages/ProductsPage"));
 const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
@@ -83,14 +89,15 @@ function PageLoader() {
 }
 
 function AppShell() {
-  useCursor();
   const { pathname } = useLocation();
+  useCursor();
   const isAuth = AUTH_PATHS.some((p) => pathname.startsWith(p));
   const isAdmin = NO_NAV_PATHS.some((p) => pathname.startsWith(p));
 
   const setAuth = useAuthStore((s) => s.setAuth);
   const logout = useAuthStore((s) => s.logout);
 
+  // ✅ FIX: non-blocking auth
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem("token");
@@ -102,7 +109,10 @@ function AppShell() {
         logout();
       }
     };
-    initAuth();
+
+    requestIdleCallback(() => {
+      initAuth();
+    });
   }, []);
 
   return (
@@ -203,8 +213,14 @@ function AppShell() {
           {/* Commerce pages */}
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
-          <Route path="/orders/:orderId/track" element={<OrderTrackingPage />} />
+          <Route
+            path="/order-confirmation"
+            element={<OrderConfirmationPage />}
+          />
+          <Route
+            path="/orders/:orderId/track"
+            element={<OrderTrackingPage />}
+          />
 
           {/* Account pages */}
           <Route path="/account/orders" element={<OrderHistoryPage />} />
@@ -222,9 +238,15 @@ function AppShell() {
 
           {/* Other pages */}
           <Route path="/collections" element={<CollectionPage />} />
-          <Route path="/account" element={<PlaceholderPage title="Account" />} />
+          <Route
+            path="/account"
+            element={<PlaceholderPage title="Account" />}
+          />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="*" element={<PlaceholderPage title="404 — Not Found" />} />
+          <Route
+            path="*"
+            element={<PlaceholderPage title="404 — Not Found" />}
+          />
         </Routes>
       </Suspense>
 

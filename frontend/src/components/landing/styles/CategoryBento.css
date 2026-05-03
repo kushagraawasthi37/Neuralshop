@@ -1,0 +1,199 @@
+/* ═══════════════════════════════════════════════
+   CATEGORY BENTO — MODULE CSS
+   ═══════════════════════════════════════════════ */
+
+/* ─── Grid ───────────────────────── */
+.cat-bento-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 2px;
+}
+
+/* sizes */
+.cat-bento-large {
+    height: 600px;
+    grid-row: span 2;
+}
+
+.cat-bento-small {
+    height: 296px;
+}
+
+/* ─── Card ───────────────────────── */
+.cat-card {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    background: #1a1916;
+}
+
+/* background layer */
+.cat-card__bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1a1916 0%, #252320 100%);
+    transition: transform 0.6s var(--ease-luxury);
+}
+
+.cat-card__bg img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.45;
+}
+
+/* overlay */
+.cat-card__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top,
+            rgba(13, 12, 11, 0.95) 0%,
+            rgba(13, 12, 11, 0.3) 55%,
+            rgba(13, 12, 11, 0.5) 100%);
+    z-index: 2;
+}
+
+/* hover glow */
+.cat-card__hover {
+    position: absolute;
+    inset: 0;
+    background: rgba(201, 169, 110, 0.05);
+    border: 1px solid rgba(201, 169, 110, 0.2);
+    opacity: 0;
+    transition: opacity 0.4s;
+    z-index: 3;
+}
+
+/* ─── Content ───────────────────────── */
+.cat-card__content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 36px;
+    z-index: 10;
+
+    transform: translateX(-14px);
+    transition: transform 0.45s var(--ease-luxury);
+}
+
+/* text */
+.cat-card__tag {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-gold);
+    margin-bottom: 10px;
+}
+
+.cat-card__title {
+    font-family: var(--font-serif);
+    font-weight: 300;
+    color: #f0e6d0;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    white-space: pre-line;
+}
+
+.cat-card__title--large {
+    font-size: 42px;
+}
+
+.cat-card__title--small {
+    font-size: 28px;
+}
+
+.cat-card__count {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* arrow */
+.cat-card__arrow {
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(201, 169, 110, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+
+    transition: all 0.3s;
+}
+
+.cat-card__arrow svg {
+    stroke: rgba(201, 169, 110, 0.6);
+    transition: stroke 0.3s;
+}
+
+/* ─── Hover Effects (PURE CSS 🔥) ───────────────────────── */
+.cat-card:hover .cat-card__bg {
+    transform: scale(1.04);
+}
+
+.cat-card:hover .cat-card__hover {
+    opacity: 1;
+}
+
+.cat-card:hover .cat-card__content {
+    transform: translateX(0);
+}
+
+.cat-card:hover .cat-card__arrow {
+    background: var(--color-gold);
+    border-color: var(--color-gold);
+}
+
+.cat-card:hover .cat-card__arrow svg {
+    stroke: #0d0c0b;
+}
+
+/* ─── Animation ───────────────────────── */
+@keyframes catTextIn {
+    from {
+        transform: translateX(-32px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(-14px);
+        opacity: 1;
+    }
+}
+
+.cat-card__content {
+    animation: catTextIn 0.8s var(--ease-luxury) both;
+}
+
+/* ─── Responsive ───────────────────────── */
+@media (max-width: 1023px) {
+    .cat-bento-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .cat-bento-large {
+        height: 360px;
+        grid-row: span 1;
+    }
+
+    .cat-bento-small {
+        height: 260px;
+    }
+}
+
+@media (max-width: 639px) {
+    .cat-bento-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cat-bento-large {
+        height: 260px;
+    }
+
+    .cat-bento-small {
+        height: 200px;
+    }
+}

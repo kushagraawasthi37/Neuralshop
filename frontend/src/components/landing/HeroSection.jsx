@@ -28,12 +28,35 @@ export default function HeroSection() {
   useEffect(() => {
     const onMouseMove = (e) => {
       if (!stageRef.current) return;
-      const rx = (e.clientY / window.innerHeight - 0.5) * -20;
-      const ry = (e.clientX / window.innerWidth - 0.5) * 20;
-      stageRef.current.style.transform = `rotateX(${8 + rx * 0.3}deg) rotateY(${-8 + ry * 0.3}deg)`;
+      const rx = (e.clientY / window.innerHeight - 0.5) * -12;
+      const ry = (e.clientX / window.innerWidth - 0.5) * 12;
+      stageRef.current.style.transform = `rotateX(${8 + rx}deg) rotateY(${-8 + ry}deg)  translateY(0)`;
     };
     window.addEventListener("mousemove", onMouseMove);
     return () => window.removeEventListener("mousemove", onMouseMove);
+  }, []);
+
+  useEffect(() => {
+    const container = document.getElementById("particles-container");
+    if (!container) return;
+
+    container.innerHTML = ""; // ✅ cleanup old particles
+
+    for (let i = 0; i < 35; i++) {
+      // increase density
+      const p = document.createElement("div");
+      const size = Math.random() * 2 + 0.5;
+
+      p.className = "particle";
+      p.style.left = Math.random() * 100 + "%";
+      p.style.bottom = "-10px";
+      p.style.width = size + "px";
+      p.style.height = size + "px";
+      p.style.animationDuration = 6 + Math.random() * 10 + "s";
+      p.style.animationDelay = Math.random() * 5 + "s";
+
+      container.appendChild(p);
+    }
   }, []);
 
   return (
@@ -48,6 +71,15 @@ export default function HeroSection() {
         background: "#0d0c0b",
       }}
     >
+      <div
+        id="particles-container"
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          overflow: "hidden",
+        }}
+      />
       {/* Ambient glows */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         <div
@@ -58,10 +90,10 @@ export default function HeroSection() {
             borderRadius: "50%",
             background: "#c9a96e",
             filter: "blur(120px)",
-            opacity: 0.12,
+            opacity: 0.18,
             top: -200,
             right: -100,
-            animation: "floatGlow 8s ease-in-out infinite",
+            animation: "floatGlow 10s ease-in-out infinite",
           }}
         />
         <div
@@ -72,10 +104,10 @@ export default function HeroSection() {
             borderRadius: "50%",
             background: "#4a5c47",
             filter: "blur(120px)",
-            opacity: 0.08,
+            opacity: 0.12,
             bottom: -300,
             left: -200,
-            animation: "floatGlow 10s ease-in-out infinite reverse",
+            animation: "floatGlow 12s ease-in-out infinite reverse",
           }}
         />
         <div
@@ -86,10 +118,10 @@ export default function HeroSection() {
             borderRadius: "50%",
             background: "#8b6340",
             filter: "blur(80px)",
-            opacity: 0.06,
+            opacity: 0.1,
             top: "30%",
             left: "20%",
-            animation: "floatGlow 12s ease-in-out infinite 2s",
+            animation: "floatGlow 14s ease-in-out infinite 2s",
           }}
         />
         {/* Grid overlay */}
@@ -98,12 +130,23 @@ export default function HeroSection() {
             position: "absolute",
             inset: 0,
             backgroundImage:
-              "linear-gradient(rgba(201,169,110,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(201,169,110,0.04) 1px, transparent 1px)",
+              "linear-gradient(rgba(201,169,110,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(201,169,110,0.05) 1px, transparent 1px)",
             backgroundSize: "80px 80px",
             animation: "gridDrift 20s linear infinite",
           }}
         />
       </div>
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E\")",
+          opacity: 0.4,
+          pointerEvents: "none",
+        }}
+      />
 
       <div
         style={{
@@ -158,7 +201,10 @@ export default function HeroSection() {
             }}
           >
             <span style={{ display: "block" }}>Objects of</span>
-            <span className="hero-line-accent" style={{ display: "block", position: "relative" }}>
+            <span
+              className="hero-line-accent"
+              style={{ display: "block", position: "relative" }}
+            >
               <em style={{ fontStyle: "italic", color: "#c9a96e" }}>Rare</em>{" "}
               Desire
             </span>
@@ -278,51 +324,6 @@ export default function HeroSection() {
             animation: "fadeIn 1.4s ease 0.6s forwards",
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: 58,
-              right: 60,
-              width: 12,
-              height: 12,
-              borderRadius: "50%",
-              background: "#c9a96e",
-              boxShadow: "0 0 24px rgba(201,169,110,0.8)",
-              animation: "dotRise 4.4s linear infinite",
-              zIndex: 2,
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              top: 180,
-              right: 110,
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              background: "#c9a96e",
-              boxShadow: "0 0 18px rgba(201,169,110,0.7)",
-              animation: "dotRise 5.2s linear infinite",
-              animationDelay: "0.6s",
-              zIndex: 1,
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              top: 260,
-              right: 30,
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: "#c9a96e",
-              boxShadow: "0 0 14px rgba(201,169,110,0.6)",
-              animation: "dotRise 4.8s linear infinite",
-              animationDelay: "1.2s",
-              zIndex: 1,
-            }}
-          />
-
           <div
             ref={stageRef}
             style={{
@@ -609,6 +610,10 @@ export default function HeroSection() {
           background: #f0e6d0; transform: scaleX(0); transform-origin: right;
           transition: transform 0.4s ease;
         }
+        .btn-primary-hero:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 30px rgba(201,169,110,0.25);
+        }
         .btn-primary-hero:hover::before { transform: scaleX(1); transform-origin: left; }
         .btn-primary-hero span, .btn-primary-hero svg { position: relative; z-index: 1; }
         .btn-ghost-hero {
@@ -665,6 +670,21 @@ export default function HeroSection() {
           0% { transform: translateX(-50%); }
           100% { transform: translateX(50%); }
         }
+
+        .particle {
+          position: absolute;
+          border-radius: 50%;
+          background: #c9a96e;
+          opacity: 0.4;
+          animation: particleFloat linear infinite;
+        }
+
+        @keyframes particleFloat {
+          0% { transform: translateY(0); opacity: 0; }
+          10% { opacity: 0.6; }
+          90% { opacity: 0.6; }
+          100% { transform: translateY(-500px); opacity: 0; }
+          }
       `}</style>
     </section>
   );

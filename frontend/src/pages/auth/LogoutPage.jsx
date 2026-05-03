@@ -22,7 +22,11 @@ const LogoutPage = () => {
     setError("");
 
     try {
-      await authApi.logout(pendingRole);
+      if (pendingRole === "admin") {
+        await authApi.adminLogout();
+      } else {
+        await authApi.logout(pendingRole);
+      }
     } catch (err) {
       setError(
         err.response?.data?.message || "Logout failed. Please try again.",

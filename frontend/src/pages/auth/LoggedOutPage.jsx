@@ -20,7 +20,6 @@ export default function LoggedOutPage() {
 
   const handleSignin = () => {
     logout();
-    navigate("/login");
   };
 
   return (

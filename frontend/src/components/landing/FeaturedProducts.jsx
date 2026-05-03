@@ -1,71 +1,80 @@
-import { useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { productApi } from '../../api/products'
-import ProductCard from '../ui/ProductCard'
-import ProductCardSkeleton from '../ui/ProductCardSkeleton'
-import { useReveal } from '../../hooks/useReveal'
+import { useRef } from "react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { productApi } from "../../api/products";
+import ProductCard from "../ui/ProductCard";
+import ProductCardSkeleton from "../ui/ProductCardSkeleton";
+import { useReveal } from "../../hooks/useReveal";
+import "./styles/FeatureProduct.css";
 
 export default function FeaturedProducts() {
-  const scrollRef = useRef(null)
-  const headerRef = useReveal()
+  const scrollRef = useRef(null);
+  const headerRef = useReveal();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['products', 'bestseller'],
+    queryKey: ["products", "bestseller"],
     queryFn: () => productApi.list({ bestseller: true, limit: 8 }),
     select: (res) => res.data?.products || [],
-  })
+  });
 
   const scroll = (dir) => {
-    if (!scrollRef.current) return
-    scrollRef.current.scrollBy({ left: dir * 640, behavior: 'smooth' })
-  }
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: dir * 640, behavior: "smooth" });
+  };
 
   return (
-    <section id="featured" className="landing-section" style={{ position: 'relative', background: '#0d0c0b' }}>
+    <section id="featured" className="landing-section featured-section">
       <div className="landing-inner">
-        <div ref={headerRef} className="reveal" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 'clamp(32px,5vw,60px)', flexWrap: 'wrap', gap: 16 }}>
+        <div ref={headerRef} className="featured-header reveal">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-              <div style={{ width: 30, height: 1, background: '#c9a96e' }} />
-              <span style={{ fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#c9a96e' }}>Neural Picks</span>
+            <div className="featured-label">
+              <div className="featured-label__line" />
+              <span className="featured-label__text">Neural Picks</span>
             </div>
-            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(28px, 4vw, 60px)', fontWeight: 300, color: '#f0e6d0', lineHeight: 1.1 }}>
-              Objects of <em style={{ fontStyle: 'italic', color: 'rgba(240,230,208,0.4)' }}>distinction</em>
+
+            <h2 className="featured-title">
+              Objects of <em>distinction</em>
             </h2>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <button className="feat-nav-btn" onClick={() => scroll(-1)} style={{ width: 44, height: 44, border: '1px solid rgba(201,169,110,0.2)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = '#c9a96e'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,169,110,0.2)'}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+
+          <div className="featured-controls">
+            <button className="feat-nav-btn" onClick={() => scroll(-1)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5M12 19l-7-7 7-7" strokeWidth="1.5" />
+              </svg>
             </button>
-            <button className="feat-nav-btn" onClick={() => scroll(1)} style={{ width: 44, height: 44, border: '1px solid rgba(201,169,110,0.2)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = '#c9a96e'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,169,110,0.2)'}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+
+            <button className="feat-nav-btn" onClick={() => scroll(1)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="1.5" />
+              </svg>
             </button>
-            <Link to="/collections" style={{ fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(240,230,208,0.5)', textDecoration: 'none', borderBottom: '1px solid rgba(201,169,110,0.2)', paddingBottom: 4, transition: 'all 0.3s' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#c9a96e'; e.currentTarget.style.borderColor = '#c9a96e' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(240,230,208,0.5)'; e.currentTarget.style.borderColor = 'rgba(201,169,110,0.2)' }}>
+
+            <Link to="/collections" className="featured-link">
               View All
             </Link>
           </div>
         </div>
 
         {error && (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(240,230,208,0.4)', fontSize: 14 }}>
+          <div className="featured-error">
             Unable to load products. Please try again later.
           </div>
         )}
 
-        <div ref={scrollRef} style={{ overflowX: 'auto', scrollbarWidth: 'none', display: 'flex', gap: 20, paddingBottom: 20, scrollSnapType: 'x mandatory' }}>
+        <div ref={scrollRef} className="featured-scroll">
           {isLoading
-            ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={i} />)
-            : (data || []).map(product => <ProductCard key={product._id || product.id} product={product} />)
-          }
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))
+            : (data || []).map((product) => (
+                <ProductCard
+                  key={product._id || product.id}
+                  product={product}
+                />
+              ))}
         </div>
       </div>
     </section>
-  )
+  );
 }

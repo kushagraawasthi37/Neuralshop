@@ -20,7 +20,6 @@ const schema = z.object({
   email: z.string().email("Enter a valid email address"),
 });
 
-/* Centred layout — no split panel needed here */
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const pendingRole = useAuthStore((s) => s.pendingRole);
@@ -36,9 +35,7 @@ export default function ForgotPasswordPage() {
     handleSubmit,
     getValues,
     formState: { errors },
-  } = useForm({
-    resolver: zodResolver(schema),
-  });
+  } = useForm({ resolver: zodResolver(schema) });
 
   const onSubmit = async ({ email }) => {
     setLoading(true);
@@ -60,13 +57,15 @@ export default function ForgotPasswordPage() {
 
   return (
     <div
+      className="auth-centered-page"
       style={{
         minHeight: "100vh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         background: "#0e0d0b",
-        padding: "120px 40px 80px",
+        padding:
+          "clamp(90px,12vw,120px) clamp(16px,6vw,40px) clamp(48px,8vw,80px)",
         position: "relative",
         overflow: "hidden",
       }}
@@ -75,8 +74,8 @@ export default function ForgotPasswordPage() {
       <div
         style={{
           position: "absolute",
-          width: 600,
-          height: 600,
+          width: "min(600px,90vw)",
+          height: "min(600px,90vw)",
           borderRadius: "50%",
           filter: "blur(140px)",
           background: "rgba(201,169,110,0.05)",
@@ -99,6 +98,7 @@ export default function ForgotPasswordPage() {
       />
 
       <div
+        className="auth-centered-inner"
         style={{
           width: "100%",
           maxWidth: 460,
@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
           <SentState email={getValues("email")} />
         ) : (
           <>
-            <div style={{ marginBottom: 40 }}>
+            <div style={{ marginBottom: 36 }}>
               <TextLink
                 onClick={() => navigate("/login")}
                 style={{
@@ -145,6 +145,8 @@ export default function ForgotPasswordPage() {
                 error={errors.email?.message}
                 {...register("email")}
               />
+
+              {/* Account type selector */}
               <div style={{ marginBottom: 14 }}>
                 <label
                   style={{
@@ -160,15 +162,19 @@ export default function ForgotPasswordPage() {
                 </label>
                 <select
                   value={role}
-                  onChange={(event) => setRole(event.target.value)}
+                  onChange={(e) => setRole(e.target.value)}
                   style={{
                     width: "100%",
-                    padding: "12px 16px",
+                    padding: "clamp(10px,2vw,12px) 16px",
                     background: "rgba(255,255,255,0.02)",
                     border: "1px solid rgba(201,169,110,0.18)",
                     color: "#f0e6d0",
                     fontSize: 14,
                     outline: "none",
+                    minHeight: 44,
+                    appearance: "none",
+                    WebkitAppearance: "none",
+                    cursor: "pointer",
                   }}
                 >
                   <option value="user">Customer Account</option>
@@ -185,6 +191,7 @@ export default function ForgotPasswordPage() {
                   Choose the account type for password recovery.
                 </p>
               </div>
+
               <AuthBtn type="submit" loading={loading}>
                 Send Reset Code →
               </AuthBtn>
@@ -241,8 +248,8 @@ function SentState({ email }) {
 
       <div
         style={{
-          width: 64,
-          height: 64,
+          width: "clamp(52px,12vw,64px)",
+          height: "clamp(52px,12vw,64px)",
           border: "1px solid rgba(201,169,110,0.3)",
           display: "flex",
           alignItems: "center",
@@ -274,7 +281,7 @@ function SentState({ email }) {
       <div
         style={{
           fontFamily: "'Cormorant Garamond',serif",
-          fontSize: 32,
+          fontSize: "clamp(24px,5vw,32px)",
           fontWeight: 300,
           color: "#f0e6d0",
           marginBottom: 12,
@@ -303,6 +310,8 @@ function SentState({ email }) {
           fontSize: 12,
           color: "rgba(240,230,208,0.58)",
           marginBottom: 24,
+          wordBreak: "break-all",
+          textAlign: "center",
         }}
       >
         {email}

@@ -14,13 +14,44 @@ function CartItem({ item, onUpdate, onRemove }) {
     <div className="cart-item">
       <div className="cart-item__img">
         {item.image ? (
-          <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img
+            src={item.image}
+            alt={item.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
         ) : (
-          <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
-            <rect x="15" y="8" width="30" height="44" stroke="rgba(201,169,110,0.6)" strokeWidth="0.8" />
-            <line x1="20" y1="20" x2="40" y2="20" stroke="rgba(201,169,110,0.3)" strokeWidth="0.8" />
-            <line x1="20" y1="26" x2="40" y2="26" stroke="rgba(201,169,110,0.3)" strokeWidth="0.8" />
-            <circle cx="30" cy="42" r="4" stroke="rgba(201,169,110,0.4)" strokeWidth="0.8" />
+          <svg width="36" height="36" viewBox="0 0 60 60" fill="none">
+            <rect
+              x="15"
+              y="8"
+              width="30"
+              height="44"
+              stroke="rgba(201,169,110,0.6)"
+              strokeWidth="0.8"
+            />
+            <line
+              x1="20"
+              y1="20"
+              x2="40"
+              y2="20"
+              stroke="rgba(201,169,110,0.3)"
+              strokeWidth="0.8"
+            />
+            <line
+              x1="20"
+              y1="26"
+              x2="40"
+              y2="26"
+              stroke="rgba(201,169,110,0.3)"
+              strokeWidth="0.8"
+            />
+            <circle
+              cx="30"
+              cy="42"
+              r="4"
+              stroke="rgba(201,169,110,0.4)"
+              strokeWidth="0.8"
+            />
           </svg>
         )}
       </div>
@@ -33,23 +64,47 @@ function CartItem({ item, onUpdate, onRemove }) {
         </div>
         <div className="cart-item__qty-row">
           <button
-            onClick={() => onUpdate({ productId: item.productId, quantity: Math.max(1, item.quantity - 1), size: item.size })}
+            onClick={() =>
+              onUpdate({
+                productId: item.productId,
+                quantity: Math.max(1, item.quantity - 1),
+                size: item.size,
+              })
+            }
             className="cart-item__qty-btn"
-          >−</button>
+            aria-label="Decrease quantity"
+          >
+            −
+          </button>
           <span className="cart-item__qty-val">{item.quantity}</span>
           <button
-            onClick={() => onUpdate({ productId: item.productId, quantity: item.quantity + 1, size: item.size })}
+            onClick={() =>
+              onUpdate({
+                productId: item.productId,
+                quantity: item.quantity + 1,
+                size: item.size,
+              })
+            }
             className="cart-item__qty-btn"
-          >+</button>
+            aria-label="Increase quantity"
+          >
+            +
+          </button>
         </div>
       </div>
 
       <div className="cart-item__right">
-        <div className="cart-item__price">{fmt((item.priceAtAdd || 0) * item.quantity)}</div>
+        <div className="cart-item__price">
+          {fmt((item.priceAtAdd || 0) * item.quantity)}
+        </div>
         <button
-          onClick={() => onRemove({ productId: item.productId, size: item.size })}
+          onClick={() =>
+            onRemove({ productId: item.productId, size: item.size })
+          }
           className="cart-item__remove"
-        >Remove</button>
+        >
+          Remove
+        </button>
       </div>
     </div>
   );
@@ -66,11 +121,20 @@ function CouponInput({ couponCode, setCouponCode, onApply, coupon, discount }) {
           placeholder="Neural Code"
           className="coupon-section__input"
         />
-        <button onClick={onApply} className="coupon-section__btn">Apply</button>
+        <button onClick={onApply} className="coupon-section__btn">
+          Apply
+        </button>
       </div>
       {coupon && (
         <div className="coupon-section__success">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
             <polyline points="20 6 9 17 4 12" />
           </svg>
           {coupon.coupon.code} applied — You save {fmt(discount)}
@@ -80,21 +144,50 @@ function CouponInput({ couponCode, setCouponCode, onApply, coupon, discount }) {
   );
 }
 
-function OrderSummary({ items, subtotal, shipping, tax, discount, total, coupon, isLoggedIn, onCheckout }) {
+function OrderSummary({
+  items,
+  subtotal,
+  shipping,
+  tax,
+  discount,
+  total,
+  coupon,
+  isLoggedIn,
+  onCheckout,
+}) {
   return (
     <div className="order-summary">
       <div className="order-summary__title">Order Summary</div>
 
       <div className="order-summary__rows">
         {[
-          { label: `Subtotal (${items.length} items)`, value: fmt(subtotal) },
-          { label: "Shipping", value: shipping === 0 ? "Free" : fmt(shipping), green: shipping === 0 },
+          {
+            label: `Subtotal (${items.length} item${items.length !== 1 ? "s" : ""})`,
+            value: fmt(subtotal),
+          },
+          {
+            label: "Shipping",
+            value: shipping === 0 ? "Free" : fmt(shipping),
+            green: shipping === 0,
+          },
           { label: "Tax (18% GST)", value: fmt(tax) },
-          ...(discount > 0 ? [{ label: `Discount (${coupon.coupon.code})`, value: `−${fmt(discount)}`, green: true }] : []),
+          ...(discount > 0
+            ? [
+                {
+                  label: `Discount (${coupon.coupon.code})`,
+                  value: `−${fmt(discount)}`,
+                  green: true,
+                },
+              ]
+            : []),
         ].map((row, i) => (
           <div key={i} className="order-summary__row">
             <span className="order-summary__row-label">{row.label}</span>
-            <span className={`order-summary__row-val${row.green ? " green" : ""}`}>{row.value}</span>
+            <span
+              className={`order-summary__row-val${row.green ? " green" : ""}`}
+            >
+              {row.value}
+            </span>
           </div>
         ))}
       </div>
@@ -113,7 +206,14 @@ function OrderSummary({ items, subtotal, shipping, tax, discount, total, coupon,
         </div>
       )}
       <div className="order-summary__security">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
         256-bit SSL · Razorpay PCI DSS
@@ -151,7 +251,9 @@ export default function CartPage() {
       isLoggedIn
         ? cartApi.updateItem(productId, quantity, size)
         : (guestUpdate(productId, size, quantity), Promise.resolve()),
-    onSuccess: () => { if (isLoggedIn) qc.invalidateQueries(["cart"]); },
+    onSuccess: () => {
+      if (isLoggedIn) qc.invalidateQueries(["cart"]);
+    },
     onError: () => showToast("Failed to update quantity"),
   });
 
@@ -187,10 +289,20 @@ export default function CartPage() {
     }
   };
 
+  const handleCheckout = () => {
+    if (!isLoggedIn) {
+      navigate("/login?return=/checkout");
+    } else {
+      navigate("/checkout", { state: { coupon, total } });
+    }
+  };
+
   const items = isLoggedIn
     ? data?.items || []
     : guestItems.map((i) => ({ ...i, priceAtAdd: i.priceAtAdd || 0 }));
-  const subtotal = data?.subtotal || items.reduce((s, i) => s + (i.priceAtAdd || 0) * i.quantity, 0);
+  const subtotal =
+    data?.subtotal ||
+    items.reduce((s, i) => s + (i.priceAtAdd || 0) * i.quantity, 0);
   const shipping = data?.shippingCost || 0;
   const tax = data?.tax || Math.round(subtotal * 0.18);
   const discount = Math.round(coupon?.discountAmount || 0);
@@ -198,7 +310,10 @@ export default function CartPage() {
 
   if (isLoggedIn && isLoading) {
     return (
-      <div className="page-center" style={{ minHeight: "100vh", paddingTop: 80 }}>
+      <div
+        className="page-center"
+        style={{ minHeight: "100vh", paddingTop: 80 }}
+      >
         <div className="spinner" />
       </div>
     );
@@ -214,71 +329,136 @@ export default function CartPage() {
             Shopping Cart
           </div>
           <h1 className="cart-page__title">
-            Your <em style={{ fontStyle: "italic", color: "#c9a96e" }}>Curation</em>
+            Your{" "}
+            <em style={{ fontStyle: "italic", color: "#c9a96e" }}>Curation</em>
           </h1>
         </div>
 
         {items.length === 0 ? (
           <div className="cart-empty">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="rgba(201,169,110,0.3)"
+              strokeWidth="1"
+              style={{ margin: "0 auto 20px", display: "block" }}
+            >
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
             <div className="cart-empty__title">Your cart is empty</div>
-            <button onClick={() => navigate("/collections")} className="btn-primary" style={{ marginTop: 16 }}>
+            <p
+              style={{
+                fontSize: 13,
+                color: "rgba(240,230,208,0.38)",
+                marginBottom: 24,
+              }}
+            >
+              Discover something extraordinary
+            </p>
+            <button
+              onClick={() => navigate("/collections")}
+              className="btn-primary"
+            >
               Browse Collections
             </button>
           </div>
         ) : (
-          <div className="cart-layout">
-            {/* Left — items */}
-            <div>
-              <div className="cart-items-header">
-                <span className="cart-items-count">
-                  {items.length} Item{items.length !== 1 ? "s" : ""}
-                </span>
-                <button onClick={() => clearMutation.mutate()} className="cart-clear-btn">
-                  Clear All
-                </button>
+          <>
+            <div className="cart-layout">
+              {/* Left — items */}
+              <div>
+                <div className="cart-items-header">
+                  <span className="cart-items-count">
+                    {items.length} Item{items.length !== 1 ? "s" : ""}
+                  </span>
+                  <button
+                    onClick={() => clearMutation.mutate()}
+                    className="cart-clear-btn"
+                  >
+                    Clear All
+                  </button>
+                </div>
+
+                {items.map((item) => (
+                  <CartItem
+                    key={item.productId + (item.size || "")}
+                    item={item}
+                    onUpdate={(args) => updateMutation.mutate(args)}
+                    onRemove={(args) => removeMutation.mutate(args)}
+                  />
+                ))}
+
+                <CouponInput
+                  couponCode={couponCode}
+                  setCouponCode={setCouponCode}
+                  onApply={handleApplyCoupon}
+                  coupon={coupon}
+                  discount={discount}
+                />
+
+                {/* Spacer for mobile sticky bar */}
+                <div style={{ height: 80 }} className="mobile-cart-spacer" />
               </div>
 
-              {items.map((item) => (
-                <CartItem
-                  key={item.productId + (item.size || "")}
-                  item={item}
-                  onUpdate={(args) => updateMutation.mutate(args)}
-                  onRemove={(args) => removeMutation.mutate(args)}
+              {/* Right — summary (hidden on mobile, replaced by sticky bar) */}
+              <div className="cart-summary-desktop">
+                <OrderSummary
+                  items={items}
+                  subtotal={subtotal}
+                  shipping={shipping}
+                  tax={tax}
+                  discount={discount}
+                  total={total}
+                  coupon={coupon}
+                  isLoggedIn={isLoggedIn}
+                  onCheckout={handleCheckout}
                 />
-              ))}
-
-              <CouponInput
-                couponCode={couponCode}
-                setCouponCode={setCouponCode}
-                onApply={handleApplyCoupon}
-                coupon={coupon}
-                discount={discount}
-              />
+              </div>
             </div>
 
-            {/* Right — summary */}
-            <div>
-              <OrderSummary
-                items={items}
-                subtotal={subtotal}
-                shipping={shipping}
-                tax={tax}
-                discount={discount}
-                total={total}
-                coupon={coupon}
-                isLoggedIn={isLoggedIn}
-                onCheckout={() => {
-                  if (!isLoggedIn) {
-                    navigate("/login?return=/checkout");
-                  } else {
-                    navigate("/checkout", { state: { coupon, total } });
-                  }
-                }}
-              />
+            {/* Mobile sticky checkout bar */}
+            <div className="mobile-sticky-summary">
+              <div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "rgba(240,230,208,0.38)",
+                    marginBottom: 2,
+                  }}
+                >
+                  Total
+                </div>
+                <div className="mobile-sticky-summary__total">{fmt(total)}</div>
+              </div>
+              <button
+                className="mobile-sticky-summary__btn"
+                onClick={handleCheckout}
+              >
+                {isLoggedIn ? "Checkout →" : "Sign In →"}
+              </button>
             </div>
-          </div>
+          </>
         )}
       </div>
+
+      {/* Hide desktop summary & spacer on mobile via style tag */}
+      <style>{`
+        @media (min-width: 640px) {
+          .mobile-sticky-summary { display: none !important; }
+          .mobile-cart-spacer { display: none !important; }
+        }
+        @media (max-width: 639px) {
+          .cart-summary-desktop { display: none !important; }
+          .cart-layout { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+
       <Toast msg={toast.msg} show={toast.show} />
     </div>
   );

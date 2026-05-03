@@ -3,7 +3,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminProductsApi, adminInventoryApi } from "../../../api/admin";
 import { fmt } from "../adminUtils";
 
-const CATEGORIES = ["Watches", "Apparel", "Bags", "Footwear", "Accessories", "Jewellery", "Clothing"];
+const CATEGORIES = [
+  "Watches",
+  "Apparel",
+  "Bags",
+  "Footwear",
+  "Accessories",
+  "Jewellery",
+  "Clothing",
+];
 
 export default function ProductsPanel({ showToast }) {
   const qc = useQueryClient();
@@ -12,31 +20,38 @@ export default function ProductsPanel({ showToast }) {
   const [filterCategory, setFilterCategory] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [newProduct, setNewProduct] = useState({
-    name: "", category: "", price: "", originalPrice: "", description: "", isActive: true,
+    name: "",
+    category: "",
+    price: "",
+    originalPrice: "",
+    description: "",
+    isActive: true,
   });
 
   // Fetch all products (backend ignores filter params — we filter client-side)
   const { data: allProducts = [] } = useQuery({
     queryKey: ["admin-products"],
-    queryFn: () => adminProductsApi.list({}).then((r) => {
-      const d = r.data;
-      if (Array.isArray(d?.product)) return d.product;
-      if (Array.isArray(d?.data)) return d.data;
-      if (Array.isArray(d?.data?.products)) return d.data.products;
-      if (Array.isArray(d)) return d;
-      return [];
-    }),
+    queryFn: () =>
+      adminProductsApi.list({}).then((r) => {
+        const d = r.data;
+        if (Array.isArray(d?.product)) return d.product;
+        if (Array.isArray(d?.data)) return d.data;
+        if (Array.isArray(d?.data?.products)) return d.data.products;
+        if (Array.isArray(d)) return d;
+        return [];
+      }),
   });
 
   // Fetch all inventory to populate stock column
   const { data: inventoryList = [] } = useQuery({
     queryKey: ["admin-inventory-all"],
-    queryFn: () => adminInventoryApi.getAll().then((r) => {
-      const d = r.data.data;
-      if (Array.isArray(d)) return d;
-      if (Array.isArray(d?.inventory)) return d.inventory;
-      return [];
-    }),
+    queryFn: () =>
+      adminInventoryApi.getAll().then((r) => {
+        const d = r.data.data;
+        if (Array.isArray(d)) return d;
+        if (Array.isArray(d?.inventory)) return d.inventory;
+        return [];
+      }),
   });
 
   // Build productId → total available stock map
@@ -53,7 +68,9 @@ export default function ProductsPanel({ showToast }) {
 
   // Unique categories from loaded products (to cover all backend categories)
   const allCategories = useMemo(() => {
-    const fromProducts = [...new Set(allProducts.map((p) => p.category).filter(Boolean))];
+    const fromProducts = [
+      ...new Set(allProducts.map((p) => p.category).filter(Boolean)),
+    ];
     const merged = [...new Set([...CATEGORIES, ...fromProducts])].sort();
     return merged;
   }, [allProducts]);
@@ -67,7 +84,11 @@ export default function ProductsPanel({ showToast }) {
         const sku = (p.sku || "").toLowerCase();
         if (!name.includes(q) && !sku.includes(q)) return false;
       }
-      if (filterCategory && (p.category || "").toLowerCase() !== filterCategory.toLowerCase()) return false;
+      if (
+        filterCategory &&
+        (p.category || "").toLowerCase() !== filterCategory.toLowerCase()
+      )
+        return false;
       if (filterStatus === "active" && p.isActive === false) return false;
       if (filterStatus === "inactive" && p.isActive !== false) return false;
       return true;
@@ -79,7 +100,14 @@ export default function ProductsPanel({ showToast }) {
     onSuccess: () => {
       qc.invalidateQueries(["admin-products"]);
       setProductModal(false);
-      setNewProduct({ name: "", category: "", price: "", originalPrice: "", description: "", isActive: true });
+      setNewProduct({
+        name: "",
+        category: "",
+        price: "",
+        originalPrice: "",
+        description: "",
+        isActive: true,
+      });
       showToast("Product created successfully");
     },
     onError: () => showToast("Failed to create product"),
@@ -94,52 +122,123 @@ export default function ProductsPanel({ showToast }) {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-title">Add Product</div>
-              <button className="modal-close" type="button" onClick={() => setProductModal(false)}>×</button>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setProductModal(false)}
+              >
+                ×
+              </button>
             </div>
             <div className="form-row">
               <div className="form-group">
                 <div className="form-label">Product Name</div>
-                <input className="ns-input" placeholder="e.g. Phantom Chronograph" value={newProduct.name} onChange={(e) => set("name", e.target.value)} />
+                <input
+                  className="ns-input"
+                  placeholder="e.g. Phantom Chronograph"
+                  value={newProduct.name}
+                  onChange={(e) => set("name", e.target.value)}
+                />
               </div>
               <div className="form-group">
                 <div className="form-label">Category</div>
-                <select className="ns-select" style={{ width: "100%" }} value={newProduct.category} onChange={(e) => set("category", e.target.value)}>
+                <select
+                  className="ns-select"
+                  style={{ width: "100%" }}
+                  value={newProduct.category}
+                  onChange={(e) => set("category", e.target.value)}
+                >
                   <option value="">Select category</option>
-                  {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {allCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
             <div className="form-row three">
               <div className="form-group">
                 <div className="form-label">Price (₹)</div>
-                <input className="ns-input" type="number" placeholder="0" value={newProduct.price} onChange={(e) => set("price", e.target.value)} />
+                <input
+                  className="ns-input"
+                  type="number"
+                  placeholder="0"
+                  value={newProduct.price}
+                  onChange={(e) => set("price", e.target.value)}
+                />
               </div>
               <div className="form-group">
                 <div className="form-label">Compare At (₹)</div>
-                <input className="ns-input" type="number" placeholder="0" value={newProduct.originalPrice} onChange={(e) => set("originalPrice", e.target.value)} />
+                <input
+                  className="ns-input"
+                  type="number"
+                  placeholder="0"
+                  value={newProduct.originalPrice}
+                  onChange={(e) => set("originalPrice", e.target.value)}
+                />
               </div>
               <div className="form-group">
                 <div className="form-label">Status</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 10 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    paddingTop: 10,
+                  }}
+                >
                   <label className="ns-toggle">
-                    <input type="checkbox" checked={newProduct.isActive} onChange={(e) => set("isActive", e.target.checked)} />
+                    <input
+                      type="checkbox"
+                      checked={newProduct.isActive}
+                      onChange={(e) => set("isActive", e.target.checked)}
+                    />
                     <div className="ns-toggle-track" />
                     <div className="ns-toggle-thumb" />
                   </label>
-                  <span style={{ fontSize: 12, color: "var(--text-mid)" }}>Active</span>
+                  <span style={{ fontSize: 12, color: "var(--text-mid)" }}>
+                    Active
+                  </span>
                 </div>
               </div>
             </div>
-            <div className="form-row" style={{ gridTemplateColumns: "1fr", marginBottom: 16 }}>
+            <div
+              className="form-row"
+              style={{ gridTemplateColumns: "1fr", marginBottom: 16 }}
+            >
               <div className="form-group">
                 <div className="form-label">Description</div>
-                <textarea className="ns-input" rows={3} style={{ resize: "vertical" }} placeholder="Product description…" value={newProduct.description} onChange={(e) => set("description", e.target.value)} />
+                <textarea
+                  className="ns-input"
+                  rows={3}
+                  style={{ resize: "vertical" }}
+                  placeholder="Product description…"
+                  value={newProduct.description}
+                  onChange={(e) => set("description", e.target.value)}
+                />
               </div>
             </div>
             <div className="modal-actions">
-              <button type="button" className="ns-btn ns-btn-ghost" onClick={() => setProductModal(false)}>Cancel</button>
-              <button type="button" className="ns-btn ns-btn-primary" disabled={createProductMutation.isPending}
-                onClick={() => createProductMutation.mutate({ ...newProduct, price: Number(newProduct.price), originalPrice: Number(newProduct.originalPrice) })}>
+              <button
+                type="button"
+                className="ns-btn ns-btn-ghost"
+                onClick={() => setProductModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="ns-btn ns-btn-primary"
+                disabled={createProductMutation.isPending}
+                onClick={() =>
+                  createProductMutation.mutate({
+                    ...newProduct,
+                    price: Number(newProduct.price),
+                    originalPrice: Number(newProduct.originalPrice),
+                  })
+                }
+              >
                 {createProductMutation.isPending ? "Creating…" : "Add Product"}
               </button>
             </div>
@@ -149,15 +248,41 @@ export default function ProductsPanel({ showToast }) {
 
       <div className="page-header">
         <div className="page-eyebrow">02 — Commerce</div>
-        <div className="page-title">Product <em>Management</em></div>
-        <div className="page-sub">{products.length} of {allProducts.length} products</div>
+        <div className="page-title">
+          Product <em>Management</em>
+        </div>
+        <div className="page-sub">
+          {products.length} of {allProducts.length} products
+        </div>
       </div>
 
-      <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          marginBottom: 24,
+          flexWrap: "wrap",
+        }}
+      >
         <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"
-            style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.4 }}>
-            <circle cx="9" cy="9" r="6" /><path d="M16 16l-3-3" />
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            style={{
+              position: "absolute",
+              left: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              opacity: 0.4,
+            }}
+          >
+            <circle cx="9" cy="9" r="6" />
+            <path d="M16 16l-3-3" />
           </svg>
           <input
             className="ns-input"
@@ -174,7 +299,11 @@ export default function ProductsPanel({ showToast }) {
           onChange={(e) => setFilterCategory(e.target.value)}
         >
           <option value="">All Categories</option>
-          {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+          {allCategories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
         </select>
         <select
           className="ns-select"
@@ -186,20 +315,42 @@ export default function ProductsPanel({ showToast }) {
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
-        <button className="ns-btn ns-btn-primary" onClick={() => setProductModal(true)}>+ Add Product</button>
+        <button
+          className="ns-btn ns-btn-primary"
+          onClick={() => setProductModal(true)}
+        >
+          + Add Product
+        </button>
       </div>
 
       <div className="card" style={{ padding: 0 }}>
         <div className="table-wrap">
           <table className="ns-table">
             <thead>
-              <tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th></tr>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+              </tr>
             </thead>
             <tbody>
               {products.length === 0 ? (
-                <tr><td colSpan={5} style={{ textAlign: "center", padding: "40px 16px", color: "var(--text-muted)" }}>
-                  {allProducts.length === 0 ? "No products found" : "No products match filters"}
-                </td></tr>
+                <tr>
+                  <td
+                    colSpan={5}
+                    style={{
+                      textAlign: "center",
+                      padding: "40px 16px",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    {allProducts.length === 0
+                      ? "No products found"
+                      : "No products match filters"}
+                  </td>
+                </tr>
               ) : (
                 products.map((p) => {
                   const pid = p._id || p.id || "";
@@ -207,38 +358,120 @@ export default function ProductsPanel({ showToast }) {
                   return (
                     <tr key={String(pid)}>
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          <div style={{ width: 40, height: 40, background: "rgba(201,169,110,0.06)", border: "1px solid var(--border-gold)", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            {(p.image?.[0] || p.images?.[0]) ? (
-                              <img src={p.image?.[0] || p.images?.[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { e.target.style.display = "none"; }} />
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              background: "rgba(201,169,110,0.06)",
+                              border: "1px solid var(--border-gold)",
+                              flexShrink: 0,
+                              overflow: "hidden",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {p.image?.[0] || p.images?.[0] ? (
+                              <img
+                                src={p.image?.[0] || p.images?.[0]}
+                                alt=""
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                }}
+                              />
                             ) : (
-                              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="rgba(201,169,110,0.4)" strokeWidth="1.2">
-                                <rect x="3" y="3" width="14" height="14" /><path d="M3 8h14M8 3v14" />
+                              <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 20 20"
+                                fill="none"
+                                stroke="rgba(201,169,110,0.4)"
+                                strokeWidth="1.2"
+                              >
+                                <rect x="3" y="3" width="14" height="14" />
+                                <path d="M3 8h14M8 3v14" />
                               </svg>
                             )}
                           </div>
                           <div>
-                            <div style={{ fontSize: 13, color: "var(--champagne)" }}>{p.name}</div>
-                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{p.sku || ""}</div>
+                            <div
+                              style={{
+                                fontSize: 13,
+                                color: "var(--champagne)",
+                              }}
+                            >
+                              {p.name}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "var(--text-muted)",
+                              }}
+                            >
+                              {p.sku || ""}
+                            </div>
                           </div>
                         </div>
                       </td>
                       <td>{p.category || "—"}</td>
-                      <td className="primary">{fmt(p.offerPrice || p.price)}</td>
+                      <td className="primary">
+                        {fmt(p.offerPrice || p.price)}
+                      </td>
                       <td>
                         {stock !== null ? (
                           <div className="stock-level">
-                            <div style={{ fontSize: 12, color: stock < 10 ? "rgba(190,110,110,0.9)" : "var(--champagne)", fontWeight: 500 }}>{stock}</div>
-                            <div className="progress-bar" style={{ marginTop: 4 }}>
-                              <div className={`progress-fill${stock < 10 ? " red" : ""}`} style={{ width: `${Math.min(100, Math.round((stock / 100) * 100))}%` }} />
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color:
+                                  stock < 10
+                                    ? "rgba(190,110,110,0.9)"
+                                    : "var(--champagne)",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {stock}
+                            </div>
+                            <div
+                              className="progress-bar"
+                              style={{ marginTop: 4 }}
+                            >
+                              <div
+                                className={`progress-fill${stock < 10 ? " red" : ""}`}
+                                style={{
+                                  width: `${Math.min(100, Math.round((stock / 100) * 100))}%`,
+                                }}
+                              />
                             </div>
                           </div>
                         ) : (
-                          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>—</span>
+                          <span
+                            style={{ fontSize: 11, color: "var(--text-muted)" }}
+                          >
+                            —
+                          </span>
                         )}
                       </td>
                       <td>
-                        <span className={p.isActive !== false ? "badge badge-delivered" : "badge badge-cancelled"}>
+                        <span
+                          className={
+                            p.isActive !== false
+                              ? "badge badge-delivered"
+                              : "badge badge-cancelled"
+                          }
+                        >
                           {p.isActive !== false ? "Active" : "Inactive"}
                         </span>
                       </td>
@@ -249,8 +482,18 @@ export default function ProductsPanel({ showToast }) {
             </tbody>
           </table>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px", borderTop: "1px solid rgba(201,169,110,0.06)" }}>
-          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Showing {products.length} of {allProducts.length} products</div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "16px 24px",
+            borderTop: "1px solid rgba(201,169,110,0.06)",
+          }}
+        >
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            Showing {products.length} of {allProducts.length} products
+          </div>
         </div>
       </div>
     </div>

@@ -1,0 +1,134 @@
+/* ═══════════════════════════════════════════════
+   FEATURED PRODUCTS — MODULE CSS
+   ═══════════════════════════════════════════════ */
+
+/* ─── Section ───────────────────────── */
+.featured-section {
+    position: relative;
+    background: var(--color-ink);
+}
+
+/* ─── Header ───────────────────────── */
+.featured-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: clamp(32px, 5vw, 60px);
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+/* label row */
+.featured-label {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.featured-label__line {
+    width: 30px;
+    height: 1px;
+    background: var(--color-gold);
+}
+
+.featured-label__text {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-gold);
+}
+
+/* title */
+.featured-title {
+    font-family: var(--font-serif);
+    font-size: clamp(28px, 4vw, 60px);
+    font-weight: 300;
+    color: var(--color-champagne);
+    line-height: 1.1;
+}
+
+.featured-title em {
+    font-style: italic;
+    color: rgba(240, 230, 208, 0.4);
+}
+
+/* ─── Controls ───────────────────────── */
+.featured-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* nav button */
+.feat-nav-btn {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(201, 169, 110, 0.2);
+    background: transparent;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.3s;
+}
+
+.feat-nav-btn svg {
+    stroke: var(--color-gold);
+}
+
+.feat-nav-btn:hover {
+    border-color: var(--color-gold);
+    background: rgba(201, 169, 110, 0.08);
+}
+
+/* view all link */
+.featured-link {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(240, 230, 208, 0.5);
+    text-decoration: none;
+
+    border-bottom: 1px solid rgba(201, 169, 110, 0.2);
+    padding-bottom: 4px;
+
+    transition: all 0.3s;
+}
+
+.featured-link:hover {
+    color: var(--color-gold);
+    border-color: var(--color-gold);
+}
+
+/* ─── Scroll Row ───────────────────────── */
+.featured-scroll {
+    overflow-x: auto;
+    display: flex;
+    gap: 20px;
+    padding-bottom: 20px;
+
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+
+.featured-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* ─── Error ───────────────────────── */
+.featured-error {
+    text-align: center;
+    padding: 60px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* ─── Responsive ───────────────────────── */
+@media (max-width: 639px) {
+    .feat-nav-btn {
+        display: none;
+    }
+}

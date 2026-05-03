@@ -199,47 +199,56 @@ const NAV_SECTIONS = [
 const PANEL_TITLES = {
   dashboard: (
     <>
-      Admin <em>Dashboard</em>
+      {" "}
+      Admin <em>Dashboard</em>{" "}
     </>
   ),
   products: (
     <>
-      Product <em>Management</em>
+      {" "}
+      Product <em>Management</em>{" "}
     </>
   ),
   orders: (
     <>
-      Order <em>Management</em>
+      {" "}
+      Order <em>Management</em>{" "}
     </>
   ),
   inventory: (
     <>
-      Inventory <em>Intelligence</em>
+      {" "}
+      Inventory <em>Intelligence</em>{" "}
     </>
   ),
   analytics: (
     <>
-      Analytics &amp; <em>Reports</em>
+      {" "}
+      Analytics &amp; <em>Reports</em>{" "}
     </>
   ),
   coupons: (
     <>
-      Coupon <em>Management</em>
+      {" "}
+      Coupon <em>Management</em>{" "}
     </>
   ),
   returns: (
     <>
-      Returns &amp; <em>Refunds</em>
+      {" "}
+      Returns &amp; <em>Refunds</em>{" "}
     </>
   ),
   reviews: (
     <>
-      Review <em>Moderation</em>
+      {" "}
+      Review <em>Moderation</em>{" "}
     </>
   ),
   profile: (
     <>
-      Admin <em>Profile</em>
+      {" "}
+      Admin <em>Profile</em>{" "}
     </>
   ),
 };
@@ -248,6 +257,7 @@ export default function AdminDashboardPage() {
   const [panel, setPanel] = useState("dashboard");
   const [toast, setToast] = useState({ show: false, msg: "" });
   const [notifOpen, setNotifOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
 
@@ -256,17 +266,16 @@ export default function AdminDashboardPage() {
     setTimeout(() => setToast({ show: false, msg: "" }), 3000);
   };
 
-  const handleSignOut = async () => {
-    try {
-      await authApi.adminLogout();
-    } catch (_) {
-      // continue even if API call fails
-    }
-    logout();
-    navigate("/admin/login");
+  const handlePanelChange = (id) => {
+    setPanel(id);
+    setSidebarOpen(false);
+    setNotifOpen(false);
   };
 
-  /* Badge queries — always active for sidebar counts */
+  const handleSignOut = async () => {
+    navigate("/logout");
+  };
+
   const { data: dashboard } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: () => analyticsApi.dashboard().then((r) => r.data.data),
@@ -292,6 +301,15 @@ export default function AdminDashboardPage() {
   const pendingOrders = dashboard?.pendingOrders || 0;
   const pendingReturns = returns.filter((r) => r.status === "REQUESTED").length;
 
+  const getBadge = (key) =>
+    key === "pending"
+      ? pendingOrders
+      : key === "lowstock"
+        ? inventory.length
+        : key === "returns"
+          ? pendingReturns
+          : null;
+
   const tickerData = [
     `Total Revenue ₹${Number(dashboard?.totalRevenue || 0).toLocaleString("en-IN")}`,
     `Total Orders ${Number(dashboard?.totalOrders || 0).toLocaleString("en-IN")}`,
@@ -303,7 +321,9 @@ export default function AdminDashboardPage() {
   const tickerItems = [...tickerData, ...tickerData];
 
   const PANELS = {
-    dashboard: <DashboardPanel onNavigate={setPanel} showToast={showToast} />,
+    dashboard: (
+      <DashboardPanel onNavigate={handlePanelChange} showToast={showToast} />
+    ),
     products: <ProductsPanel showToast={showToast} />,
     orders: <OrdersPanel showToast={showToast} />,
     inventory: <InventoryPanel showToast={showToast} />,
@@ -315,14 +335,29 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="ns-admin-root">
+    <div
+      className="ns-admin-root"
+      onClick={() => {
+        setNotifOpen(false);
+        setSidebarOpen(false);
+      }}
+    >
       <div className="orb orb-1" />
       <div className="orb orb-2" />
       <div className="orb orb-3" />
       <div className="grid-bg" />
 
+      {/* Sidebar overlay for mobile */}
+      <div
+        className={"sidebar-overlay" + (sidebarOpen ? " active" : "")}
+        onClick={(e) => {
+          e.stopPropagation();
+          setSidebarOpen(false);
+        }}
+      />
+
       {/* ════ SIDEBAR ════ */}
-      <nav id="ns-sidebar">
+      <nav id="ns-sidebar" className={sidebarOpen ? "open" : ""}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
             Neural<span>·</span>Shop
@@ -335,21 +370,14 @@ export default function AdminDashboardPage() {
             <div key={section.label}>
               <div className="nav-section-label">{section.label}</div>
               {section.items.map((item) => {
-                const badge =
-                  item.badgeKey === "pending"
-                    ? pendingOrders
-                    : item.badgeKey === "lowstock"
-                      ? inventory.length
-                      : item.badgeKey === "returns"
-                        ? pendingReturns
-                        : null;
+                const badge = item.badgeKey ? getBadge(item.badgeKey) : null;
                 return (
                   <button
                     key={item.id}
                     className={
                       "nav-item" + (panel === item.id ? " active" : "")
                     }
-                    onClick={() => setPanel(item.id)}
+                    onClick={() => handlePanelChange(item.id)}
                   >
                     {item.icon}
                     {item.label}
@@ -366,7 +394,7 @@ export default function AdminDashboardPage() {
         <div className="sidebar-footer">
           <button
             className="admin-profile"
-            onClick={() => setPanel("profile")}
+            onClick={() => handlePanelChange("profile")}
             style={{
               background: "none",
               border: "none",
@@ -405,10 +433,32 @@ export default function AdminDashboardPage() {
       </nav>
 
       {/* ════ MAIN ════ */}
-      <main id="ns-main">
+      <main id="ns-main" onClick={(e) => e.stopPropagation()}>
         {/* Top Bar */}
         <div className="topbar">
+          {/* Hamburger — mobile only */}
+          <button
+            className="mobile-menu-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSidebarOpen((o) => !o);
+            }}
+            aria-label="Open menu"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path d="M3 5h14M3 10h14M3 15h14" />
+            </svg>
+          </button>
+
           <div className="topbar-title">{PANEL_TITLES[panel]}</div>
+
           <div className="topbar-right">
             <span className="date-badge">
               {new Date().toLocaleDateString("en-IN", {
@@ -418,11 +468,14 @@ export default function AdminDashboardPage() {
               })}
             </span>
 
-            {/* Notification bell with pending orders count */}
+            {/* Notification bell */}
             <div style={{ position: "relative" }}>
               <button
                 className="topbar-btn topbar-notif"
-                onClick={() => setNotifOpen((o) => !o)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNotifOpen((o) => !o);
+                }}
                 title="Notifications"
               >
                 <svg
@@ -450,8 +503,10 @@ export default function AdminDashboardPage() {
                   />
                 )}
               </button>
+
               {notifOpen && (
                 <div
+                  onClick={(e) => e.stopPropagation()}
                   style={{
                     position: "absolute",
                     top: "calc(100% + 8px)",
@@ -462,7 +517,6 @@ export default function AdminDashboardPage() {
                     zIndex: 200,
                     padding: 16,
                   }}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <div
                     style={{
@@ -482,48 +536,25 @@ export default function AdminDashboardPage() {
                       gap: 10,
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 12,
-                      }}
-                    >
-                      <span style={{ color: "var(--text-mid)" }}>
-                        Pending Orders
-                      </span>
-                      <span style={{ color: "var(--gold)" }}>
-                        {pendingOrders}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 12,
-                      }}
-                    >
-                      <span style={{ color: "var(--text-mid)" }}>
-                        Low Stock Items
-                      </span>
-                      <span style={{ color: "var(--gold)" }}>
-                        {inventory.length}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 12,
-                      }}
-                    >
-                      <span style={{ color: "var(--text-mid)" }}>
-                        Pending Returns
-                      </span>
-                      <span style={{ color: "var(--gold)" }}>
-                        {pendingReturns}
-                      </span>
-                    </div>
+                    {[
+                      ["Pending Orders", pendingOrders],
+                      ["Low Stock Items", inventory.length],
+                      ["Pending Returns", pendingReturns],
+                    ].map(([label, val]) => (
+                      <div
+                        key={label}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: 12,
+                        }}
+                      >
+                        <span style={{ color: "var(--text-mid)" }}>
+                          {label}
+                        </span>
+                        <span style={{ color: "var(--gold)" }}>{val}</span>
+                      </div>
+                    ))}
                   </div>
                   <button
                     className="ns-btn ns-btn-ghost"
@@ -535,7 +566,7 @@ export default function AdminDashboardPage() {
                     }}
                     onClick={() => {
                       setNotifOpen(false);
-                      setPanel("orders");
+                      handlePanelChange("orders");
                     }}
                   >
                     View Orders →
@@ -567,13 +598,13 @@ export default function AdminDashboardPage() {
               >
                 <path d="M9 3H4a1 1 0 00-1 1v12a1 1 0 001 1h5M14 7l4 3-4 3M8 10h10" />
               </svg>
-              Sign Out
+              <span className="sign-out-label">Sign Out</span>
             </button>
           </div>
         </div>
 
         {/* Ticker */}
-        <div className="ticker-wrap" >
+        <div className="ticker-wrap">
           <div className="ticker">
             {tickerItems.map((t, i) => (
               <span key={i} className="ticker-item">
@@ -586,6 +617,117 @@ export default function AdminDashboardPage() {
         {/* Active Panel */}
         {PANELS[panel]}
       </main>
+
+      {/* ════ MOBILE BOTTOM NAV ════ */}
+      <nav className="mobile-bottom-nav">
+        {[
+          {
+            id: "dashboard",
+            label: "Home",
+            icon: (
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+              >
+                <rect x="2" y="2" width="7" height="7" />
+                <rect x="11" y="2" width="7" height="7" />
+                <rect x="2" y="11" width="7" height="7" />
+                <rect x="11" y="11" width="7" height="7" />
+              </svg>
+            ),
+          },
+          {
+            id: "orders",
+            label: "Orders",
+            badgeKey: "pending",
+            icon: (
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+              >
+                <rect x="3" y="3" width="14" height="14" rx="1" />
+                <path d="M7 7h6M7 10h6M7 13h4" />
+              </svg>
+            ),
+          },
+          {
+            id: "products",
+            label: "Products",
+            icon: (
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+              >
+                <path d="M3 3h14v3H3zM5 6v11h10V6" />
+                <path d="M8 10h4" />
+              </svg>
+            ),
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: (
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+              >
+                <path d="M3 15L7 9l4 3 3-5 3 3" />
+                <path d="M3 17h14" />
+              </svg>
+            ),
+          },
+          {
+            id: "_more",
+            label: "More",
+            icon: (
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+              >
+                <circle cx="4" cy="10" r="1.5" fill="currentColor" />
+                <circle cx="10" cy="10" r="1.5" fill="currentColor" />
+                <circle cx="16" cy="10" r="1.5" fill="currentColor" />
+              </svg>
+            ),
+          },
+        ].map((item) => {
+          const badge = item.badgeKey ? getBadge(item.badgeKey) : null;
+          const isMore = item.id === "_more";
+          return (
+            <button
+              key={item.id}
+              className={
+                "mobile-nav-item" +
+                ((!isMore && panel === item.id) || (isMore && sidebarOpen)
+                  ? " active"
+                  : "")
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                isMore ? setSidebarOpen((o) => !o) : handlePanelChange(item.id);
+              }}
+            >
+              {badge > 0 && (
+                <span className="mobile-nav-badge">
+                  {badge > 9 ? "9+" : badge}
+                </span>
+              )}
+              {item.icon}
+              <span className="mobile-nav-label">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       {/* ════ TOAST ════ */}
       {toast.show && (

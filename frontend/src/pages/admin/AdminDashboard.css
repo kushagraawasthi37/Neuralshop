@@ -1316,21 +1316,536 @@ table.ns-table td.primary {
   fill: rgba(240, 230, 208, 0.35) !important
 }
 
-@media(max-width:1024px) {
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — TABLET  (≤ 1024px)
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
   :root {
-    --sidebar-w: 220px
+    --sidebar-w: 220px;
   }
 
   .ns-content {
-    padding: 28px
+    padding: 28px;
   }
 
   .kpi-grid {
-    grid-template-columns: repeat(2, 1fr)
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .two-col {
-    grid-template-columns: 1fr
+    grid-template-columns: 1fr;
+  }
+
+  .three-col {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .four-col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .topbar {
+    padding: 0 28px;
+  }
+
+  .stat-row {
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    min-width: calc(50% - 1px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE NAV TOGGLE  — shared vars for JS-driven open state
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --mobile-topbar-h: 56px;
+  --mobile-bottom-nav-h: 60px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE  (≤ 768px)  — full redesign
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Root layout ── */
+  .ns-admin-root {
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* ── Hide desktop sidebar entirely ── */
+  #ns-sidebar {
+    display: none;
+  }
+
+  /* ── Main takes full width ── */
+  #ns-main {
+    margin-left: 0;
+    width: 100%;
+    padding-bottom: var(--mobile-bottom-nav-h);
+  }
+
+  /* ── Top bar — compact mobile header ── */
+  .topbar {
+    height: var(--mobile-topbar-h);
+    padding: 0 16px;
+    gap: 8px;
+  }
+
+  .topbar-title {
+    font-size: 16px;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Hide date badge on mobile — saves space */
+  .date-badge {
+    display: none;
+  }
+
+  /* Topbar search — collapse on mobile */
+  .topbar-search {
+    display: none;
+  }
+
+  /* ── Ticker — slightly smaller ── */
+  .ticker-wrap {
+    height: 30px;
+  }
+
+  .ticker-item {
+    font-size: 9px;
+    padding: 0 18px;
+    letter-spacing: 0.16em;
+  }
+
+  /* ── Content area ── */
+  .ns-content {
+    padding: 20px 16px 24px;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    margin-bottom: 28px;
+  }
+
+  .page-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    margin-bottom: 6px;
+  }
+
+  .page-title {
+    font-size: clamp(24px, 7vw, 32px);
+    margin-bottom: 4px;
+  }
+
+  .page-sub {
+    font-size: 12px;
+  }
+
+  /* ── KPI / stat grids — single column on mobile ── */
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .card {
+    padding: 18px 16px;
+  }
+
+  .card-value {
+    font-size: 26px;
+  }
+
+  .card-label {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    margin-bottom: 6px;
+  }
+
+  /* ── Two / three / four col — all single column ── */
+  .two-col,
+  .three-col,
+  .four-col {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .mt-2 {
+    margin-top: 8px;
+  }
+
+  /* ── Stat row ── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: unset;
+  }
+
+  .stat-card {
+    min-width: unset;
+    padding: 14px 16px;
+  }
+
+  .stat-val {
+    font-size: 22px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    margin-bottom: 5px;
+  }
+
+  .stat-sub {
+    font-size: 10px;
+  }
+
+  /* ── Analytics metrics ── */
+  .analytics-metric {
+    padding: 16px 18px;
+  }
+
+  .analytics-val {
+    font-size: 24px;
+  }
+
+  /* ── Tables — horizontal scroll with min-width cols ── */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table.ns-table {
+    min-width: 520px;
+    font-size: 12px;
+  }
+
+  table.ns-table thead th {
+    padding: 10px 12px;
+    font-size: 9px;
+  }
+
+  table.ns-table tbody td {
+    padding: 12px 12px;
+  }
+
+  /* ── Donut chart — stack vertically ── */
+  .donut-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .donut-legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+  }
+
+  .donut-item {
+    font-size: 11px;
+  }
+
+  /* ── Tabs ── */
+  .ns-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 0;
+  }
+
+  .ns-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ns-tab {
+    padding: 10px 16px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  /* ── Inputs / selects / buttons ── */
+  .ns-input,
+  .ns-select {
+    font-size: 14px;
+    padding: 11px 14px;
+  }
+
+  .ns-btn {
+    padding: 9px 18px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Modal ── */
+  .modal {
+    width: calc(100vw - 24px);
+    max-width: 100%;
+    padding: 24px 20px;
+    max-height: 90vh;
+    margin: 12px;
+  }
+
+  .modal-title {
+    font-size: 22px;
+  }
+
+  .modal-header {
+    margin-bottom: 20px;
+  }
+
+  .modal-actions {
+    margin-top: 20px;
+    padding-top: 16px;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modal-actions .ns-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ── Form rows — single column ── */
+  .form-row,
+  .form-row.three {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* ── Timeline ── */
+  .timeline::before {
+    left: 7px;
+  }
+
+  .timeline-title {
+    font-size: 12px;
+  }
+
+  /* ── Progress/sparkline ── */
+  .sparkline {
+    height: 36px;
+  }
+
+  /* ── Toast ── */
+  .toast-container {
+    bottom: calc(var(--mobile-bottom-nav-h) + 12px);
+    right: 12px;
+    left: 12px;
+  }
+
+  .toast {
+    min-width: unset;
+    width: 100%;
+    font-size: 12px;
+    padding: 12px 16px;
+  }
+
+  /* ── Delete modal ── */
+  .delete-modal {
+    width: calc(100% - 24px);
+    padding: 24px 20px;
+  }
+
+  /* ── Profile panel grid — single column ── */
+  .profile-grid-override {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE BOTTOM NAV  — replaces sidebar on phones
+   ═══════════════════════════════════════════════════════════ */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--mobile-bottom-nav-h);
+    background: rgba(13, 12, 11, 0.97);
+    border-top: 1px solid var(--border-gold);
+    backdrop-filter: blur(20px);
+    z-index: 300;
+    align-items: stretch;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .mobile-bottom-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 10px;
+    min-width: 56px;
+    flex: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: 'DM Sans', sans-serif;
+    transition: color 0.2s ease;
+    position: relative;
+    white-space: nowrap;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--gold);
+  }
+
+  .mobile-nav-item.active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .mobile-nav-item svg {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  .mobile-nav-item.active svg {
+    opacity: 1;
+  }
+
+  .mobile-nav-label {
+    font-size: 8.5px;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+
+  .mobile-nav-badge {
+    position: absolute;
+    top: 6px;
+    right: calc(50% - 16px);
+    min-width: 14px;
+    height: 14px;
+    background: var(--gold);
+    color: var(--ink);
+    font-size: 8px;
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    font-weight: 600;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE HAMBURGER / SIDEBAR DRAWER
+   ═══════════════════════════════════════════════════════════ */
+.mobile-menu-btn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: 1px solid var(--border-gold);
+    color: var(--text-mid);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Drawer sidebar */
+  #ns-sidebar {
+    display: flex;
+    transform: translateX(-100%);
+    transition: transform 0.32s cubic-bezier(0.23, 1, 0.32, 1);
+    width: 280px;
+    z-index: 400;
+    top: 0;
+    height: 100%;
+  }
+
+  #ns-sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Overlay behind drawer */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 390;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SMALL MOBILE  (≤ 380px)  — extra tight
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 380px) {
+  .ns-content {
+    padding: 16px 12px 20px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .stat-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .card {
+    padding: 14px 12px;
+  }
+
+  .topbar {
+    padding: 0 12px;
+  }
+
+  .mobile-nav-item {
+    min-width: 48px;
+    padding: 6px 6px;
+  }
+
+  table.ns-table {
+    min-width: 440px;
   }
 }
 
@@ -1453,5 +1968,82 @@ table.ns-table td.primary {
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+/* ── Sign-out label — hide text on very small screens ── */
+@media (max-width: 480px) {
+  .sign-out-label {
+    display: none;
+  }
+
+  .ns-btn.ns-btn-ghost[title="Sign Out"] {
+    padding: 6px 10px;
+  }
+}
+
+/* ── Tablet (768–1024px) — sidebar visible, refined layout ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --sidebar-w: 200px;
+  }
+
+  .ns-content {
+    padding: 24px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .four-col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .three-col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    padding: 0 24px;
+  }
+
+  .topbar-search {
+    width: 160px;
+  }
+
+  .stat-row {
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    min-width: calc(50% - 1px);
+    flex: unset;
+  }
+
+  .page-title {
+    font-size: clamp(22px, 2.5vw, 34px);
+  }
+
+  .nav-section-label {
+    font-size: 8px;
+    padding: 14px 18px 6px;
+  }
+
+  .nav-item {
+    padding: 9px 18px;
+    font-size: 12px;
+  }
+
+  .sidebar-header {
+    padding: 24px 18px 18px;
+  }
+
+  .sidebar-footer {
+    padding: 14px 18px;
   }
 }
