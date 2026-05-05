@@ -25,13 +25,15 @@
 .trending-item {
     display: flex;
     align-items: center;
-    gap: 24px;
-    padding: 24px 0;
+    gap: 20px;
+    padding: 20px 0;
     border-bottom: 1px solid rgba(201, 169, 110, 0.08);
     cursor: pointer;
     position: relative;
     overflow: hidden;
     transition: all 0.3s ease;
+    /* Minimum touch target height */
+    min-height: var(--touch-min);
 }
 
 /* Gold left line */
@@ -42,23 +44,20 @@
     top: 0;
     bottom: 0;
     width: 2px;
-
-    background: linear-gradient(to top,
-            rgba(201, 169, 110, 1),
-            rgba(201, 169, 110, 0.3));
-
+    background: linear-gradient(to top, rgba(201, 169, 110, 1), rgba(201, 169, 110, 0.3));
     transform: scaleY(0);
     transform-origin: bottom;
     transition: transform 0.3s ease;
 }
 
-.trending-item:hover::before {
-    transform: scaleY(1);
-}
+@media (hover: hover) {
+    .trending-item:hover::before {
+        transform: scaleY(1);
+    }
 
-/* subtle slide */
-.trending-item:hover {
-    padding-left: 16px;
+    .trending-item:hover {
+        padding-left: 16px;
+    }
 }
 
 /* ─── Number ───────────────────────── */
@@ -66,7 +65,9 @@
     font-family: var(--font-serif);
     font-size: 40px;
     color: rgba(201, 169, 110, 0.15);
-    min-width: 50px;
+    min-width: 48px;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 /* ─── Thumbnail ───────────────────────── */
@@ -76,6 +77,7 @@
     background: #1a1916;
     border: 1px solid var(--border-gold);
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .trending-thumb img {
@@ -89,16 +91,21 @@
     font-family: var(--font-serif);
     font-size: 18px;
     color: #f0e6d0;
+    line-height: 1.2;
 }
 
 .trending-cat {
     font-size: 11px;
     color: var(--text-muted);
+    margin-top: 4px;
 }
 
 .trending-price {
     font-family: var(--font-serif);
     color: var(--color-gold);
+    font-size: 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* ─── Featured Card ───────────────────────── */
@@ -122,6 +129,13 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.6s var(--ease-luxury);
+}
+
+@media (hover: hover) {
+    .trending-featured:hover .trending-feat-img img {
+        transform: scale(1.03);
+    }
 }
 
 /* Badge */
@@ -129,10 +143,8 @@
     position: absolute;
     top: 20px;
     left: 20px;
-
     background: var(--color-gold);
     color: #0d0c0b;
-
     font-size: 9px;
     padding: 4px 10px;
     letter-spacing: 0.1em;
@@ -147,17 +159,25 @@
     font-size: 10px;
     letter-spacing: 0.2em;
     color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
 }
 
 .trending-feat-title {
     font-family: var(--font-serif);
     font-size: 28px;
+    color: #f0e6d0;
+    font-weight: 300;
+    margin-bottom: 20px;
+    line-height: 1.15;
 }
 
 .trending-feat-bottom {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .trending-feat-price {
@@ -166,20 +186,106 @@
     color: var(--color-gold);
 }
 
+/* ─── Skeleton ───────────────────────── */
+.trending-skeleton-num {
+    width: 50px;
+    height: 40px;
+}
+
+.trending-skeleton-thumb {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+}
+
 /* ─── Responsive ───────────────────────── */
+
+/* Tablet: unstick the featured panel */
 @media (max-width: 1023px) {
     .trending-sticky {
         position: static;
     }
+
+    .trending-two-col {
+        gap: clamp(24px, 4vw, 48px);
+    }
 }
 
+/* Mobile: single column, hide featured (list is primary) */
 @media (max-width: 767px) {
     .trending-two-col {
         grid-template-columns: 1fr;
-        gap: 32px;
+        gap: 0;
     }
 
+    /* On mobile, show featured ABOVE the list */
     .trending-sticky {
+        display: block;
+        order: -1;
+        margin-bottom: 32px;
+    }
+
+    .trending-feat-img {
+        height: 260px;
+    }
+
+    .trending-feat-title {
+        font-size: 22px;
+    }
+
+    .trending-feat-price {
+        font-size: 20px;
+    }
+
+    .trending-feat-info {
+        padding: 20px 0;
+    }
+}
+
+/* Mobile list item tightening */
+@media (max-width: 639px) {
+    .trending-item {
+        gap: 12px;
+        padding: 16px 0;
+    }
+
+    .trending-num {
+        font-size: 28px;
+        min-width: 36px;
+    }
+
+    .trending-thumb {
+        width: 56px;
+        height: 56px;
+    }
+
+    .trending-title {
+        font-size: 15px;
+    }
+
+    .trending-cat {
+        font-size: 10px;
+    }
+
+    .trending-price {
+        font-size: 14px;
+    }
+
+    /* Hide number on very small to save space */
+}
+
+/* Extra small */
+@media (max-width: 380px) {
+    .trending-num {
         display: none;
+    }
+
+    .trending-item {
+        gap: 10px;
+    }
+
+    .trending-thumb {
+        width: 48px;
+        height: 48px;
     }
 }

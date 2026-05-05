@@ -217,6 +217,7 @@ function ProductCard({ product }) {
       }}
     >
       <div
+        className="listing-card__img"
         style={{
           position: "relative",
           aspectRatio: "3/4",
@@ -447,6 +448,16 @@ const getProducts = (page) =>
   Array.isArray(page) ? page : page?.products || page?.items || [];
 const getTotal = (page) => page?.total || page?.count || 0;
 
+function sortProducts(products, sortBy) {
+  if (!sortBy) return products;
+  const arr = [...products];
+  if (sortBy === "price_asc") return arr.sort((a, b) => (a.offerPrice ?? a.price ?? 0) - (b.offerPrice ?? b.price ?? 0));
+  if (sortBy === "price_desc") return arr.sort((a, b) => (b.offerPrice ?? b.price ?? 0) - (a.offerPrice ?? a.price ?? 0));
+  if (sortBy === "newest") return arr.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  if (sortBy === "rating") return arr.sort((a, b) => (b.rating ?? b.avgRating ?? 0) - (a.rating ?? a.avgRating ?? 0));
+  return arr;
+}
+
 export default function CollectionPage() {
   const [searchParams] = useSearchParams();
   const [category, setCategory] = useState(
@@ -467,7 +478,6 @@ export default function CollectionPage() {
 
   const hasFilters =
     category !== "All" ||
-    sortBy !== "" ||
     priceMin > 0 ||
     priceMax < 50000 ||
     search.trim() !== "";
@@ -476,7 +486,7 @@ export default function CollectionPage() {
     useInfiniteQuery({
       queryKey: [
         "collection",
-        { category, sortBy, priceMin, priceMax, search },
+        { category, priceMin, priceMax, search },
       ],
       queryFn: ({ pageParam = 0 }) => {
         if (!hasFilters) {
@@ -487,7 +497,6 @@ export default function CollectionPage() {
         return productApi
           .list({
             ...(category && category !== "All" ? { category } : {}),
-            ...(sortBy ? { sort: sortBy } : {}),
             ...(priceMin > 0 ? { priceMin } : {}),
             ...(priceMax < 50000 ? { priceMax } : {}),
             ...(search.trim() ? { search: search.trim() } : {}),
@@ -505,6 +514,7 @@ export default function CollectionPage() {
     });
 
   const allProducts = data?.pages.flatMap(getProducts) ?? [];
+  const displayedProducts = sortProducts(allProducts, sortBy);
   const total = data?.pages[0] ? getTotal(data.pages[0]) : 0;
 
   useEffect(() => {
@@ -564,12 +574,38 @@ export default function CollectionPage() {
   ];
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   return (
     <div className="listing-page">
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes spin { to{transform:rotate(360deg)} }
+        .col-mobile-filter-overlay {
+          display: none;
+          position: fixed;
+          top: var(--nav-h, 60px);
+          bottom: 0; left: 0; right: 0;
+          background: rgba(13,12,11,0.92);
+          z-index: 500;
+          align-items: flex-end;
+          backdrop-filter: blur(10px);
+        }
+        .col-mobile-filter-overlay.open { display: flex; }
+        .col-mobile-filter-panel {
+          width: 100%;
+          background: #1a1916;
+          border-top: 1px solid rgba(201,169,110,0.18);
+          padding: 24px 20px 40px;
+          max-height: 88vh;
+          overflow-y: auto;
+        }
+        .col-mobile-filter-header {
+          display: flex; align-items: center;
+          justify-content: space-between;
+          margin-bottom: 24px; padding-bottom: 16px;
+          border-bottom: 1px solid rgba(201,169,110,0.12);
+        }
       `}</style>
 
       {/* Hero Header */}
@@ -673,20 +709,70 @@ export default function CollectionPage() {
         </p>
       </div>
 
-      {/* Mobile filter toggle */}
-      <button className="listing-filter-toggle" onClick={() => setSidebarOpen((o) => !o)}>
+      {/* Mobile filter toggle — opens bottom drawer on mobile */}
+      <button className="listing-filter-toggle" onClick={() => setMobileFiltersOpen(true)}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="14" y2="12" /><line x1="4" y1="18" x2="10" y2="18" />
         </svg>
-        {sidebarOpen ? "Hide Filters" : "Show Filters"}
+        Show Filters
       </button>
 
+      {/* Mobile filter bottom drawer */}
+      <div
+        className={`col-mobile-filter-overlay${mobileFiltersOpen ? " open" : ""}`}
+        onClick={(e) => { if (e.target === e.currentTarget) setMobileFiltersOpen(false); }}
+      >
+        <div className="col-mobile-filter-panel">
+          <div className="col-mobile-filter-header">
+            <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 22, fontWeight: 300, color: "#f0e6d0" }}>Filters</div>
+            <button onClick={() => setMobileFiltersOpen(false)} style={{ width: 36, height: 36, border: "1px solid rgba(201,169,110,0.18)", background: "none", color: "rgba(240,230,208,0.5)", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+          </div>
+          {/* Search */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(201,169,110,0.5)", marginBottom: 10 }}>Search</div>
+            <form onSubmit={(e) => { e.preventDefault(); setSearch(searchInput.trim()); setMobileFiltersOpen(false); }} style={{ display: "flex", gap: 0 }}>
+              <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search products…" style={{ flex: 1, padding: "8px 10px", background: "rgba(201,169,110,0.04)", border: "1px solid rgba(201,169,110,0.18)", borderRight: "none", color: "#f0e6d0", fontSize: 12, outline: "none", fontFamily: "'DM Sans',sans-serif" }} />
+              <button type="submit" style={{ padding: "8px 12px", background: "rgba(201,169,110,0.12)", border: "1px solid rgba(201,169,110,0.18)", color: "#c9a96e", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>↵</button>
+            </form>
+          </div>
+          {/* Category */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(201,169,110,0.5)", marginBottom: 12 }}>Category</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {CATEGORIES.map((cat) => (
+                <button key={cat} onClick={() => setCategory(cat)} style={{ padding: "7px 14px", background: category === cat ? "rgba(201,169,110,0.1)" : "none", border: `1px solid ${category === cat ? "rgba(201,169,110,0.35)" : "rgba(201,169,110,0.15)"}`, color: category === cat ? "#c9a96e" : "rgba(240,230,208,0.45)", fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>{cat}</button>
+              ))}
+            </div>
+          </div>
+          {/* Sort */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(201,169,110,0.5)", marginBottom: 12 }}>Sort By</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {SORT_OPTIONS.map((opt) => (
+                <button key={opt.value} onClick={() => setSortBy(opt.value)} style={{ textAlign: "left", padding: "9px 12px", background: sortBy === opt.value ? "rgba(201,169,110,0.08)" : "none", border: sortBy === opt.value ? "1px solid rgba(201,169,110,0.25)" : "1px solid transparent", color: sortBy === opt.value ? "#c9a96e" : "rgba(240,230,208,0.45)", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>{opt.label}</button>
+              ))}
+            </div>
+          </div>
+          {/* Price */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(201,169,110,0.5)", marginBottom: 10 }}>Price Range</div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(240,230,208,0.45)", marginBottom: 8 }}>
+              <span>₹{priceMin.toLocaleString("en-IN")}</span><span>₹{priceMax.toLocaleString("en-IN")}</span>
+            </div>
+            <input type="range" min={0} max={50000} step={500} value={priceMin} onChange={(e) => { const v = Number(e.target.value); setPriceMin(v); if (v > priceMax) setPriceMax(v); }} style={{ width: "100%", accentColor: "#c9a96e", marginBottom: 8 }} />
+            <input type="range" min={0} max={50000} step={500} value={priceMax} onChange={(e) => { const v = Number(e.target.value); setPriceMax(v); if (v < priceMin) setPriceMin(v); }} style={{ width: "100%", accentColor: "#c9a96e" }} />
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={() => { clearAll(); setMobileFiltersOpen(false); }} style={{ flex: 1, padding: 12, background: "none", border: "1px solid rgba(201,169,110,0.18)", color: "rgba(240,230,208,0.5)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Clear All</button>
+            <button onClick={() => setMobileFiltersOpen(false)} style={{ flex: 1, padding: 12, background: "#c9a96e", border: "none", color: "#0d0c0b", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 500 }}>Apply</button>
+          </div>
+        </div>
+      </div>
+
       <div className="listing-layout">
-        {/* Sticky Sidebar */}
-        <aside
-          className={`listing-sidebar${sidebarOpen ? " listing-sidebar--open" : ""}`}
-          style={{ position: "sticky", top: 80, alignSelf: "flex-start" }}
-        >
+        {/* Sticky Sidebar — desktop only */}
+        <aside className="listing-sidebar">
+
           {/* Search */}
           <div style={{ marginBottom: 40 }}>
             <div
@@ -1045,7 +1131,7 @@ export default function CollectionPage() {
           ) : (
             <>
               <div className="listing-grid">
-                {allProducts.map((p, i) => (
+                {displayedProducts.map((p, i) => (
                   <ProductCard key={p.id || p._id || i} product={p} />
                 ))}
                 {isFetchingNextPage &&

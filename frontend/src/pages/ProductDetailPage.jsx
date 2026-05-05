@@ -5,6 +5,7 @@ import { productApi, reviewApi } from "../api/products";
 import { wishlistApi } from "../api/user";
 import { cartApi } from "../api/cart";
 import { useAuthStore } from "../store/authStore";
+import { useGuestCartStore } from "../store/guestCartStore";
 import Toast from "../components/ui/Toast";
 import ProductGallery from "../components/product/ProductGallery";
 import ProductInfo from "../components/product/ProductInfo";
@@ -15,11 +16,20 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { user } = useAuthStore();
+  const { user, isLoggedIn } = useAuthStore();
+  const guestAddItem = useGuestCartStore((s) => s.addItem);
 
   const [toast, setToast] = useState({ show: false, msg: "" });
-  const [reviewForm, setReviewForm] = useState({ show: false, rating: 0, comment: "" });
-  const [editForm, setEditForm] = useState({ reviewId: null, rating: 0, comment: "" });
+  const [reviewForm, setReviewForm] = useState({
+    show: false,
+    rating: 0,
+    comment: "",
+  });
+  const [editForm, setEditForm] = useState({
+    reviewId: null,
+    rating: 0,
+    comment: "",
+  });
   const [addingCart, setAddingCart] = useState(false);
 
   const showToast = (msg) => {
@@ -27,16 +37,25 @@ export default function ProductDetailPage() {
     setTimeout(() => setToast({ show: false, msg: "" }), 3000);
   };
 
-  const { data: product, isLoading, error } = useQuery({
+  const {
+    data: product,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["product", id],
-    queryFn: () => productApi.getById(id).then((r) => r.data.product || r.data.data || r.data),
+    queryFn: () =>
+      productApi
+        .getById(id)
+        .then((r) => r.data.product || r.data.data || r.data),
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: reviews = [] } = useQuery({
     queryKey: ["product-reviews", id],
     queryFn: () =>
-      reviewApi.getByProduct(id).then((res) => res.data?.data?.reviews || res.data?.data || []),
+      reviewApi
+        .getByProduct(id)
+        .then((res) => res.data?.data?.reviews || res.data?.data || []),
     staleTime: 2 * 60 * 1000,
   });
 
@@ -60,7 +79,10 @@ export default function ProductDetailPage() {
   const { data: wishlistStatus } = useQuery({
     queryKey: ["wishlist-check", id],
     queryFn: () =>
-      wishlistApi.check(id).then((r) => r.data.data?.inWishlist ?? false).catch(() => false),
+      wishlistApi
+        .check(id)
+        .then((r) => r.data.data?.inWishlist ?? false)
+        .catch(() => false),
   });
 
   const wishlistMutation = useMutation({
@@ -72,23 +94,27 @@ export default function ProductDetailPage() {
   });
 
   const reviewMutation = useMutation({
-    mutationFn: ({ rating, comment }) => reviewApi.submit(id, { rating, comment }),
+    mutationFn: ({ rating, comment }) =>
+      reviewApi.submit(id, { rating, comment }),
     onSuccess: () => {
       qc.invalidateQueries(["product-reviews", id]);
       setReviewForm({ show: false, rating: 0, comment: "" });
       showToast("Review submitted — thank you!");
     },
-    onError: (err) => showToast(err?.response?.data?.message || "Could not submit review"),
+    onError: (err) =>
+      showToast(err?.response?.data?.message || "Could not submit review"),
   });
 
   const editMutation = useMutation({
-    mutationFn: ({ reviewId, rating, comment }) => reviewApi.update(reviewId, { rating, comment }),
+    mutationFn: ({ reviewId, rating, comment }) =>
+      reviewApi.update(reviewId, { rating, comment }),
     onSuccess: () => {
       qc.invalidateQueries(["product-reviews", id]);
       setEditForm({ reviewId: null, rating: 0, comment: "" });
       showToast("Review updated");
     },
-    onError: (err) => showToast(err?.response?.data?.message || "Could not update review"),
+    onError: (err) =>
+      showToast(err?.response?.data?.message || "Could not update review"),
   });
 
   const deleteMutation = useMutation({
@@ -97,17 +123,25 @@ export default function ProductDetailPage() {
       qc.invalidateQueries(["product-reviews", id]);
       showToast("Review deleted");
     },
-    onError: (err) => showToast(err?.response?.data?.message || "Could not delete review"),
+    onError: (err) =>
+      showToast(err?.response?.data?.message || "Could not delete review"),
   });
 
   const handleAddToCart = async ({ selectedSize, quantity }) => {
-    if (!selectedSize) { showToast("Please select a size"); return; }
+    if (!selectedSize) {
+      showToast("Please select a size");
+      return;
+    }
     setAddingCart(true);
     try {
       const productId = product.id || product._id;
       const priceAtAdd = product.offerPrice || product.price || 0;
       const image = (product.image || product.images || [])[0] || "";
-      await cartApi.addItem(productId, quantity, selectedSize, priceAtAdd, product.name, image);
+      if (isLoggedIn) {
+        await cartApi.addItem(productId, quantity, selectedSize, priceAtAdd, product.name, image);
+      } else {
+        guestAddItem({ productId, quantity, size: selectedSize, priceAtAdd, name: product.name, image });
+      }
       showToast("Added to cart");
     } catch (err) {
       showToast(err?.response?.data?.message || "Could not add to cart");
@@ -117,7 +151,10 @@ export default function ProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="page-center" style={{ minHeight: "100vh", paddingTop: 80 }}>
+      <div
+        className="page-center"
+        style={{ minHeight: "100vh", paddingTop: 80 }}
+      >
         <div className="page-loader-text">Loading…</div>
       </div>
     );
@@ -125,7 +162,14 @@ export default function ProductDetailPage() {
 
   if (error || !product) {
     return (
-      <div className="page-center" style={{ minHeight: "100vh", paddingTop: 80 }}>
+      <div
+        className="page-center"
+        style={{
+          minHeight: "100vh",
+          paddingTop: 80,
+          padding: "80px var(--page-px) 40px",
+        }}
+      >
         <div style={{ textAlign: "center" }}>
           <div className="error-title">Product not found</div>
           <button onClick={() => navigate("/products")} className="btn-primary">
@@ -153,25 +197,46 @@ export default function ProductDetailPage() {
 
       {/* Breadcrumb */}
       <div className="breadcrumb">
-        <Link to="/" className="breadcrumb__link">Home</Link>
+        <Link to="/" className="breadcrumb__link">
+          Home
+        </Link>
         <span>/</span>
-        <Link to="/products" className="breadcrumb__link">Products</Link>
+        <Link to="/products" className="breadcrumb__link">
+          Products
+        </Link>
         {product.category && (
           <>
             <span>/</span>
-            <Link to={`/products?category=${product.category}`} className="breadcrumb__link">
+            <Link
+              to={`/products?category=${product.category}`}
+              className="breadcrumb__link"
+            >
               {product.category}
             </Link>
           </>
         )}
         <span>/</span>
-        <span style={{ color: "rgba(240,230,208,0.6)" }}>{product.name}</span>
+        <span
+          style={{
+            color: "rgba(240,230,208,0.6)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            maxWidth: "40vw",
+          }}
+        >
+          {product.name}
+        </span>
       </div>
 
       {/* Main product layout */}
       <div className="product-layout">
         <div className="product-layout__gallery">
-          <ProductGallery images={images} name={product.name} discount={discount} />
+          <ProductGallery
+            images={images}
+            name={product.name}
+            discount={discount}
+          />
         </div>
         <div className="product-layout__info">
           <ProductInfo

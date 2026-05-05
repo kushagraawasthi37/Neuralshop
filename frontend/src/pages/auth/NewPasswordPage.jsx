@@ -31,7 +31,7 @@ export default function NewPasswordPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { pendingEmail, pendingRole, setPendingEmail } = useAuthStore();
-  const [otp, setOtp] = useState(location.state?.otp || "");
+  const [otp] = useState(location.state?.otp || "");
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -41,9 +41,8 @@ export default function NewPasswordPage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm({
-    resolver: zodResolver(schema),
-  });
+  } = useForm({ resolver: zodResolver(schema) });
+
   const newPassword = watch("newPassword", "");
 
   useEffect(() => {
@@ -84,16 +83,18 @@ export default function NewPasswordPage() {
         alignItems: "center",
         justifyContent: "center",
         background: "#0e0d0b",
-        padding: "120px 40px 80px",
+        padding:
+          "clamp(90px,12vw,120px) clamp(16px,6vw,40px) clamp(48px,8vw,80px)",
         position: "relative",
         overflow: "hidden",
       }}
     >
+      {/* Ambient glow */}
       <div
         style={{
           position: "absolute",
-          width: 600,
-          height: 600,
+          width: "min(600px,90vw)",
+          height: "min(600px,90vw)",
           borderRadius: "50%",
           filter: "blur(140px)",
           background: "rgba(201,169,110,0.05)",
@@ -103,6 +104,7 @@ export default function NewPasswordPage() {
           pointerEvents: "none",
         }}
       />
+      {/* Grid */}
       <div
         style={{
           position: "absolute",
@@ -126,7 +128,7 @@ export default function NewPasswordPage() {
           <DoneState />
         ) : (
           <>
-            <div style={{ marginBottom: 40 }}>
+            <div style={{ marginBottom: 36 }}>
               <TextLink
                 onClick={() => navigate("/reset-password")}
                 style={{
@@ -149,7 +151,7 @@ export default function NewPasswordPage() {
             </FormTitle>
             <FormSubtitle>
               Choose a strong password. After reset, all existing sessions will
-              be invalidated from Redis blacklist.
+              be invalidated.
             </FormSubtitle>
 
             <FormError message={serverError} />
@@ -197,8 +199,8 @@ function DoneState() {
     <div style={{ textAlign: "center" }}>
       <div
         style={{
-          width: 80,
-          height: 80,
+          width: "clamp(64px,16vw,80px)",
+          height: "clamp(64px,16vw,80px)",
           borderRadius: "50%",
           background: "rgba(201,169,110,0.1)",
           display: "flex",

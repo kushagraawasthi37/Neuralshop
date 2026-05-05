@@ -49,16 +49,11 @@ export default function LoginPage() {
       setPendingRole("user");
       setAuth(data.user, data.token, "user");
 
-      console.log(data.user);
-
-      // Merge guest cart if the user had items saved while browsing unauthenticated
       if (guestItems.length > 0) {
         try {
           await cartApi.merge({ items: guestItems });
           clearGuestCart();
-        } catch (_) {
-          // Non-fatal: continue even if merge fails
-        }
+        } catch (_) {}
       }
 
       const returnTo = searchParams.get("return") || "/";
@@ -103,7 +98,6 @@ export default function LoginPage() {
           error={errors.email?.message}
           {...register("email")}
         />
-
         <div>
           <AuthField
             label="Password"
@@ -157,6 +151,7 @@ export function GoogleBtn() {
         gap: 10,
         transition: "all 0.3s",
         marginBottom: 8,
+        minHeight: 44,
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = "rgba(201,169,110,0.45)";

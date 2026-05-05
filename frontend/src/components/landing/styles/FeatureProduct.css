@@ -18,7 +18,6 @@
     gap: 16px;
 }
 
-/* label row */
 .featured-label {
     display: flex;
     align-items: center;
@@ -39,7 +38,6 @@
     color: var(--color-gold);
 }
 
-/* title */
 .featured-title {
     font-family: var(--font-serif);
     font-size: clamp(28px, 4vw, 60px);
@@ -60,23 +58,18 @@
     gap: 16px;
 }
 
-/* nav button */
 .feat-nav-btn {
     width: 44px;
     height: 44px;
     border: 1px solid rgba(201, 169, 110, 0.2);
     background: transparent;
     cursor: pointer;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     transition: all 0.3s;
-}
-
-.feat-nav-btn svg {
-    stroke: var(--color-gold);
+    flex-shrink: 0;
+    color: var(--color-gold);
 }
 
 .feat-nav-btn:hover {
@@ -84,18 +77,19 @@
     background: rgba(201, 169, 110, 0.08);
 }
 
-/* view all link */
 .featured-link {
     font-size: 12px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: rgba(240, 230, 208, 0.5);
     text-decoration: none;
-
     border-bottom: 1px solid rgba(201, 169, 110, 0.2);
     padding-bottom: 4px;
-
     transition: all 0.3s;
+    white-space: nowrap;
+    min-height: var(--touch-min);
+    display: inline-flex;
+    align-items: flex-end;
 }
 
 .featured-link:hover {
@@ -103,19 +97,59 @@
     border-color: var(--color-gold);
 }
 
-/* ─── Scroll Row ───────────────────────── */
+/* ─── Desktop Collection Grid (≥ 1024px) ── */
+.featured-grid {
+    display: none;
+    /* shown only on desktop via media query */
+}
+
+/* ─── Mobile/Tablet Scroll Row (< 1024px) ── */
 .featured-scroll {
     overflow-x: auto;
     display: flex;
-    gap: 20px;
+    gap: 2px;
     padding-bottom: 20px;
-
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
 
 .featured-scroll::-webkit-scrollbar {
     display: none;
+}
+
+.featured-scroll>* {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    min-width: clamp(220px, 55vw, 300px);
+}
+
+/* ─── Footer CTA ───────────────────────── */
+.featured-footer {
+    display: none;
+    /* only on desktop */
+    margin-top: clamp(32px, 4vw, 52px);
+    text-align: center;
+}
+
+.featured-footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 40px;
+    border: 1px solid rgba(201, 169, 110, 0.25);
+    color: rgba(240, 230, 208, 0.6);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.4s var(--ease-luxury);
+}
+
+.featured-footer-link:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+    background: rgba(201, 169, 110, 0.04);
 }
 
 /* ─── Error ───────────────────────── */
@@ -126,9 +160,89 @@
     font-size: 14px;
 }
 
-/* ─── Responsive ───────────────────────── */
-@media (max-width: 639px) {
-    .feat-nav-btn {
+/* ─── Desktop (≥ 1024px): Collection Grid ───────────────────────── */
+@media (min-width: 1024px) {
+    .featured-grid {
         display: none;
+    }
+
+    .featured-scroll {
+        display: flex;
+    }
+
+    .featured-scroll>* {
+        min-width: 200px;
+    }
+
+    .feat-nav-btn--scroll {
+        display: flex;
+    }
+
+    .featured-footer {
+        display: block;
+    }
+
+    .featured-header {
+        margin-bottom: clamp(28px, 4vw, 52px);
+    }
+}
+
+/* ─── Tablet (640–1023px) ───────────────────────────────────── */
+@media (min-width: 640px) and (max-width: 1023px) {
+    .feat-nav-btn--scroll {
+        display: flex;
+    }
+
+    .featured-header {
+        align-items: flex-start;
+    }
+
+    .featured-scroll>* {
+        min-width: clamp(200px, 38vw, 280px);
+    }
+}
+
+/* ─── Mobile (< 640px) ──────────────────────────────────────── */
+@media (max-width: 639px) {
+
+    /* Hide scroll nav arrows — user swipes */
+    .feat-nav-btn--scroll {
+        display: none;
+    }
+
+    .featured-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .featured-controls {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .featured-label {
+        margin-bottom: 12px;
+    }
+
+    .featured-label__text {
+        font-size: 9px;
+    }
+
+    .featured-scroll {
+        gap: 10px;
+        padding-bottom: 16px;
+    }
+
+    .featured-scroll>* {
+        min-width: min(260px, 72vw);
+    }
+}
+
+/* ─── Extra small (≤ 380px) ──────────── */
+@media (max-width: 380px) {
+    .featured-scroll>* {
+        min-width: 80vw;
     }
 }

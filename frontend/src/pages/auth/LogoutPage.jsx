@@ -20,7 +20,6 @@ const LogoutPage = () => {
   const confirmLogout = async () => {
     setLoading(true);
     setError("");
-
     try {
       if (pendingRole === "admin") {
         await authApi.adminLogout();
@@ -34,14 +33,21 @@ const LogoutPage = () => {
       setLoading(false);
       return;
     }
-
     logout();
     navigate("/logged-out");
   };
 
   return (
     <AuthCenter>
-      <div style={{ textAlign: "center" }}>
+      <div
+        style={{
+          textAlign: "center",
+          width: "100%",
+          maxWidth: 380,
+          margin: "0 auto",
+        }}
+      >
+        {/* Badge */}
         <div
           style={{
             display: "inline-flex",
@@ -54,7 +60,7 @@ const LogoutPage = () => {
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: "#c9a96e",
-            marginBottom: 14,
+            marginBottom: 20,
           }}
         >
           <span
@@ -94,7 +100,14 @@ const LogoutPage = () => {
         </div>
 
         {error && (
-          <p style={{ marginTop: 24, color: "#e87f7f", fontSize: 13 }}>
+          <p
+            style={{
+              marginTop: 20,
+              color: "#e87f7f",
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}
+          >
             {error}
           </p>
         )}
@@ -105,6 +118,7 @@ const LogoutPage = () => {
             display: "flex",
             gap: 16,
             justifyContent: "center",
+            flexWrap: "wrap",
           }}
         >
           <TextLink onClick={() => navigate("/")}>← Home</TextLink>

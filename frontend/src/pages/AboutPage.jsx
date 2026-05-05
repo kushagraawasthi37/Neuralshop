@@ -33,8 +33,8 @@ const STATS = [
 const TEAM = [
   { initials: "AK", name: "Kushagra Awasthi", role: "Founder & Chief Curator" },
   { initials: "MS", name: "Shivanshu Sharma", role: "Head of AI & Curation" },
-  { initials: "RV", name: "Avneesh ", role: "Luxury Partnerships" },
-  { initials: "RV", name: "Aditya", role: "Tech Head" },
+  { initials: "RV", name: "Avneesh", role: "Luxury Partnerships" },
+  { initials: "AD", name: "Aditya", role: "Tech Head" },
 ];
 
 export default function AboutPage() {
@@ -45,13 +45,47 @@ export default function AboutPage() {
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
         .about-fade { animation: fadeUp 0.9s cubic-bezier(0.23,1,0.32,1) both; }
+        .about-pillar-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2px;
+        }
+        .about-team-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2px;
+        }
+        .about-mission-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: clamp(32px, 6vw, 80px);
+          align-items: center;
+        }
+        @media (max-width: 1023px) {
+          .about-pillar-grid { grid-template-columns: repeat(2, 1fr); }
+          .about-team-grid   { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 1024px) and (max-width: 1440px) {
+          .about-section-padded {
+            padding-left: clamp(24px, 3vw, 48px) !important;
+            padding-right: clamp(24px, 3vw, 48px) !important;
+          }
+        }
+        @media (max-width: 639px) {
+          .about-pillar-grid  { grid-template-columns: 1fr; }
+          .about-team-grid    { grid-template-columns: repeat(2, 1fr); }
+          .about-mission-grid { grid-template-columns: 1fr; }
+          .about-cta-btns     { flex-direction: column; }
+          .about-cta-btns button { width: 100% !important; }
+        }
       `}</style>
 
-      {/* Hero */}
+      {/* ── Hero ───────────────────────────────────────────────── */}
       <section
         style={{
           position: "relative",
-          padding: "clamp(60px,8vw,100px) var(--page-px) clamp(48px,6vw,96px)",
+          padding:
+            "clamp(36px,6vw,80px) min(24px, var(--page-px)) clamp(32px,5vw,64px)",
           borderBottom: "1px solid rgba(201,169,110,0.1)",
           overflow: "hidden",
         }}
@@ -59,16 +93,13 @@ export default function AboutPage() {
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            inset: 0,
             background:
               "radial-gradient(ellipse 80% 60% at 60% 40%, rgba(201,169,110,0.055) 0%, transparent 70%)",
             pointerEvents: "none",
           }}
         />
-        <div style={{ maxWidth: 1080, margin: "0 auto", position: "relative" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative" }}>
           <div
             className="about-fade"
             style={{
@@ -79,7 +110,7 @@ export default function AboutPage() {
               display: "flex",
               alignItems: "center",
               gap: 14,
-              marginBottom: 22,
+              marginBottom: 20,
             }}
           >
             <span
@@ -104,11 +135,11 @@ export default function AboutPage() {
             className="about-fade"
             style={{
               fontFamily: "'Cormorant Garamond',serif",
-              fontSize: "clamp(44px,6.5vw,88px)",
+              fontSize: "clamp(36px,6.5vw,88px)",
               fontWeight: 300,
               color: "#f0e6d0",
-              lineHeight: 1.04,
-              marginBottom: 28,
+              lineHeight: 1.06,
+              marginBottom: 24,
               animationDelay: "0.1s",
             }}
           >
@@ -122,7 +153,7 @@ export default function AboutPage() {
           <p
             className="about-fade"
             style={{
-              fontSize: 15,
+              fontSize: "clamp(13px,2vw,15px)",
               color: "rgba(240,230,208,0.5)",
               maxWidth: 620,
               lineHeight: 1.8,
@@ -137,19 +168,19 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Stats */}
+      {/* ── Stats ──────────────────────────────────────────────── */}
       <section
         style={{
-          padding: "clamp(40px,5vw,72px) var(--page-px)",
+          padding: "clamp(28px,5vw,64px) min(24px, var(--page-px))",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
         }}
       >
         <div
           style={{
-            maxWidth: 1080,
+            maxWidth: 1200,
             margin: "0 auto",
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
             gap: 2,
           }}
         >
@@ -157,7 +188,7 @@ export default function AboutPage() {
             <div
               key={i}
               style={{
-                padding: "36px 28px",
+                padding: "clamp(24px,4vw,36px) clamp(16px,3vw,28px)",
                 background: "rgba(201,169,110,0.025)",
                 border: "1px solid rgba(201,169,110,0.1)",
                 textAlign: "center",
@@ -166,7 +197,7 @@ export default function AboutPage() {
               <div
                 style={{
                   fontFamily: "'Cormorant Garamond',serif",
-                  fontSize: 48,
+                  fontSize: "clamp(36px,5vw,48px)",
                   fontWeight: 300,
                   color: "#c9a96e",
                   lineHeight: 1,
@@ -190,22 +221,16 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Mission */}
+      {/* ── Mission ────────────────────────────────────────────── */}
       <section
+        className="about-section-padded"
         style={{
-          padding: "clamp(48px,6vw,96px) var(--page-px)",
+          padding: "clamp(40px,6vw,96px) var(--page-px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
         }}
       >
-        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))",
-              gap: "clamp(32px,5vw,80px)",
-              alignItems: "center",
-            }}
-          >
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div className="about-mission-grid">
             <div>
               <div
                 style={{
@@ -221,7 +246,7 @@ export default function AboutPage() {
               <h2
                 style={{
                   fontFamily: "'Cormorant Garamond',serif",
-                  fontSize: "clamp(30px,3.5vw,48px)",
+                  fontSize: "clamp(26px,3.5vw,48px)",
                   fontWeight: 300,
                   color: "#f0e6d0",
                   lineHeight: 1.15,
@@ -235,7 +260,7 @@ export default function AboutPage() {
               </h2>
               <p
                 style={{
-                  fontSize: 14,
+                  fontSize: "clamp(12px,1.5vw,14px)",
                   color: "rgba(240,230,208,0.45)",
                   lineHeight: 1.85,
                   marginBottom: 20,
@@ -248,70 +273,98 @@ export default function AboutPage() {
               </p>
               <p
                 style={{
-                  fontSize: 14,
+                  fontSize: "clamp(12px,1.5vw,14px)",
                   color: "rgba(240,230,208,0.45)",
                   lineHeight: 1.85,
                 }}
               >
-                Our models don't just match price to product. They understand
-                provenance, rarity, and the subtle signals that separate a
-                timeless investment from a trend.
+                Our technology stack learns continuously. As tastes evolve and
+                new makers emerge, NeuralShop surfaces them first — giving our
+                community a perpetual edge over the conventional market.
               </p>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {[
-                "Sourced from verified partners only",
-                "AI-scored quality assessment on every listing",
-                "Real-time pricing benchmarked against 14 global markets",
-                "White-glove delivery with live tracking",
-              ].map((pt, i) => (
+            {/* Visual panel — hidden on mobile via grid collapse */}
+            <div style={{ position: "relative" }}>
+              <div
+                style={{
+                  width: "100%",
+                  aspectRatio: "4/5",
+                  background:
+                    "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, rgba(201,169,110,0.01) 100%)",
+                  border: "1px solid rgba(201,169,110,0.12)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
                 <div
-                  key={i}
                   style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 16,
-                    padding: "20px 24px",
-                    background: "rgba(201,169,110,0.025)",
-                    border: "1px solid rgba(201,169,110,0.1)",
+                    fontFamily: "'Cormorant Garamond',serif",
+                    fontSize: "clamp(80px,14vw,160px)",
+                    fontWeight: 300,
+                    color: "rgba(201,169,110,0.06)",
+                    userSelect: "none",
+                    lineHeight: 1,
                   }}
                 >
-                  <span
+                  N
+                </div>
+                {/* Corner accents */}
+                {[
+                  [0, 0],
+                  [0, "auto"],
+                  ["auto", 0],
+                  ["auto", "auto"],
+                ].map(([t, b, l, r], i) => (
+                  <div
+                    key={i}
                     style={{
-                      width: 6,
-                      height: 6,
-                      background: "#c9a96e",
-                      borderRadius: "50%",
-                      marginTop: 6,
-                      flexShrink: 0,
+                      position: "absolute",
+                      top: i < 2 ? 12 : "auto",
+                      bottom: i >= 2 ? 12 : "auto",
+                      left: i % 2 === 0 ? 12 : "auto",
+                      right: i % 2 !== 0 ? 12 : "auto",
+                      width: 20,
+                      height: 20,
+                      borderTop:
+                        i < 2 ? "1px solid rgba(201,169,110,0.3)" : "none",
+                      borderBottom:
+                        i >= 2 ? "1px solid rgba(201,169,110,0.3)" : "none",
+                      borderLeft:
+                        i % 2 === 0
+                          ? "1px solid rgba(201,169,110,0.3)"
+                          : "none",
+                      borderRight:
+                        i % 2 !== 0
+                          ? "1px solid rgba(201,169,110,0.3)"
+                          : "none",
                     }}
                   />
-                  <span
-                    style={{
-                      fontSize: 13,
-                      color: "rgba(240,230,208,0.55)",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {pt}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pillars */}
+      {/* ── Pillars ────────────────────────────────────────────── */}
       <section
+        className="about-section-padded"
         style={{
-          padding: "clamp(48px,6vw,96px) var(--page-px)",
+          padding: "clamp(40px,6vw,96px) var(--page-px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
         }}
       >
-        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 64 }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "clamp(36px,5vw,64px)",
+            }}
+          >
             <div
               style={{
                 fontSize: 9,
@@ -321,53 +374,43 @@ export default function AboutPage() {
                 marginBottom: 14,
               }}
             >
-              What We Stand For
+              Our Principles
             </div>
             <h2
               style={{
                 fontFamily: "'Cormorant Garamond',serif",
-                fontSize: "clamp(28px,3vw,44px)",
+                fontSize: "clamp(26px,3vw,44px)",
                 fontWeight: 300,
                 color: "#f0e6d0",
               }}
             >
-              Four{" "}
-              <em style={{ fontStyle: "italic", color: "#c9a96e" }}>Pillars</em>{" "}
-              of NeuralShop
+              The four{" "}
+              <em style={{ fontStyle: "italic", color: "#c9a96e" }}>pillars</em>
             </h2>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 2,
-            }}
-          >
+          <div className="about-pillar-grid">
             {PILLARS.map((p, i) => (
               <div
                 key={i}
                 style={{
-                  padding: "40px 32px",
-                  background: "rgba(201,169,110,0.025)",
+                  padding: "clamp(24px,4vw,40px) clamp(20px,3vw,32px)",
+                  background: "rgba(201,169,110,0.02)",
                   border: "1px solid rgba(201,169,110,0.1)",
-                  transition: "all 0.4s cubic-bezier(0.23,1,0.32,1)",
+                  transition: "border-color 0.3s",
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(201,169,110,0.28)";
-                  e.currentTarget.style.background = "rgba(201,169,110,0.045)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(201,169,110,0.1)";
-                  e.currentTarget.style.background = "rgba(201,169,110,0.025)";
-                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.borderColor = "rgba(201,169,110,0.28)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.borderColor = "rgba(201,169,110,0.1)")
+                }
               >
                 <div
                   style={{
-                    fontFamily: "'Cormorant Garamond',serif",
-                    fontSize: 28,
+                    fontSize: "clamp(20px,3vw,26px)",
                     color: "#c9a96e",
-                    marginBottom: 18,
+                    marginBottom: 16,
                     lineHeight: 1,
                   }}
                 >
@@ -401,15 +444,21 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team */}
+      {/* ── Team ───────────────────────────────────────────────── */}
       <section
+        className="about-section-padded"
         style={{
-          padding: "clamp(48px,6vw,96px) var(--page-px)",
+          padding: "clamp(40px,6vw,96px) var(--page-px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
         }}
       >
-        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 64 }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "clamp(36px,5vw,64px)",
+            }}
+          >
             <div
               style={{
                 fontSize: 9,
@@ -424,7 +473,7 @@ export default function AboutPage() {
             <h2
               style={{
                 fontFamily: "'Cormorant Garamond',serif",
-                fontSize: "clamp(28px,3vw,44px)",
+                fontSize: "clamp(26px,3vw,44px)",
                 fontWeight: 300,
                 color: "#f0e6d0",
               }}
@@ -436,18 +485,12 @@ export default function AboutPage() {
             </h2>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 2,
-            }}
-          >
+          <div className="about-team-grid">
             {TEAM.map((m, i) => (
               <div
                 key={i}
                 style={{
-                  padding: "40px 32px",
+                  padding: "clamp(28px,5vw,40px) clamp(16px,3vw,32px)",
                   background: "rgba(201,169,110,0.025)",
                   border: "1px solid rgba(201,169,110,0.1)",
                   textAlign: "center",
@@ -455,17 +498,17 @@ export default function AboutPage() {
               >
                 <div
                   style={{
-                    width: 72,
-                    height: 72,
+                    width: "clamp(56px,12vw,72px)",
+                    height: "clamp(56px,12vw,72px)",
                     borderRadius: "50%",
                     background: "rgba(201,169,110,0.08)",
                     border: "1px solid rgba(201,169,110,0.25)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    margin: "0 auto 20px",
+                    margin: "0 auto 16px",
                     fontFamily: "'Cormorant Garamond',serif",
-                    fontSize: 24,
+                    fontSize: "clamp(18px,3vw,24px)",
                     fontWeight: 300,
                     color: "#c9a96e",
                   }}
@@ -475,7 +518,7 @@ export default function AboutPage() {
                 <div
                   style={{
                     fontFamily: "'Cormorant Garamond',serif",
-                    fontSize: 20,
+                    fontSize: "clamp(16px,2vw,20px)",
                     fontWeight: 300,
                     color: "#f0e6d0",
                     marginBottom: 8,
@@ -499,7 +542,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* ── CTA ────────────────────────────────────────────────── */}
       <section style={{ padding: "clamp(48px,6vw,96px) var(--page-px)" }}>
         <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
           <div
@@ -536,7 +579,7 @@ export default function AboutPage() {
           <h2
             style={{
               fontFamily: "'Cormorant Garamond',serif",
-              fontSize: "clamp(30px,4vw,52px)",
+              fontSize: "clamp(26px,4vw,52px)",
               fontWeight: 300,
               color: "#f0e6d0",
               lineHeight: 1.12,
@@ -550,10 +593,11 @@ export default function AboutPage() {
           </h2>
           <p
             style={{
-              fontSize: 13,
+              fontSize: "clamp(12px,2vw,13px)",
               color: "rgba(240,230,208,0.4)",
               lineHeight: 1.75,
-              marginBottom: 40,
+              marginBottom: 36,
+              padding: "0 clamp(0px,4vw,20px)",
             }}
           >
             Every piece in our collection has been held to a standard most
@@ -561,6 +605,7 @@ export default function AboutPage() {
             looks like.
           </p>
           <div
+            className="about-cta-btns"
             style={{
               display: "flex",
               gap: 12,
@@ -571,7 +616,7 @@ export default function AboutPage() {
             <button
               onClick={() => navigate("/collections")}
               style={{
-                padding: "16px 40px",
+                padding: "clamp(13px,2vw,16px) clamp(24px,5vw,40px)",
                 background: "#c9a96e",
                 border: "none",
                 color: "#0d0c0b",
@@ -581,21 +626,22 @@ export default function AboutPage() {
                 fontWeight: 500,
                 cursor: "pointer",
                 fontFamily: "'DM Sans',sans-serif",
-                transition: "all 0.3s",
+                transition: "background 0.3s",
+                minHeight: 44,
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#b8954a";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#c9a96e";
-              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#b8954a")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "#c9a96e")
+              }
             >
               Explore the Collection
             </button>
             <button
               onClick={() => navigate("/search")}
               style={{
-                padding: "16px 40px",
+                padding: "clamp(13px,2vw,16px) clamp(24px,5vw,40px)",
                 background: "none",
                 border: "1px solid rgba(201,169,110,0.35)",
                 color: "#c9a96e",
@@ -604,14 +650,15 @@ export default function AboutPage() {
                 textTransform: "uppercase",
                 cursor: "pointer",
                 fontFamily: "'DM Sans',sans-serif",
-                transition: "all 0.3s",
+                transition: "border-color 0.3s",
+                minHeight: 44,
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#c9a96e";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "rgba(201,169,110,0.35)";
-              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.borderColor = "#c9a96e")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.borderColor = "rgba(201,169,110,0.35)")
+              }
             >
               Search Products
             </button>

@@ -31,12 +31,14 @@ export default function ReviewSection({
           <div className="review-section__summary">
             <div className="review-section__avg">{avgRating.toFixed(1)}</div>
             <StarRating rating={avgRating} />
-            <div className="review-section__count">{reviews.length} reviews</div>
+            <div className="review-section__count">
+              {reviews.length} reviews
+            </div>
           </div>
         )}
       </div>
 
-      {/* Write review toggle */}
+      {/* Write review */}
       <div style={{ marginBottom: 40 }}>
         <button
           onClick={() => setReviewForm((f) => ({ ...f, show: !f.show }))}
@@ -132,10 +134,10 @@ export default function ReviewSection({
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div className="review-item__rating-row">
                     <StarRating rating={r.rating} />
                     {isOwn && !isEditing && (
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div className="review-item__actions">
                         <button
                           onClick={() =>
                             setEditForm({
@@ -149,9 +151,7 @@ export default function ReviewSection({
                           Edit
                         </button>
                         <button
-                          onClick={() =>
-                            deleteMutation.mutate(r.id || r._id)
-                          }
+                          onClick={() => deleteMutation.mutate(r.id || r._id)}
                           disabled={deleteMutation.isPending}
                           className="review-item__delete-btn"
                         >
@@ -163,7 +163,10 @@ export default function ReviewSection({
                 </div>
 
                 {isEditing ? (
-                  <div className="review-section__form" style={{ marginTop: 12 }}>
+                  <div
+                    className="review-section__form"
+                    style={{ marginTop: 12 }}
+                  >
                     <div style={{ marginBottom: 12 }}>
                       <div className="review-section__field-label">Rating</div>
                       <StarRating
@@ -177,10 +180,7 @@ export default function ReviewSection({
                     <textarea
                       value={editForm.comment}
                       onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          comment: e.target.value,
-                        }))
+                        setEditForm((f) => ({ ...f, comment: e.target.value }))
                       }
                       rows={3}
                       className="review-section__textarea"
@@ -188,7 +188,11 @@ export default function ReviewSection({
                     <div className="review-section__form-actions">
                       <button
                         onClick={() =>
-                          setEditForm({ reviewId: null, rating: 0, comment: "" })
+                          setEditForm({
+                            reviewId: null,
+                            rating: 0,
+                            comment: "",
+                          })
                         }
                         className="review-item__edit-btn"
                         style={{ padding: "8px 20px" }}

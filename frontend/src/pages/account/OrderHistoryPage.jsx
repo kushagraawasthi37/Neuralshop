@@ -74,9 +74,9 @@ export default function OrderHistoryPage() {
     queryKey: ["orders"],
     queryFn: () =>
       ordersApi.list().then((r) => {
-        const data = r.data.data
-        if (Array.isArray(data)) return data
-        return Array.isArray(data?.orders) ? data.orders : []
+        const data = r.data.data;
+        if (Array.isArray(data)) return data;
+        return Array.isArray(data?.orders) ? data.orders : [];
       }),
   });
 
@@ -95,7 +95,81 @@ export default function OrderHistoryPage() {
 
   return (
     <div style={{ minHeight: "100vh", paddingTop: 100 }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 var(--page-px)" }}>
+      <style>{`
+        .order-card__header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 20px 24px;
+          cursor: pointer;
+          gap: 12px;
+        }
+        .order-card__left {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+          min-width: 0;
+          flex: 1;
+        }
+        .order-card__id {
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          color: #c9a96e;
+          letter-spacing: 0.06em;
+          white-space: nowrap;
+        }
+        .order-card__date {
+          font-size: 11px;
+          color: rgba(240,230,208,0.38);
+          white-space: nowrap;
+        }
+        .order-card__amount {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 20px;
+          color: #f0e6d0;
+          white-space: nowrap;
+        }
+        .order-card__right {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          flex-shrink: 0;
+        }
+        @media (max-width: 639px) {
+          .order-card__header {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 16px 18px;
+            gap: 10px;
+          }
+          .order-card__left {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            width: 100%;
+          }
+          .order-card__id {
+            font-size: 11px;
+          }
+          .order-card__date {
+            font-size: 10px;
+          }
+          .order-card__amount {
+            font-size: 22px;
+          }
+          .order-card__right {
+            width: 100%;
+            justify-content: space-between;
+          }
+        }
+      `}</style>
+      <div
+        style={{
+          maxWidth: 1320,
+          margin: "0 auto",
+          padding: "0 var(--page-px)",
+        }}
+      >
         <div
           style={{
             padding: "clamp(32px,4vw,52px) 0 44px",
@@ -281,7 +355,8 @@ export default function OrderHistoryPage() {
                   style={{
                     background: "#1a1916",
                     border: "1px solid rgba(201,169,110,0.18)",
-                    marginBottom: 2,
+                    borderRadius: 18,
+                    marginBottom: 24,
                     transition: "all 0.4s cubic-bezier(0.23,1,0.32,1)",
                     position: "relative",
                     overflow: "hidden",
@@ -301,58 +376,26 @@ export default function OrderHistoryPage() {
                     }}
                   />
                   <div
+                    className="order-card__header"
                     onClick={() => setExpandedId(isOpen ? null : order.id)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "22px 28px",
-                      cursor: "pointer",
-                    }}
                   >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 24 }}
-                    >
-                      <div
-                        style={{
-                          fontFamily: "'DM Mono',monospace",
-                          fontSize: 12,
-                          color: "#c9a96e",
-                          letterSpacing: "0.06em",
-                        }}
-                      >
+                    <div className="order-card__left">
+                      <div className="order-card__id">
                         {order.id?.slice(0, 16)}...
                       </div>
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: "rgba(240,230,208,0.38)",
-                        }}
-                      >
+                      <div className="order-card__date">
                         {order.createdAt
                           ? new Date(order.createdAt).toLocaleDateString(
                               "en-IN",
-                              {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              },
+                              { day: "numeric", month: "short", year: "numeric" },
                             )
                           : "—"}
                       </div>
-                      <div
-                        style={{
-                          fontFamily: "'Cormorant Garamond',serif",
-                          fontSize: 20,
-                          color: "#f0e6d0",
-                        }}
-                      >
+                      <div className="order-card__amount">
                         {fmt(order.totalAmount || order.total)}
                       </div>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 16 }}
-                    >
+                    <div className="order-card__right">
                       <StatusBadge status={order.status} />
                       <div
                         style={{
@@ -374,8 +417,7 @@ export default function OrderHistoryPage() {
                           strokeWidth="1.5"
                           style={{
                             transform: isOpen ? "rotate(180deg)" : "none",
-                            transition:
-                              "transform 0.4s cubic-bezier(0.23,1,0.32,1)",
+                            transition: "transform 0.4s cubic-bezier(0.23,1,0.32,1)",
                           }}
                         >
                           <polyline points="6 9 12 15 18 9" />
@@ -394,8 +436,9 @@ export default function OrderHistoryPage() {
                   >
                     <div
                       style={{
-                        padding: "0 28px 24px",
+                        padding: "0 24px 24px",
                         borderTop: "1px solid rgba(201,169,110,0.08)",
+                        borderRadius: "0 0 18px 18px",
                       }}
                     >
                       <div

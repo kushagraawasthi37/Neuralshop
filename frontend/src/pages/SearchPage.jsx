@@ -8,12 +8,45 @@ import { useGuestCartStore } from "../store/guestCartStore";
 
 const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
+// ── Client-side sort (matches CollectionPage exactly) ──────────────────────
+function sortProducts(products, sortBy) {
+  if (!sortBy) return products;
+  const arr = [...products];
+  if (sortBy === "price_asc")
+    return arr.sort(
+      (a, b) => (a.offerPrice ?? a.price ?? 0) - (b.offerPrice ?? b.price ?? 0),
+    );
+  if (sortBy === "price_desc")
+    return arr.sort(
+      (a, b) => (b.offerPrice ?? b.price ?? 0) - (a.offerPrice ?? a.price ?? 0),
+    );
+  if (sortBy === "newest")
+    return arr.sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+    );
+  if (sortBy === "rating")
+    return arr.sort(
+      (a, b) => (b.rating ?? b.avgRating ?? 0) - (a.rating ?? a.avgRating ?? 0),
+    );
+  return arr;
+}
+
 const SORT_OPTIONS = [
   { label: "Relevance", value: "" },
   { label: "Price: Low → High", value: "price_asc" },
   { label: "Price: High → Low", value: "price_desc" },
   { label: "Top Rated", value: "rating" },
   { label: "Newest", value: "newest" },
+];
+
+const CATEGORIES = [
+  "All",
+  "Watches",
+  "Apparel",
+  "Bags",
+  "Footwear",
+  "Accessories",
+  "Jewellery",
 ];
 
 function SizePicker({ sizes, onSelect, onClose }) {
@@ -53,7 +86,7 @@ function SizePicker({ sizes, onSelect, onClose }) {
               onSelect(s.size);
             }}
             style={{
-              padding: "5px 10px",
+              padding: "6px 12px",
               border: "1px solid rgba(201,169,110,0.35)",
               background: "none",
               color: "#c9a96e",
@@ -61,6 +94,7 @@ function SizePicker({ sizes, onSelect, onClose }) {
               cursor: "pointer",
               letterSpacing: "0.08em",
               fontFamily: "'DM Sans',sans-serif",
+              minHeight: 36,
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "#c9a96e";
@@ -160,6 +194,9 @@ function ProductCard({ product }) {
         transition: "all 0.4s cubic-bezier(0.23,1,0.32,1)",
         cursor: "pointer",
         position: "relative",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = "rgba(201,169,110,0.42)";
@@ -176,6 +213,7 @@ function ProductCard({ product }) {
           aspectRatio: "3/4",
           background: "#0d0c0b",
           overflow: "hidden",
+          flexShrink: 0,
         }}
       >
         {img ? (
@@ -212,14 +250,22 @@ function ProductCard({ product }) {
           </div>
         )}
       </div>
-      <div style={{ padding: "14px 14px 18px", position: "relative" }}>
+      <div
+        style={{
+          padding: "clamp(10px,2vw,14px)",
+          position: "relative",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <div
           style={{
             fontSize: 9,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
             color: "rgba(201,169,110,0.45)",
-            marginBottom: 5,
+            marginBottom: 4,
           }}
         >
           {product.category || ""}
@@ -227,10 +273,10 @@ function ProductCard({ product }) {
         <div
           style={{
             fontFamily: "'Cormorant Garamond',serif",
-            fontSize: 15,
+            fontSize: "clamp(13px,2vw,15px)",
             fontWeight: 300,
             color: "#f0e6d0",
-            marginBottom: 6,
+            marginBottom: 5,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -243,7 +289,7 @@ function ProductCard({ product }) {
             display: "flex",
             alignItems: "center",
             gap: 4,
-            marginBottom: 8,
+            marginBottom: 7,
           }}
         >
           {[1, 2, 3, 4, 5].map((s) => (
@@ -271,13 +317,13 @@ function ProductCard({ product }) {
             display: "flex",
             alignItems: "baseline",
             gap: 8,
-            marginBottom: 12,
+            marginBottom: 10,
           }}
         >
           <span
             style={{
               fontFamily: "'Cormorant Garamond',serif",
-              fontSize: 18,
+              fontSize: "clamp(16px,3vw,18px)",
               fontWeight: 300,
               color: "#c9a96e",
             }}
@@ -285,7 +331,7 @@ function ProductCard({ product }) {
             {fmt(price)}
           </span>
         </div>
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative", marginTop: "auto" }}>
           {showSizePicker && (
             <SizePicker
               sizes={product.sizes}
@@ -308,6 +354,7 @@ function ProductCard({ product }) {
               cursor: "pointer",
               transition: "all 0.25s ease",
               fontFamily: "'DM Sans',sans-serif",
+              minHeight: 38,
             }}
             onMouseEnter={(e) => {
               if (!added) {
@@ -380,26 +427,29 @@ export default function SearchPage() {
   const inputRef = useRef(null);
 
   const [inputVal, setInputVal] = useState(searchParams.get("q") || "");
+
+  // ── sortBy is local state only — NOT sent to the API ──────────────────────
   const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "");
   const [priceMax, setPriceMax] = useState(
     Number(searchParams.get("priceMax") || 0),
   );
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(Number(searchParams.get("page") || 1));
 
   const q = searchParams.get("q") || "";
   const limit = 16;
 
+  // ── sortBy intentionally excluded from queryParams (client-side only) ─────
   const queryParams = {
     search: q,
-    ...(sortBy ? { sort: sortBy } : {}),
     ...(category ? { category } : {}),
     ...(priceMax > 0 ? { priceMax } : {}),
     skip: (page - 1) * limit,
     limit,
   };
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
+    // sortBy excluded from queryKey → changing sort never triggers a refetch
     queryKey: ["search", queryParams],
     queryFn: () =>
       productApi.list(queryParams).then((r) => r.data.data || r.data),
@@ -408,11 +458,15 @@ export default function SearchPage() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const products = Array.isArray(data)
+  const rawProducts = Array.isArray(data)
     ? data
     : data?.products || data?.items || [];
-  const total = data?.total || data?.count || products.length;
+
+  const total = data?.total || data?.count || rawProducts.length;
   const totalPages = Math.ceil(total / limit);
+
+  // ── Apply client-side sort (same logic as CollectionPage) ─────────────────
+  const products = sortProducts(rawProducts, sortBy);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -420,8 +474,9 @@ export default function SearchPage() {
     setPage(1);
     setSearchParams({
       q: inputVal.trim(),
-      ...(sortBy ? { sortBy } : {}),
+      // sortBy intentionally NOT included in URL params that trigger API call
       ...(category ? { category } : {}),
+      ...(priceMax > 0 ? { priceMax } : {}),
     });
   };
 
@@ -436,9 +491,27 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    setInputVal(searchParams.get("q") || "");
+    setInputVal(q);
     setPage(1);
-  }, [searchParams.get("q")]);
+  }, [q]);
+
+  useEffect(() => {
+    if (!q) return;
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set("q", q);
+      // sortBy kept in URL for shareability but doesn't affect API call
+      if (sortBy) next.set("sortBy", sortBy);
+      else next.delete("sortBy");
+      if (category) next.set("category", category);
+      else next.delete("category");
+      if (priceMax > 0) next.set("priceMax", String(priceMax));
+      else next.delete("priceMax");
+      if (page > 1) next.set("page", String(page));
+      else next.delete("page");
+      return next;
+    });
+  }, [q, sortBy, category, priceMax, page, setSearchParams]);
 
   const activeFilterChips = [
     ...(category ? [{ label: category, key: "category" }] : []),
@@ -462,13 +535,13 @@ export default function SearchPage() {
   ];
 
   return (
-    <div className="listing-page">
+    <div style={{ minHeight: "100vh", paddingTop: "var(--nav-h, 80px)" }}>
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
 
       {/* Search Hero */}
       <div
         style={{
-          padding: "clamp(32px,5vw,60px) var(--page-px) clamp(24px,4vw,48px)",
+          padding: "clamp(28px,5vw,60px) var(--page-px) clamp(20px,4vw,48px)",
           borderBottom: "1px solid rgba(201,169,110,0.08)",
           background: "rgba(201,169,110,0.01)",
         }}
@@ -494,16 +567,18 @@ export default function SearchPage() {
               placeholder="Search the collection…"
               style={{
                 width: "100%",
-                padding: "20px 60px 20px 24px",
+                padding:
+                  "clamp(14px,3vw,20px) 56px clamp(14px,3vw,20px) clamp(16px,3vw,24px)",
                 background: "rgba(255,255,255,0.02)",
                 border: "1px solid rgba(201,169,110,0.2)",
                 color: "#f0e6d0",
-                fontSize: 16,
+                fontSize: "clamp(14px,2.5vw,16px)",
                 fontFamily: "'Cormorant Garamond',serif",
                 fontWeight: 300,
                 outline: "none",
                 letterSpacing: "0.02em",
                 transition: "border-color 0.3s ease",
+                boxSizing: "border-box",
               }}
               onFocus={(e) =>
                 (e.target.style.borderColor = "rgba(201,169,110,0.5)")
@@ -519,7 +594,7 @@ export default function SearchPage() {
                 right: 0,
                 top: 0,
                 bottom: 0,
-                width: 56,
+                width: 52,
                 background: "rgba(201,169,110,0.08)",
                 border: "1px solid rgba(201,169,110,0.2)",
                 borderLeft: "none",
@@ -553,7 +628,7 @@ export default function SearchPage() {
           {q && (
             <div
               style={{
-                marginTop: 14,
+                marginTop: 12,
                 textAlign: "center",
                 fontSize: 13,
                 color: "rgba(240,230,208,0.38)",
@@ -578,14 +653,59 @@ export default function SearchPage() {
       </div>
 
       {q.length > 0 && (
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 var(--page-px)" }}>
+        <div
+          style={{
+            maxWidth: 1400,
+            margin: "0 auto",
+            padding: "0 var(--page-px)",
+          }}
+        >
+          {/* Category filter pills */}
+          <div
+            style={{
+              display: "flex",
+              gap: 6,
+              flexWrap: "wrap",
+              padding: "clamp(12px,2vw,20px) 0 0",
+              overflowX: "auto",
+            }}
+          >
+            {CATEGORIES.map((cat) => {
+              const isActive = cat === "All" ? !category : category === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setCategory(cat === "All" ? "" : cat);
+                    setPage(1);
+                  }}
+                  style={{
+                    padding: "7px 16px",
+                    border: `1px solid ${isActive ? "rgba(201,169,110,0.4)" : "rgba(201,169,110,0.15)"}`,
+                    background: isActive ? "rgba(201,169,110,0.1)" : "none",
+                    color: isActive ? "#c9a96e" : "rgba(240,230,208,0.45)",
+                    fontSize: 11,
+                    letterSpacing: "0.08em",
+                    cursor: "pointer",
+                    fontFamily: "'DM Sans',sans-serif",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.2s",
+                    minHeight: 36,
+                  }}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Controls bar */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              padding: "24px 0",
+              padding: "clamp(14px,3vw,24px) 0",
               borderBottom: "1px solid rgba(201,169,110,0.06)",
               flexWrap: "wrap",
               gap: 12,
@@ -622,6 +742,7 @@ export default function SearchPage() {
                       color: "rgba(201,169,110,0.5)",
                       fontSize: 14,
                       lineHeight: 1,
+                      padding: 0,
                     }}
                   >
                     ×
@@ -630,10 +751,28 @@ export default function SearchPage() {
               ))}
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <label
+                style={{
+                  fontSize: 10,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "rgba(240,230,208,0.35)",
+                }}
+              >
+                Sort
+              </label>
               <select
                 value={sortBy}
                 onChange={(e) => {
+                  // Only updates local state — no API refetch triggered
                   setSortBy(e.target.value);
                   setPage(1);
                 }}
@@ -646,6 +785,7 @@ export default function SearchPage() {
                   outline: "none",
                   cursor: "pointer",
                   fontFamily: "'DM Sans',sans-serif",
+                  minHeight: 40,
                 }}
               >
                 {SORT_OPTIONS.map((o) => (
@@ -658,7 +798,7 @@ export default function SearchPage() {
           </div>
 
           {/* Results */}
-          <div style={{ paddingTop: 32 }}>
+          <div style={{ paddingTop: "clamp(20px,4vw,32px)" }}>
             {isLoading ? (
               <div className="listing-grid">
                 {Array.from({ length: 8 }).map((_, i) => (
@@ -666,11 +806,16 @@ export default function SearchPage() {
                 ))}
               </div>
             ) : products.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "80px 20px" }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "clamp(48px,8vw,80px) 20px",
+                }}
+              >
                 <div
                   style={{
                     fontFamily: "'Cormorant Garamond',serif",
-                    fontSize: 52,
+                    fontSize: "clamp(36px,8vw,52px)",
                     fontWeight: 300,
                     color: "rgba(201,169,110,0.3)",
                     marginBottom: 16,
@@ -698,7 +843,12 @@ export default function SearchPage() {
                   Try a different keyword or browse the full collection.
                 </p>
                 <div
-                  style={{ display: "flex", gap: 12, justifyContent: "center" }}
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    justifyContent: "center",
+                    flexWrap: "wrap",
+                  }}
                 >
                   <button
                     onClick={() => {
@@ -715,6 +865,7 @@ export default function SearchPage() {
                       textTransform: "uppercase",
                       cursor: "pointer",
                       fontFamily: "'DM Sans',sans-serif",
+                      minHeight: 44,
                     }}
                   >
                     Clear Search
@@ -731,6 +882,7 @@ export default function SearchPage() {
                       textTransform: "uppercase",
                       cursor: "pointer",
                       fontFamily: "'DM Sans',sans-serif",
+                      minHeight: 44,
                     }}
                   >
                     Browse All
@@ -739,7 +891,7 @@ export default function SearchPage() {
               </div>
             ) : (
               <>
-                <div className="listing-grid" style={{ marginBottom: 48 }}>
+                <div className="listing-grid" style={{ marginBottom: 40 }}>
                   {products.map((p, i) => (
                     <ProductCard key={p.id || p._id || i} product={p} />
                   ))}
@@ -752,19 +904,21 @@ export default function SearchPage() {
                       justifyContent: "center",
                       gap: 4,
                       marginBottom: 60,
+                      flexWrap: "wrap",
                     }}
                   >
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                       style={{
-                        padding: "10px 18px",
+                        padding: "10px 16px",
                         background: "none",
                         border: "1px solid rgba(201,169,110,0.2)",
                         color: "rgba(240,230,208,0.45)",
                         cursor: page === 1 ? "default" : "pointer",
                         fontSize: 11,
                         opacity: page === 1 ? 0.4 : 1,
+                        minHeight: 40,
                       }}
                     >
                       ← Prev
@@ -803,13 +957,14 @@ export default function SearchPage() {
                       }
                       disabled={page === totalPages}
                       style={{
-                        padding: "10px 18px",
+                        padding: "10px 16px",
                         background: "none",
                         border: "1px solid rgba(201,169,110,0.2)",
                         color: "rgba(240,230,208,0.45)",
                         cursor: page === totalPages ? "default" : "pointer",
                         fontSize: 11,
                         opacity: page === totalPages ? 0.4 : 1,
+                        minHeight: 40,
                       }}
                     >
                       Next →
@@ -828,14 +983,14 @@ export default function SearchPage() {
           style={{
             maxWidth: 1400,
             margin: "0 auto",
-            padding: "80px var(--page-px)",
+            padding: "clamp(48px,8vw,80px) var(--page-px)",
             textAlign: "center",
           }}
         >
           <div
             style={{
               fontFamily: "'Cormorant Garamond',serif",
-              fontSize: 28,
+              fontSize: "clamp(20px,4vw,28px)",
               fontWeight: 300,
               color: "rgba(240,230,208,0.3)",
               marginBottom: 24,
@@ -846,7 +1001,7 @@ export default function SearchPage() {
           <div
             style={{
               display: "flex",
-              gap: 12,
+              gap: 10,
               justifyContent: "center",
               flexWrap: "wrap",
             }}
@@ -857,7 +1012,7 @@ export default function SearchPage() {
                   key={cat}
                   onClick={() => navigate(`/products?category=${cat}`)}
                   style={{
-                    padding: "10px 20px",
+                    padding: "11px 20px",
                     background: "none",
                     border: "1px solid rgba(201,169,110,0.18)",
                     color: "rgba(240,230,208,0.45)",
@@ -867,6 +1022,7 @@ export default function SearchPage() {
                     cursor: "pointer",
                     transition: "all 0.25s ease",
                     fontFamily: "'DM Sans',sans-serif",
+                    minHeight: 44,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = "rgba(201,169,110,0.4)";

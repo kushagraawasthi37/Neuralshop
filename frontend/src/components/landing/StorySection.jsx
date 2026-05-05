@@ -22,8 +22,9 @@ export default function StorySection() {
       }}
     >
       <div className="story-two-col">
-        {/* Visual: framed stats */}
+        {/* ── Visual: framed stats ── */}
         <div ref={leftRef} className="reveal story-visual">
+          {/* Border frame */}
           <div
             style={{
               position: "absolute",
@@ -31,8 +32,9 @@ export default function StorySection() {
               border: "1px solid rgba(201,169,110,0.1)",
             }}
           >
-            {/* corner accents */}
+            {/* Corner accents — sized with CSS classes for responsive control */}
             <div
+              className="story-corner-tl"
               style={{
                 position: "absolute",
                 top: -20,
@@ -44,6 +46,7 @@ export default function StorySection() {
               }}
             />
             <div
+              className="story-corner-br"
               style={{
                 position: "absolute",
                 bottom: -20,
@@ -55,6 +58,8 @@ export default function StorySection() {
               }}
             />
           </div>
+
+          {/* Stats */}
           <div
             style={{
               position: "absolute",
@@ -64,16 +69,17 @@ export default function StorySection() {
               justifyContent: "center",
               alignItems: "center",
               gap: 0,
-              padding: 40,
+              padding: "clamp(20px, 4vw, 40px)",
             }}
           >
             {stats.map((s, i) => (
               <div
                 key={s.label}
+                className="story-stat-pad"
                 style={{
                   textAlign: "center",
                   width: "100%",
-                  padding: "24px 0",
+                  padding: "clamp(14px, 2.5vw, 24px) 0",
                   borderBottom:
                     i < stats.length - 1
                       ? "1px solid rgba(201,169,110,0.08)"
@@ -81,9 +87,10 @@ export default function StorySection() {
                 }}
               >
                 <div
+                  className="story-stat-number"
                   style={{
                     fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: 52,
+                    fontSize: "clamp(32px, 5vw, 52px)",
                     fontWeight: 300,
                     color: "#c9a96e",
                     lineHeight: 1,
@@ -107,8 +114,9 @@ export default function StorySection() {
           </div>
         </div>
 
-        {/* Text */}
+        {/* ── Text ── */}
         <div ref={rightRef} className="reveal">
+          {/* Eyebrow */}
           <div
             style={{
               display: "flex",
@@ -117,7 +125,14 @@ export default function StorySection() {
               marginBottom: 20,
             }}
           >
-            <div style={{ width: 30, height: 1, background: "#c9a96e" }} />
+            <div
+              style={{
+                width: 30,
+                height: 1,
+                background: "#c9a96e",
+                flexShrink: 0,
+              }}
+            />
             <span
               style={{
                 fontSize: 10,
@@ -129,10 +144,12 @@ export default function StorySection() {
               Our Story
             </span>
           </div>
+
+          {/* Heading */}
           <h2
             style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "clamp(36px, 4vw, 56px)",
+              fontSize: "clamp(28px, 4vw, 56px)",
               fontWeight: 300,
               lineHeight: 1.1,
               color: "#f0e6d0",
@@ -146,9 +163,11 @@ export default function StorySection() {
               intelligence
             </em>
           </h2>
+
+          {/* Body */}
           <p
             style={{
-              fontSize: 15,
+              fontSize: "clamp(13px, 1.5vw, 15px)",
               lineHeight: 1.8,
               color: "rgba(240,230,208,0.5)",
               fontWeight: 300,
@@ -162,17 +181,18 @@ export default function StorySection() {
           </p>
           <p
             style={{
-              fontSize: 15,
+              fontSize: "clamp(13px, 1.5vw, 15px)",
               lineHeight: 1.8,
               color: "rgba(240,230,208,0.5)",
               fontWeight: 300,
-              marginBottom: 40,
+              marginBottom: "clamp(28px, 4vw, 40px)",
             }}
           >
             Every product listed has passed through our neural verification
             layer — verified for authenticity, quality, and that ineffable
             quality that separates the merely good from the genuinely rare.
           </p>
+
           <Link to="/about" className="btn-gold-flip">
             <span>Discover Our Vision</span>
             <svg

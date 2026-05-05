@@ -82,11 +82,14 @@ export default function ProductInfo({
 
       {/* Quantity */}
       <div className="product-info__section">
-        <div className="product-info__label" style={{ marginBottom: 12 }}>Quantity</div>
+        <div className="product-info__label" style={{ marginBottom: 12 }}>
+          Quantity
+        </div>
         <div className="product-info__qty">
           <button
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
             className="product-info__qty-btn"
+            aria-label="Decrease quantity"
           >
             −
           </button>
@@ -94,13 +97,14 @@ export default function ProductInfo({
           <button
             onClick={() => setQuantity((q) => Math.min(10, q + 1))}
             className="product-info__qty-btn"
+            aria-label="Increase quantity"
           >
             +
           </button>
         </div>
       </div>
 
-      {/* CTAs */}
+      {/* CTAs — desktop inline, mobile sticky */}
       <div className="product-info__ctas">
         <button
           onClick={handleAdd}
@@ -112,10 +116,32 @@ export default function ProductInfo({
         <button
           onClick={onToggleWishlist}
           className={`product-info__wish-btn${wishlistStatus ? " active" : ""}`}
+          aria-label={
+            wishlistStatus ? "Remove from wishlist" : "Add to wishlist"
+          }
         >
           <span style={{ fontSize: 20, lineHeight: 1 }}>
             {wishlistStatus ? "♥" : "♡"}
           </span>
+        </button>
+      </div>
+
+      {/* Mobile sticky CTA bar */}
+      <div className="product-info__sticky-cta">
+        <div className="product-info__sticky-price">{fmt(price)}</div>
+        <button
+          onClick={handleAdd}
+          disabled={addingCart}
+          className="product-info__sticky-btn"
+        >
+          {addingCart ? "Adding…" : "Add to Cart"}
+        </button>
+        <button
+          onClick={onToggleWishlist}
+          className={`product-info__sticky-wish${wishlistStatus ? " active" : ""}`}
+          aria-label="Wishlist"
+        >
+          {wishlistStatus ? "♥" : "♡"}
         </button>
       </div>
 

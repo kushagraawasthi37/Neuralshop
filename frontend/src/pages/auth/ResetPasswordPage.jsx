@@ -82,16 +82,18 @@ export default function ResetPasswordPage() {
         alignItems: "center",
         justifyContent: "center",
         background: "#0e0d0b",
-        padding: "120px 40px 80px",
+        padding:
+          "clamp(90px,12vw,120px) clamp(16px,6vw,40px) clamp(48px,8vw,80px)",
         position: "relative",
         overflow: "hidden",
       }}
     >
+      {/* Ambient glow */}
       <div
         style={{
           position: "absolute",
-          width: 600,
-          height: 600,
+          width: "min(600px,90vw)",
+          height: "min(600px,90vw)",
           borderRadius: "50%",
           filter: "blur(140px)",
           background: "rgba(201,169,110,0.05)",
@@ -101,6 +103,7 @@ export default function ResetPasswordPage() {
           pointerEvents: "none",
         }}
       />
+      {/* Grid */}
       <div
         style={{
           position: "absolute",
@@ -120,7 +123,7 @@ export default function ResetPasswordPage() {
           zIndex: 2,
         }}
       >
-        <div style={{ marginBottom: 40 }}>
+        <div style={{ marginBottom: 36 }}>
           <TextLink
             onClick={() => navigate("/forgot-password")}
             style={{
@@ -155,6 +158,8 @@ export default function ResetPasswordPage() {
               fontSize: 12,
               color: "rgba(240,230,208,0.58)",
               marginBottom: 28,
+              wordBreak: "break-all",
+              flexWrap: "wrap",
             }}
           >
             <svg
@@ -198,6 +203,7 @@ export default function ResetPasswordPage() {
             fontSize: 12,
             color: "rgba(240,230,208,0.38)",
             marginBottom: 28,
+            marginTop: 16,
           }}
         >
           {resendTimer > 0 ? (
@@ -226,6 +232,8 @@ export default function ResetPasswordPage() {
                 fontFamily: "'DM Sans',sans-serif",
                 letterSpacing: "0.06em",
                 opacity: resending ? 0.5 : 1,
+                minHeight: 44,
+                padding: "8px 0",
               }}
             >
               {resending ? "Sending…" : "Resend code →"}
@@ -236,8 +244,8 @@ export default function ResetPasswordPage() {
         <FormError message={serverError} />
 
         <form
-          onSubmit={(event) => {
-            event.preventDefault();
+          onSubmit={(e) => {
+            e.preventDefault();
             onSubmit();
           }}
           noValidate

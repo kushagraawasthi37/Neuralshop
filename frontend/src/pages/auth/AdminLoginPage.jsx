@@ -86,7 +86,6 @@ export default function AdminLoginPage() {
           error={errors.email?.message}
           {...register("email")}
         />
-
         <div>
           <AuthField
             label="Password"

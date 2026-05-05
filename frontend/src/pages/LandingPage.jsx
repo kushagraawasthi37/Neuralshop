@@ -13,8 +13,17 @@ const TrendingSection = lazy(
 );
 const Newsletter = lazy(() => import("../components/landing/Newsletter"));
 
-// Minimal skeleton (no heavy loader)
-const SectionSkeleton = () => <div style={{ height: "300px", opacity: 0.3 }} />;
+// Minimal skeleton — no heavy loader, respects reduced motion
+const SectionSkeleton = () => (
+  <div
+    style={{
+      height: "clamp(200px,30vw,300px)",
+      opacity: 0.15,
+      background:
+        "linear-gradient(180deg, transparent, rgba(201,169,110,0.03), transparent)",
+    }}
+  />
+);
 
 export default function LandingPage() {
   return (

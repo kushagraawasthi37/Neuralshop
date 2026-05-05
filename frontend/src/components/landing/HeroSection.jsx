@@ -25,28 +25,30 @@ function CountUp({ target, suffix = "" }) {
 export default function HeroSection() {
   const stageRef = useRef(null);
 
+  // 3D tilt — only on pointer devices
   useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (!mq.matches) return;
     const onMouseMove = (e) => {
       if (!stageRef.current) return;
       const rx = (e.clientY / window.innerHeight - 0.5) * -12;
       const ry = (e.clientX / window.innerWidth - 0.5) * 12;
-      stageRef.current.style.transform = `rotateX(${8 + rx}deg) rotateY(${-8 + ry}deg)  translateY(0)`;
+      stageRef.current.style.transform = `rotateX(${8 + rx}deg) rotateY(${-8 + ry}deg) translateY(0)`;
     };
     window.addEventListener("mousemove", onMouseMove);
     return () => window.removeEventListener("mousemove", onMouseMove);
   }, []);
 
+  // Particles
   useEffect(() => {
     const container = document.getElementById("particles-container");
     if (!container) return;
-
-    container.innerHTML = ""; // ✅ cleanup old particles
-
-    for (let i = 0; i < 35; i++) {
-      // increase density
+    container.innerHTML = "";
+    // Fewer particles on mobile for performance
+    const count = window.innerWidth < 640 ? 15 : 35;
+    for (let i = 0; i < count; i++) {
       const p = document.createElement("div");
       const size = Math.random() * 2 + 0.5;
-
       p.className = "particle";
       p.style.left = Math.random() * 100 + "%";
       p.style.bottom = "-10px";
@@ -54,7 +56,6 @@ export default function HeroSection() {
       p.style.height = size + "px";
       p.style.animationDuration = 6 + Math.random() * 10 + "s";
       p.style.animationDelay = Math.random() * 5 + "s";
-
       container.appendChild(p);
     }
   }, []);
@@ -80,13 +81,14 @@ export default function HeroSection() {
           overflow: "hidden",
         }}
       />
+
       {/* Ambient glows */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         <div
           style={{
             position: "absolute",
-            width: 700,
-            height: 700,
+            width: "min(700px, 90vw)",
+            height: "min(700px, 90vw)",
             borderRadius: "50%",
             background: "#c9a96e",
             filter: "blur(120px)",
@@ -99,8 +101,8 @@ export default function HeroSection() {
         <div
           style={{
             position: "absolute",
-            width: 700,
-            height: 700,
+            width: "min(700px, 90vw)",
+            height: "min(700px, 90vw)",
             borderRadius: "50%",
             background: "#4a5c47",
             filter: "blur(120px)",
@@ -113,8 +115,8 @@ export default function HeroSection() {
         <div
           style={{
             position: "absolute",
-            width: 400,
-            height: 400,
+            width: "min(400px, 60vw)",
+            height: "min(400px, 60vw)",
             borderRadius: "50%",
             background: "#8b6340",
             filter: "blur(80px)",
@@ -137,6 +139,7 @@ export default function HeroSection() {
         />
       </div>
 
+      {/* Noise */}
       <div
         style={{
           position: "absolute",
@@ -148,23 +151,28 @@ export default function HeroSection() {
         }}
       />
 
+      {/* Content grid */}
       <div
+        className="hero-content-grid"
         style={{
           position: "relative",
           zIndex: 10,
           maxWidth: 1400,
           margin: "0 auto",
-          padding: "clamp(60px,7vw,100px) var(--page-px) 0",
+          padding: "clamp(80px,10vw,120px) var(--page-px) clamp(48px,6vw,80px)",
           width: "100%",
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,340px),1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
           alignItems: "center",
-          gap: "clamp(32px,5vw,80px)",
+          gap: "clamp(32px, 5vw, 80px)",
         }}
       >
-        {/* Left: Copy */}
+        {/* ── LEFT: Copy ── */}
         <div>
+          {/* Eyebrow */}
           <div
+            className="hero-eyebrow-row"
             style={{
               display: "flex",
               alignItems: "center",
@@ -174,7 +182,14 @@ export default function HeroSection() {
               animation: "fadeUp 1s ease 0.3s forwards",
             }}
           >
-            <div style={{ width: 40, height: 1, background: "#c9a96e" }} />
+            <div
+              style={{
+                width: 40,
+                height: 1,
+                background: "#c9a96e",
+                flexShrink: 0,
+              }}
+            />
             <span
               style={{
                 fontSize: 11,
@@ -182,16 +197,18 @@ export default function HeroSection() {
                 textTransform: "uppercase",
                 color: "#c9a96e",
                 fontWeight: 400,
+                lineHeight: 1.4,
               }}
             >
               AI-Curated Commerce · 2026 Collection
             </span>
           </div>
 
+          {/* Headline */}
           <h1
             style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "clamp(52px, 6vw, 88px)",
+              fontSize: "clamp(44px, 6vw, 88px)",
               fontWeight: 300,
               lineHeight: 1.05,
               letterSpacing: "-0.01em",
@@ -211,10 +228,11 @@ export default function HeroSection() {
             <span style={{ display: "block" }}>Redefined</span>
           </h1>
 
+          {/* Sub */}
           <p
             style={{
               marginTop: 28,
-              fontSize: 15,
+              fontSize: "clamp(13px, 1.5vw, 15px)",
               lineHeight: 1.7,
               color: "rgba(240,230,208,0.5)",
               fontWeight: 300,
@@ -228,16 +246,10 @@ export default function HeroSection() {
             refined by yours.
           </p>
 
+          {/* CTAs */}
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "clamp(16px,3vw,28px)",
-              marginTop: "clamp(28px,4vw,52px)",
-              opacity: 0,
-              animation: "fadeUp 1s ease 1s forwards",
-              flexWrap: "wrap",
-            }}
+            className="hero-cta-row"
+            style={{ opacity: 0, animation: "fadeUp 1s ease 1s forwards" }}
           >
             <Link to="/collections" className="btn-primary-hero">
               <span>Explore Collection</span>
@@ -269,17 +281,10 @@ export default function HeroSection() {
             </Link>
           </div>
 
+          {/* Stats */}
           <div
-            style={{
-              display: "flex",
-              gap: "clamp(20px,4vw,40px)",
-              marginTop: "clamp(32px,5vw,64px)",
-              paddingTop: "clamp(20px,3vw,40px)",
-              borderTop: "1px solid rgba(201,169,110,0.12)",
-              opacity: 0,
-              animation: "fadeUp 1s ease 1.2s forwards",
-              flexWrap: "wrap",
-            }}
+            className="hero-stats-row"
+            style={{ opacity: 0, animation: "fadeUp 1s ease 1.2s forwards" }}
           >
             {[
               { target: "12400", label: "Curated Items" },
@@ -290,7 +295,7 @@ export default function HeroSection() {
                 <div
                   style={{
                     fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: "clamp(24px,3vw,36px)",
+                    fontSize: "clamp(22px, 3vw, 36px)",
                     fontWeight: 300,
                     color: "#c9a96e",
                     lineHeight: 1,
@@ -314,7 +319,7 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Right: 3D Product Stage — hidden on mobile via .hero-visual-wrap */}
+        {/* ── RIGHT: 3D Stage — hidden on mobile via .hero-visual-wrap ── */}
         <div
           className="hero-visual-wrap"
           style={{
@@ -335,6 +340,7 @@ export default function HeroSection() {
               transition: "transform 0.3s ease",
             }}
           >
+            {/* Shadow disc */}
             <div
               style={{
                 position: "absolute",
@@ -508,7 +514,7 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll hint */}
       <div
         className="hero-scroll-hint"
         style={{
@@ -572,31 +578,45 @@ export default function HeroSection() {
           animation: lineGrow 1.2s ease 1.6s forwards;
         }
         @keyframes gridDrift {
-          0% { transform: translateY(0); }
+          0%   { transform: translateY(0); }
           100% { transform: translateY(80px); }
         }
         @keyframes stageFloat {
           0%, 100% { transform: rotateX(8deg) rotateY(-8deg) translateY(0); }
-          50% { transform: rotateX(4deg) rotateY(4deg) translateY(-16px); }
-        }
-        @keyframes dotRise {
-          0% { transform: translateY(0); opacity: 0; }
-          10% { opacity: 1; }
-          50% { transform: translateY(-120px); opacity: 1; }
-          100% { transform: translateY(-240px); opacity: 0; }
+          50%       { transform: rotateX(4deg) rotateY(4deg) translateY(-16px); }
         }
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
+          to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes fadeIn {
           from { opacity: 0; }
-          to { opacity: 1; }
+          to   { opacity: 1; }
         }
         @keyframes scrollDown {
-          0% { transform: translateY(-100%); }
+          0%   { transform: translateY(-100%); }
           100% { transform: translateY(300%); }
         }
+
+        /* ── Hero CTA row — responsive ── */
+        .hero-cta-row {
+          display: flex;
+          align-items: center;
+          gap: clamp(16px, 3vw, 28px);
+          margin-top: clamp(28px, 4vw, 52px);
+          flex-wrap: wrap;
+        }
+        /* ── Hero stats row — responsive ── */
+        .hero-stats-row {
+          display: flex;
+          gap: clamp(20px, 4vw, 40px);
+          margin-top: clamp(32px, 5vw, 64px);
+          padding-top: clamp(20px, 3vw, 40px);
+          border-top: 1px solid rgba(201,169,110,0.12);
+          flex-wrap: wrap;
+        }
+
+        /* ── Buttons ── */
         .btn-primary-hero {
           display: inline-flex; align-items: center; gap: 12px;
           padding: 16px 36px; background: #c9a96e;
@@ -604,26 +624,35 @@ export default function HeroSection() {
           text-transform: uppercase; font-weight: 500;
           border: none; cursor: pointer; position: relative; overflow: hidden;
           transition: all 0.4s ease; text-decoration: none;
+          min-height: 48px;
         }
         .btn-primary-hero::before {
           content: ''; position: absolute; inset: 0;
           background: #f0e6d0; transform: scaleX(0); transform-origin: right;
           transition: transform 0.4s ease;
         }
-        .btn-primary-hero:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 30px rgba(201,169,110,0.25);
+        @media (hover: hover) {
+          .btn-primary-hero:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(201,169,110,0.25);
+          }
+          .btn-primary-hero:hover::before { transform: scaleX(1); transform-origin: left; }
         }
-        .btn-primary-hero:hover::before { transform: scaleX(1); transform-origin: left; }
-        .btn-primary-hero span, .btn-primary-hero svg { position: relative; z-index: 1; }
+        .btn-primary-hero span,
+        .btn-primary-hero svg { position: relative; z-index: 1; }
+
         .btn-ghost-hero {
           display: inline-flex; align-items: center; gap: 10px;
           padding: 16px 0; color: rgba(240,230,208,0.6); font-size: 12px;
           letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
           text-decoration: none; border-bottom: 1px solid rgba(201,169,110,0.2);
-          transition: all 0.3s; background: none;
+          transition: all 0.3s; background: none; min-height: 48px;
         }
-        .btn-ghost-hero:hover { color: #c9a96e; border-color: #c9a96e; }
+        @media (hover: hover) {
+          .btn-ghost-hero:hover { color: #c9a96e; border-color: #c9a96e; }
+        }
+
+        /* ── 3D Cards ── */
         .product-card-3d {
           position: absolute;
           background: linear-gradient(135deg, rgba(37,35,32,0.95) 0%, rgba(26,25,22,0.95) 100%);
@@ -638,8 +667,7 @@ export default function HeroSection() {
         }
         .product-card-3d::before {
           content: '';
-          position: absolute;
-          inset: 0;
+          position: absolute; inset: 0;
           background: linear-gradient(135deg, rgba(201,169,110,0.06) 0%, transparent 50%);
           pointer-events: none;
         }
@@ -647,17 +675,18 @@ export default function HeroSection() {
           background: linear-gradient(135deg, rgba(13,12,11,0.95) 0%, rgba(20,18,15,0.95) 100%);
           border-color: rgba(255,255,255,0.08);
         }
-        .product-card-3d:hover {
-          border-color: rgba(201,169,110,0.4);
-          transform: translateY(-8px) scale(1.02) !important;
-          box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 40px rgba(201,169,110,0.08);
+        @media (hover: hover) {
+          .product-card-3d:hover {
+            border-color: rgba(201,169,110,0.4);
+            transform: translateY(-8px) scale(1.02) !important;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 40px rgba(201,169,110,0.08);
+          }
         }
         .card-img-placeholder {
           width: 100%;
           background: linear-gradient(135deg, rgba(201,169,110,0.1) 0%, rgba(74,92,71,0.1) 100%);
           display: flex; align-items: center; justify-content: center;
-          position: relative; overflow: hidden;
-          margin-bottom: 16px;
+          position: relative; overflow: hidden; margin-bottom: 16px;
         }
         .card-img-placeholder::after {
           content: '';
@@ -667,24 +696,35 @@ export default function HeroSection() {
           animation: shimmer 3s ease-in-out infinite;
         }
         @keyframes shimmer {
-          0% { transform: translateX(-50%); }
+          0%   { transform: translateX(-50%); }
           100% { transform: translateX(50%); }
         }
-
         .particle {
-          position: absolute;
-          border-radius: 50%;
-          background: #c9a96e;
-          opacity: 0.4;
+          position: absolute; border-radius: 50%;
+          background: #c9a96e; opacity: 0.4;
           animation: particleFloat linear infinite;
         }
-
         @keyframes particleFloat {
-          0% { transform: translateY(0); opacity: 0; }
-          10% { opacity: 0.6; }
-          90% { opacity: 0.6; }
+          0%   { transform: translateY(0); opacity: 0; }
+          10%  { opacity: 0.6; }
+          90%  { opacity: 0.6; }
           100% { transform: translateY(-500px); opacity: 0; }
+        }
+
+        /* ── Mobile overrides ── */
+        @media (max-width: 639px) {
+          .btn-primary-hero {
+            width: 100%; justify-content: center;
+            padding: 15px 20px; font-size: 11px;
           }
+          .btn-ghost-hero {
+            padding: 12px 0; font-size: 11px;
+          }
+          .hero-eyebrow-row { margin-bottom: 20px !important; }
+          .hero-line-accent::after { display: none !important; }
+          .hero-content-grid { padding-top: 28px !important; }
+          .hero-scroll-hint { display: none !important; }
+        }
       `}</style>
     </section>
   );

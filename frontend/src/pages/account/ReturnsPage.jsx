@@ -40,6 +40,7 @@ function StatusBadge({ status }) {
         background: s.bg,
         border: `1px solid ${s.border}`,
         color: s.color,
+        whiteSpace: "nowrap",
       }}
     >
       {status}
@@ -52,8 +53,9 @@ function Toast({ msg, show }) {
     <div
       style={{
         position: "fixed",
-        bottom: 28,
-        right: 28,
+        bottom: "clamp(16px,4vw,28px)",
+        right: "clamp(16px,4vw,28px)",
+        left: "clamp(16px,4vw,auto)",
         zIndex: 9999,
         background: "#1a1916",
         border: "1px solid rgba(201,169,110,0.18)",
@@ -66,7 +68,7 @@ function Toast({ msg, show }) {
         transform: show ? "translateY(0)" : "translateY(70px)",
         opacity: show ? 1 : 0,
         transition: "all 0.5s cubic-bezier(0.23,1,0.32,1)",
-        minWidth: 240,
+        minWidth: "min(240px, calc(100vw - 32px))",
       }}
     >
       <div
@@ -75,6 +77,7 @@ function Toast({ msg, show }) {
           height: 5,
           background: "#c9a96e",
           borderRadius: "50%",
+          flexShrink: 0,
         }}
       />
       {msg}
@@ -110,9 +113,9 @@ export default function ReturnsPage() {
     queryKey: ["returns"],
     queryFn: () =>
       returnsApi.list().then((r) => {
-        const data = r.data.data
-        if (Array.isArray(data)) return data
-        return Array.isArray(data?.returns) ? data.returns : []
+        const data = r.data.data;
+        if (Array.isArray(data)) return data;
+        return Array.isArray(data?.returns) ? data.returns : [];
       }),
   });
 
@@ -120,9 +123,13 @@ export default function ReturnsPage() {
     queryKey: ["orders-delivered"],
     queryFn: () =>
       ordersApi.list().then((r) => {
-        const data = r.data.data
-        const orders = Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : []
-        return orders.filter((o) => o.status === "DELIVERED")
+        const data = r.data.data;
+        const orders = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.orders)
+            ? data.orders
+            : [];
+        return orders.filter((o) => o.status === "DELIVERED");
       }),
   });
 
@@ -150,8 +157,63 @@ export default function ReturnsPage() {
     },
   });
 
+  const fieldStyle = {
+    padding: "12px 14px",
+    background: "#252320",
+    border: "1px solid rgba(201,169,110,0.18)",
+    color: "#f0e6d0",
+    fontFamily: "'DM Sans',sans-serif",
+    fontSize: 13,
+    outline: "none",
+    cursor: "pointer",
+    width: "100%",
+    minHeight: 44,
+  };
+
   return (
-    <div style={{ minHeight: "100vh", paddingTop: 100 }}>
+    <div style={{ minHeight: "100vh", paddingTop: "var(--nav-h, 80px)" }}>
+      <style>{`
+        .return-label {
+          font-size: 10px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(240,230,208,0.38);
+          display: block;
+          margin-bottom: 7px;
+        }
+        .return-card {
+          background: #1a1916;
+          border: 1px solid rgba(201,169,110,0.18);
+          margin-bottom: 2px;
+          padding: clamp(16px,3vw,24px) clamp(16px,3vw,28px);
+        }
+        .return-card-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 16px;
+          gap: 12px;
+        }
+        .return-card-meta {
+          display: flex;
+          gap: clamp(16px,3vw,24px);
+          flex-wrap: wrap;
+        }
+        @media (max-width: 639px) {
+          .return-card-header {
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+          }
+          .return-card-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+          }
+        }
+      `}</style>
+
+      {/* Modal */}
       {showRequestModal && (
         <div
           style={{
@@ -163,16 +225,22 @@ export default function ReturnsPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            padding: "16px",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowRequestModal(false);
           }}
         >
           <div
+            className="return-modal"
             style={{
               background: "#1a1916",
               border: "1px solid rgba(201,169,110,0.18)",
-              padding: 40,
-              minWidth: 480,
-              maxWidth: 560,
+              padding: "clamp(24px,5vw,40px)",
+              width: "min(560px, calc(100vw - 32px))",
               position: "relative",
+              maxHeight: "90vh",
+              overflowY: "auto",
             }}
           >
             <button
@@ -181,8 +249,8 @@ export default function ReturnsPage() {
                 position: "absolute",
                 top: 16,
                 right: 16,
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 border: "1px solid rgba(201,169,110,0.18)",
                 background: "none",
                 color: "rgba(240,230,208,0.38)",
@@ -190,15 +258,16 @@ export default function ReturnsPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 16,
+                fontSize: 18,
               }}
             >
               ×
             </button>
+
             <div
               style={{
                 fontFamily: "'Cormorant Garamond',serif",
-                fontSize: 26,
+                fontSize: "clamp(20px,4vw,26px)",
                 fontWeight: 300,
                 color: "#f0e6d0",
                 marginBottom: 6,
@@ -210,8 +279,8 @@ export default function ReturnsPage() {
               style={{
                 fontSize: 12,
                 color: "rgba(240,230,208,0.38)",
-                marginBottom: 28,
-                paddingBottom: 24,
+                marginBottom: 24,
+                paddingBottom: 20,
                 borderBottom: "1px solid rgba(201,169,110,0.18)",
               }}
             >
@@ -226,36 +295,18 @@ export default function ReturnsPage() {
                 marginBottom: 16,
               }}
             >
-              <label
-                style={{
-                  fontSize: 10,
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  color: "rgba(240,230,208,0.38)",
-                }}
-              >
-                Select Order
-              </label>
+              <label className="return-label">Select Order</label>
               <select
                 value={requestForm.orderId}
                 onChange={(e) =>
                   setRequestForm((p) => ({ ...p, orderId: e.target.value }))
                 }
-                style={{
-                  padding: "12px 14px",
-                  background: "#252320",
-                  border: "1px solid rgba(201,169,110,0.18)",
-                  color: "#f0e6d0",
-                  fontFamily: "'DM Sans',sans-serif",
-                  fontSize: 13,
-                  outline: "none",
-                  cursor: "pointer",
-                }}
+                style={fieldStyle}
               >
                 <option value="">Select a delivered order</option>
                 {deliveredOrders.map((o) => (
                   <option key={o.id} value={o.id}>
-                    {o.id?.slice(0, 20)}... — ₹
+                    {o.id?.slice(0, 20)}… — ₹
                     {Number(o.totalAmount || 0).toLocaleString("en-IN")}
                   </option>
                 ))}
@@ -270,31 +321,13 @@ export default function ReturnsPage() {
                 marginBottom: 16,
               }}
             >
-              <label
-                style={{
-                  fontSize: 10,
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  color: "rgba(240,230,208,0.38)",
-                }}
-              >
-                Reason
-              </label>
+              <label className="return-label">Reason for Return</label>
               <select
                 value={requestForm.reason}
                 onChange={(e) =>
                   setRequestForm((p) => ({ ...p, reason: e.target.value }))
                 }
-                style={{
-                  padding: "12px 14px",
-                  background: "#252320",
-                  border: "1px solid rgba(201,169,110,0.18)",
-                  color: "#f0e6d0",
-                  fontFamily: "'DM Sans',sans-serif",
-                  fontSize: 13,
-                  outline: "none",
-                  cursor: "pointer",
-                }}
+                style={fieldStyle}
               >
                 {RETURN_REASONS.map((r) => (
                   <option key={r} value={r}>
@@ -312,48 +345,30 @@ export default function ReturnsPage() {
                 marginBottom: 28,
               }}
             >
-              <label
-                style={{
-                  fontSize: 10,
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  color: "rgba(240,230,208,0.38)",
-                }}
-              >
-                Additional Details
-              </label>
+              <label className="return-label">Description (optional)</label>
               <textarea
                 value={requestForm.description}
                 onChange={(e) =>
                   setRequestForm((p) => ({ ...p, description: e.target.value }))
                 }
-                rows={3}
+                placeholder="Describe the issue with your order…"
+                rows={4}
                 style={{
-                  padding: "12px 14px",
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px solid rgba(201,169,110,0.18)",
-                  color: "#f0e6d0",
-                  fontFamily: "'DM Sans',sans-serif",
-                  fontSize: 13,
-                  outline: "none",
-                  resize: "none",
+                  ...fieldStyle,
+                  resize: "vertical",
+                  lineHeight: 1.6,
+                  height: "auto",
+                  minHeight: 96,
                 }}
               />
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                paddingTop: 24,
-                borderTop: "1px solid rgba(201,169,110,0.18)",
-              }}
-            >
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <button
                 onClick={() => requestMutation.mutate(requestForm)}
                 disabled={!requestForm.orderId || requestMutation.isPending}
                 style={{
-                  padding: "10px 28px",
+                  padding: "13px 28px",
                   background: "#c9a96e",
                   border: "none",
                   color: "#0d0c0b",
@@ -363,24 +378,27 @@ export default function ReturnsPage() {
                   cursor: "pointer",
                   fontFamily: "'DM Sans',sans-serif",
                   fontWeight: 500,
+                  minHeight: 44,
                   opacity:
-                    !requestForm.orderId || requestMutation.isPending ? 0.7 : 1,
+                    !requestForm.orderId || requestMutation.isPending ? 0.6 : 1,
+                  flex: 1,
                 }}
               >
-                {requestMutation.isPending ? "Submitting..." : "Submit Request"}
+                {requestMutation.isPending ? "Submitting…" : "Submit Request"}
               </button>
               <button
                 onClick={() => setShowRequestModal(false)}
                 style={{
-                  padding: "10px 20px",
+                  padding: "13px 20px",
                   background: "none",
                   border: "1px solid rgba(201,169,110,0.18)",
-                  color: "rgba(240,230,208,0.38)",
+                  color: "rgba(240,230,208,0.45)",
                   fontSize: 11,
                   letterSpacing: "0.14em",
                   textTransform: "uppercase",
                   cursor: "pointer",
                   fontFamily: "'DM Sans',sans-serif",
+                  minHeight: 44,
                 }}
               >
                 Cancel
@@ -390,19 +408,15 @@ export default function ReturnsPage() {
         </div>
       )}
 
-      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 var(--page-px)" }}>
-        <div
-          style={{
-            padding: "clamp(32px,4vw,52px) 0 44px",
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 12,
-            borderBottom: "1px solid rgba(201,169,110,0.18)",
-            marginBottom: 52,
-          }}
-        >
+      <div
+        style={{
+          maxWidth: 1320,
+          margin: "0 auto",
+          padding: "0 var(--page-px)",
+        }}
+      >
+        {/* Page header */}
+        <div className="page-header">
           <div>
             <div
               style={{
@@ -419,15 +433,7 @@ export default function ReturnsPage() {
               <div style={{ width: 26, height: 1, background: "#c9a96e" }} />
               My Account
             </div>
-            <h1
-              style={{
-                fontFamily: "'Cormorant Garamond',serif",
-                fontSize: "clamp(34px,4.5vw,58px)",
-                fontWeight: 300,
-                color: "#f0e6d0",
-                lineHeight: 1.04,
-              }}
-            >
+            <h1 className="page-header__title">
               Returns{" "}
               <em style={{ fontStyle: "italic", color: "#c9a96e" }}>
                 &amp; Refunds
@@ -437,7 +443,7 @@ export default function ReturnsPage() {
           <button
             onClick={() => setShowRequestModal(true)}
             style={{
-              padding: "12px 28px",
+              padding: "12px 24px",
               background: "#c9a96e",
               border: "none",
               color: "#0d0c0b",
@@ -447,20 +453,16 @@ export default function ReturnsPage() {
               cursor: "pointer",
               fontFamily: "'DM Sans',sans-serif",
               fontWeight: 500,
+              minHeight: 44,
+              whiteSpace: "nowrap",
             }}
           >
             New Return Request
           </button>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 2,
-            marginBottom: 48,
-          }}
-        >
+        {/* Stats */}
+        <div className="returns-stats">
           {[
             { label: "Total Returns", val: returns.length },
             {
@@ -481,7 +483,7 @@ export default function ReturnsPage() {
               style={{
                 background: "#1a1916",
                 border: "1px solid rgba(201,169,110,0.18)",
-                padding: "24px 28px",
+                padding: "clamp(16px,3vw,24px) clamp(16px,3vw,28px)",
               }}
             >
               <div
@@ -498,7 +500,7 @@ export default function ReturnsPage() {
               <div
                 style={{
                   fontFamily: "'Cormorant Garamond',serif",
-                  fontSize: 32,
+                  fontSize: "clamp(24px,5vw,32px)",
                   fontWeight: 300,
                   color: "#c9a96e",
                 }}
@@ -529,7 +531,7 @@ export default function ReturnsPage() {
           <div
             style={{
               textAlign: "center",
-              padding: "60px 0",
+              padding: "60px 20px",
               color: "rgba(240,230,208,0.4)",
               paddingBottom: 100,
             }}
@@ -537,8 +539,9 @@ export default function ReturnsPage() {
             <div
               style={{
                 fontFamily: "'Cormorant Garamond',serif",
-                fontSize: 28,
+                fontSize: "clamp(22px,5vw,28px)",
                 marginBottom: 12,
+                color: "rgba(240,230,208,0.5)",
               }}
             >
               No return requests
@@ -550,23 +553,8 @@ export default function ReturnsPage() {
         ) : (
           <div style={{ paddingBottom: 100 }}>
             {returns.map((ret) => (
-              <div
-                key={ret.id}
-                style={{
-                  background: "#1a1916",
-                  border: "1px solid rgba(201,169,110,0.18)",
-                  marginBottom: 2,
-                  padding: "24px 28px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    marginBottom: 16,
-                  }}
-                >
+              <div key={ret.id} className="return-card">
+                <div className="return-card-header">
                   <div>
                     <div
                       style={{
@@ -574,9 +562,10 @@ export default function ReturnsPage() {
                         fontSize: 12,
                         color: "#c9a96e",
                         marginBottom: 4,
+                        wordBreak: "break-all",
                       }}
                     >
-                      {ret.id?.slice(0, 20)}...
+                      {ret.id?.slice(0, 20)}…
                     </div>
                     <div
                       style={{ fontSize: 11, color: "rgba(240,230,208,0.38)" }}
@@ -591,14 +580,20 @@ export default function ReturnsPage() {
                     </div>
                   </div>
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: 12 }}
+                    className="return-card-actions"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      flexWrap: "wrap",
+                    }}
                   >
                     <StatusBadge status={ret.status} />
                     {ret.status === "REQUESTED" && (
                       <button
                         onClick={() => cancelMutation.mutate(ret.id)}
                         style={{
-                          padding: "6px 14px",
+                          padding: "7px 14px",
                           background: "none",
                           border: "1px solid rgba(140,70,70,0.35)",
                           color: "rgba(190,110,110,0.75)",
@@ -607,6 +602,7 @@ export default function ReturnsPage() {
                           textTransform: "uppercase",
                           cursor: "pointer",
                           fontFamily: "'DM Sans',sans-serif",
+                          minHeight: 34,
                         }}
                       >
                         Cancel
@@ -614,7 +610,7 @@ export default function ReturnsPage() {
                     )}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 24 }}>
+                <div className="return-card-meta">
                   <div>
                     <div
                       style={{

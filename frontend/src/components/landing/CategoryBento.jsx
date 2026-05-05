@@ -5,7 +5,7 @@ import perfumeImg from "../../../assets/perfumes.webp";
 import jewelleryImg from "../../../assets/jewellery.webp";
 import clothesImg from "../../../assets/clothes.webp";
 import techImg from "../../../assets/electronics.webp";
-import "./styles/CategoryBento.css"
+import "./styles/CategoryBento.css";
 
 const categories = [
   {
@@ -51,8 +51,7 @@ const categories = [
   },
 ];
 
-function CatCard({ cat, index, onClick }) {
-
+function CatCard({ cat, onClick }) {
   return (
     <div
       onClick={onClick}
@@ -61,26 +60,23 @@ function CatCard({ cat, index, onClick }) {
       <div className="cat-card__bg">
         {cat.image && <img src={cat.image} loading="lazy" alt={cat.name} />}
       </div>
-
       <div className="cat-card__overlay" />
       <div className="cat-card__hover" />
-
       <div className="cat-card__content">
         <div className="cat-card__tag">{cat.tag}</div>
-
         <div
-          className={`cat-card__title ${
-            cat.large ? "cat-card__title--large" : "cat-card__title--small"
-          }`}
+          className={`cat-card__title ${cat.large ? "cat-card__title--large" : "cat-card__title--small"}`}
         >
           {cat.name}
         </div>
-
         <div className="cat-card__count">{cat.count}</div>
-
         <div className="cat-card__arrow">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="1.5" />
+            <path
+              d="M5 12h14M12 5l7 7-7 7"
+              strokeWidth="1.5"
+              stroke="currentColor"
+            />
           </svg>
         </div>
       </div>
@@ -103,10 +99,11 @@ export default function CategoryBento() {
       }}
     >
       <div className="landing-inner">
+        {/* Header */}
         <div
           className="reveal"
           ref={sectionRef}
-          style={{ marginBottom: "clamp(40px, 6vw, 80px)" }}
+          style={{ marginBottom: "clamp(32px, 6vw, 80px)" }}
         >
           <div
             style={{
@@ -131,7 +128,7 @@ export default function CategoryBento() {
           <h2
             style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "clamp(36px, 4vw, 60px)",
+              fontSize: "clamp(28px, 4vw, 60px)",
               fontWeight: 300,
               color: "#f0e6d0",
               lineHeight: 1.1,
@@ -146,22 +143,16 @@ export default function CategoryBento() {
           </h2>
         </div>
 
+        {/* Grid */}
         <div className="cat-bento-grid">
-          {categories.map((cat, i) => (
+          {categories.map((cat) => (
             <CatCard
               key={cat.query}
               cat={cat}
-              index={i}
               onClick={() => navigate(`/collections?category=${cat.query}`)}
             />
           ))}
         </div>
-        <style>{`
-          @keyframes catTextIn {
-            from { transform: translateX(-32px); opacity: 0; }
-            to   { transform: translateX(-14px); opacity: 1; }
-          }
-        `}</style>
       </div>
     </section>
   );

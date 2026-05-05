@@ -13,7 +13,7 @@ export default function FeaturedProducts() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["products", "bestseller"],
-    queryFn: () => productApi.list({ bestseller: true, limit: 8 }),
+    queryFn: () => productApi.list({ bestseller: true, limit: 10 }),
     select: (res) => res.data?.products || [],
   });
 
@@ -22,35 +22,53 @@ export default function FeaturedProducts() {
     scrollRef.current.scrollBy({ left: dir * 640, behavior: "smooth" });
   };
 
+  const products = data || [];
+  const skeletons = Array.from({ length: 8 });
+
   return (
     <section id="featured" className="landing-section featured-section">
       <div className="landing-inner">
+        {/* Header */}
         <div ref={headerRef} className="featured-header reveal">
           <div>
             <div className="featured-label">
               <div className="featured-label__line" />
-              <span className="featured-label__text">Neural Picks</span>
+              <span className="featured-label__text">Curated Selection</span>
             </div>
-
             <h2 className="featured-title">
-              Objects of <em>distinction</em>
+              New <em>Arrivals</em>
             </h2>
           </div>
 
           <div className="featured-controls">
-            <button className="feat-nav-btn" onClick={() => scroll(-1)}>
+            {/* Scroll arrows — only visible on mobile/tablet where scroll is active */}
+            <button
+              className="feat-nav-btn feat-nav-btn--scroll"
+              onClick={() => scroll(-1)}
+              aria-label="Scroll left"
+            >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M19 12H5M12 19l-7-7 7-7" strokeWidth="1.5" />
+                <path
+                  d="M19 12H5M12 19l-7-7 7-7"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                />
               </svg>
             </button>
-
-            <button className="feat-nav-btn" onClick={() => scroll(1)}>
+            <button
+              className="feat-nav-btn feat-nav-btn--scroll"
+              onClick={() => scroll(1)}
+              aria-label="Scroll right"
+            >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="1.5" />
+                <path
+                  d="M5 12h14M12 5l7 7-7 7"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                />
               </svg>
             </button>
-
-            <Link to="/collections" className="featured-link">
+            <Link to="/collections?sort=newest" className="featured-link">
               View All
             </Link>
           </div>
@@ -62,17 +80,45 @@ export default function FeaturedProducts() {
           </div>
         )}
 
-        <div ref={scrollRef} className="featured-scroll">
+        {/* ── Desktop: Collection Grid ── */}
+        <div className="featured-grid">
           {isLoading
-            ? Array.from({ length: 5 }).map((_, i) => (
-                <ProductCardSkeleton key={i} />
-              ))
-            : (data || []).map((product) => (
+            ? skeletons.map((_, i) => <ProductCardSkeleton key={i} />)
+            : products.map((product) => (
                 <ProductCard
                   key={product._id || product.id}
                   product={product}
                 />
               ))}
+        </div>
+
+        {/* ── Mobile/Tablet: Horizontal Scroll ── */}
+        <div ref={scrollRef} className="featured-scroll">
+          {isLoading
+            ? skeletons.map((_, i) => <ProductCardSkeleton key={i} />)
+            : products.map((product) => (
+                <ProductCard
+                  key={product._id || product.id}
+                  product={product}
+                />
+              ))}
+        </div>
+
+        {/* Desktop footer link */}
+        <div className="featured-footer">
+          <Link to="/collections?sort=newest" className="featured-footer-link">
+            <span>Explore Full Collection</span>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
       </div>
     </section>

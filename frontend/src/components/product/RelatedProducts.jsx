@@ -7,19 +7,21 @@ function RelatedCard({ product }) {
   const price = product.offerPrice || product.price || 0;
   const img = product.image?.[0] || product.images?.[0];
   return (
-    <Link to={`/product/${product.id || product._id}`} style={{ textDecoration: "none" }}>
-      <div className="related-card">
-        <div className="related-card__img">
-          {img ? (
-            <img src={img} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <div className="related-card__img-placeholder" />
-          )}
-        </div>
-        <div className="related-card__info">
-          <div className="related-card__name">{product.name}</div>
-          <div className="related-card__price">{fmt(price)}</div>
-        </div>
+    <Link
+      to={`/product/${product.id || product._id}`}
+      className="related-card"
+      style={{ textDecoration: "none" }}
+    >
+      <div className="related-card__img">
+        {img ? (
+          <img src={img} alt={product.name} className="related-card__img-el" />
+        ) : (
+          <div className="related-card__img-placeholder" />
+        )}
+      </div>
+      <div className="related-card__info">
+        <div className="related-card__name">{product.name}</div>
+        <div className="related-card__price">{fmt(price)}</div>
       </div>
     </Link>
   );
