@@ -9,11 +9,13 @@ const createElasticsearchClient = async () => {
 
   esClient = new Client({
     node: config.elasticsearch.node,
+    auth: {
+      apiKey: config.elasticsearch.key,
+    },
     maxRetries: 5,
     requestTimeout: 60000,
     sniffOnStart: false,
   });
-
   try {
     await esClient.ping();
     logger.info("✅ Elasticsearch connected");

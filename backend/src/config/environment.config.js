@@ -48,16 +48,16 @@ export const config = {
 
   // Redis Config
   redis: {
-    host: getEnvVariable("REDIS_HOST", "localhost"),
-    port: parseInt(getEnvVariable("REDIS_PORT", "6379")),
-    password: getEnvVariable("REDIS_PASS", null),
+    url: getEnvVariable("REDIS_URL", "localhost"),
   },
 
   // Kafka Config
   kafka: {
-    brokers: getEnvVariable("KAFKA_BROKERS", "localhost:9092").split(","),
+    broker: getEnvVariable("KAFKA_BROKER", "localhost:9092"),
     clientId: getEnvVariable("KAFKA_CLIENT_ID", "neural-shop"),
     groupId: getEnvVariable("KAFKA_GROUP_ID", "neural-shop-consumer-group"),
+    username: getEnvVariable("KAFKA_USERNAME", ""),
+    password: getEnvVariable("KAFKA_PASSWORD", ""),
   },
 
   // Razorpay Config
@@ -75,6 +75,7 @@ export const config = {
   // Elasticsearch Config
   elasticsearch: {
     node: getEnvVariable("ELASTICSEARCH_NODE", "http://localhost:9200"),
+    key: getEnvVariable("ELASTICSEARCH_API_KEY"),
   },
   // Logging Config
   logging: {
