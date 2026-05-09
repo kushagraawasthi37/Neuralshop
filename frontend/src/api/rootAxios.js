@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const rootApi = axios.create({
-  baseURL: '/',
+  baseURL: import.meta.env.VITE_API_ROOT_URL,
   withCredentials: true,
   timeout: 15000,
 })

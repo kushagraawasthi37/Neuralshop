@@ -125,6 +125,7 @@ export const config = {
       getEnvVariable("FRONTEND_URL_USER", "http://localhost:3000"),
       getEnvVariable("FRONTEND_URL_ADMIN", "http://localhost:3001"),
       "http://localhost:4173",
+      "https://neuralshop-usermode.onrender.com",
       "http://localhost:5173",
     ],
     credentials: true,
