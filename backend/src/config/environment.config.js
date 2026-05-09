@@ -60,6 +60,11 @@ export const config = {
     password: getEnvVariable("KAFKA_PASSWORD", ""),
   },
 
+  // Google OAuth Config
+  google: {
+    clientId: getEnvVariable("GOOGLE_CLIENT_ID"),
+  },
+
   // Razorpay Config
   razorpay: {
     keyId: getEnvVariable("RAZORPAY_KEY_ID"),

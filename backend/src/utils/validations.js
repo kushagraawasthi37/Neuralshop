@@ -39,14 +39,7 @@ export const authValidations = {
   ],
 
   googleLogin: [
-    body("name").trim().notEmpty().withMessage("Name is required"),
-
-    body("email")
-      .trim()
-      .notEmpty()
-      .withMessage("Email is required")
-      .isEmail()
-      .withMessage("Invalid email format"),
+    body("idToken").trim().notEmpty().withMessage("Firebase ID token is required"),
   ],
 
   verifyEmail: [

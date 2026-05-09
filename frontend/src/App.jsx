@@ -102,22 +102,23 @@ function AppShell() {
   // Seed session ID on first visit so behavior tracking works immediately
   useEffect(() => { getSessionId(); }, []);
 
-  // ✅ FIX: non-blocking auth
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      const raw = localStorage.getItem("token");
+      const validToken = raw && raw !== "undefined" && raw !== "null";
+      if (!validToken) {
+        logout();
+        return;
+      }
       try {
         const res = await userApi.getMe();
-        setAuth(res.data.user, token, res.data.user.role);
+        setAuth(res.data.user, raw, res.data.user.role || "user");
       } catch {
         logout();
       }
     };
 
-    requestIdleCallback(() => {
-      initAuth();
-    });
+    initAuth();
   }, []);
 
   return (
@@ -217,21 +218,21 @@ function AppShell() {
 
           {/* Commerce pages */}
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout" element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
           <Route
             path="/order-confirmation"
-            element={<OrderConfirmationPage />}
+            element={<PrivateRoute><OrderConfirmationPage /></PrivateRoute>}
           />
           <Route
             path="/orders/:orderId/track"
-            element={<OrderTrackingPage />}
+            element={<PrivateRoute><OrderTrackingPage /></PrivateRoute>}
           />
 
           {/* Account pages */}
-          <Route path="/account/orders" element={<OrderHistoryPage />} />
-          <Route path="/account/profile" element={<ProfilePage />} />
-          <Route path="/account/wishlist" element={<WishlistPage />} />
-          <Route path="/account/returns" element={<ReturnsPage />} />
+          <Route path="/account/orders" element={<PrivateRoute><OrderHistoryPage /></PrivateRoute>} />
+          <Route path="/account/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+          <Route path="/account/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
+          <Route path="/account/returns" element={<PrivateRoute><ReturnsPage /></PrivateRoute>} />
 
           {/* Admin — heavy dashboard loads only for admin users */}
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
@@ -260,6 +261,16 @@ function AppShell() {
       <VoiceAssistant />
     </>
   );
+}
+
+function PrivateRoute({ children }) {
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const isInitializing = useAuthStore((s) => s.isInitializing);
+  const { pathname } = useLocation();
+
+  if (isInitializing) return <PageLoader />;
+  if (!isLoggedIn) return <Navigate to={`/login?return=${encodeURIComponent(pathname)}`} replace />;
+  return children;
 }
 
 function AuthPage({ children, admin, hideLinks }) {

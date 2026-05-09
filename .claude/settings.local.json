@@ -11,7 +11,10 @@
       "PowerShell(ls -Recurse \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\backend\\\\src\" | Where-Object {$_.PSIsContainer} | Select-Object FullName)",
       "PowerShell(ls -Recurse \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\frontend\\\\src\" | Where-Object {$_.PSIsContainer} | Select-Object Name, FullName -First 30)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\frontend\\\\src\" -Recurse -Filter \"*.jsx\")",
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\frontend\\\\src\\\\pages\\\\account\\\\\" | Select-Object Name, FullName)"
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\frontend\\\\src\\\\pages\\\\account\\\\\" | Select-Object Name, FullName)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\" -Recurse -Depth 2)",
+      "Bash(Select-Object FullName)",
+      "Bash(Select-String -Path \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\backend\\\\.env\" -Pattern \"GOOGLE\")"
     ]
   }
 }

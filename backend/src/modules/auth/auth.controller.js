@@ -16,6 +16,7 @@ import config from "../../config/environment.config.js";
 import { OTP_TYPES, ROLES } from "./otp.service.js";
 import jwt from "jsonwebtoken";
 import redisClient from "../../config/redis.js";
+import firebaseAdmin from "../../config/firebaseAdmin.js";
 
 const isProd = config.app.isProduction;
 
@@ -205,9 +206,24 @@ export const adminLogout = async (req, res) => {
 
 export const googleLogin = async (req, res) => {
   try {
-    const { name, email } = req.body;
-    const { user, token } = await googleLoginService(name, email);
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ message: "Firebase ID token is required" });
+    }
 
+    let decoded;
+    try {
+      decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
+    } catch {
+      return res.status(401).json({ message: "Invalid Firebase token" });
+    }
+
+    const { name, email } = decoded;
+    if (!email) {
+      return res.status(400).json({ message: "Google account has no email" });
+    }
+
+    const { user, token } = await googleLoginService(name, email);
     setUserCookie(res, token);
     return res.status(200).json({ user, token });
   } catch (error) {

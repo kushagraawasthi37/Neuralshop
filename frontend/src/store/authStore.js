@@ -1,18 +1,22 @@
 import { create } from "zustand";
 
+const getRawToken = () => localStorage.getItem("token");
+const isTokenValid = (t) => !!t && t !== "undefined" && t !== "null";
+
 export const useAuthStore = create((set) => ({
   user: null,
-  token: localStorage.getItem("token") || null,
-  role: localStorage.getItem("userRole") || "user", // "user" | "admin"
+  token: isTokenValid(getRawToken()) ? getRawToken() : null,
+  role: localStorage.getItem("userRole") || "user",
   pendingEmail: null,
   pendingRole: "user",
-  isLoggedIn: !!localStorage.getItem("token"),
+  isLoggedIn: isTokenValid(getRawToken()),
+  isInitializing: true,
 
-  // role param: "user" (default) or "admin"
   setAuth: (user, token, role = "user") => {
+    if (!isTokenValid(token)) return;
     localStorage.setItem("token", token);
     localStorage.setItem("userRole", role);
-    set({ user, token, isLoggedIn: true, role });
+    set({ user, token, isLoggedIn: true, role, isInitializing: false });
   },
 
   setPendingEmail: (email) => set({ pendingEmail: email }),
@@ -28,6 +32,7 @@ export const useAuthStore = create((set) => ({
       role: "user",
       pendingEmail: null,
       pendingRole: "user",
+      isInitializing: false,
     });
   },
 }));

@@ -1,6 +1,7 @@
 // NOTE: dotenv.config() is called in server.js before importing this module
 import express from "express";
 import connectDB from "./config/db.js";
+import { createProductIndex } from "./modules/product/elasticsearch.service.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { setupRoutes } from "./routes/index.js";
@@ -39,8 +40,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Connect DB
+// Connect DB and seed Elasticsearch index
 connectDB();
+createProductIndex();
 
 // Setup Routes
 setupRoutes(app);
