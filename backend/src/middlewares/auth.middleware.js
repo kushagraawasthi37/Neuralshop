@@ -16,7 +16,6 @@ const isAuth = async (req, res, next) => {
       return res.status(400).json({ message: "user does not have token" });
     }
 
-    // blacklist lookup — skip gracefully if Redis is unavailable
     try {
       const blacklisted = await redisClient.get(`blacklisted_token:${token}`);
       if (blacklisted) {
@@ -25,7 +24,8 @@ const isAuth = async (req, res, next) => {
           .json({ message: "Token invalidated. Please login again." });
       }
     } catch (_redisErr) {
-      // Redis unavailable — proceed without blacklist check
+      // Redis unavailable — reject to prevent blacklisted tokens from passing through
+      return res.status(503).json({ message: "Auth service temporarily unavailable. Please try again." });
     }
 
     try {
@@ -53,7 +53,6 @@ const isAuthAdmin = async (req, res, next) => {
       return res.status(400).json({ message: "Admin authentication required" });
     }
 
-    // blacklist lookup — skip gracefully if Redis is unavailable
     try {
       const blacklisted = await redisClient.get(`blacklisted_token:${token}`);
       if (blacklisted) {
@@ -62,7 +61,7 @@ const isAuthAdmin = async (req, res, next) => {
           .json({ message: "Token invalidated. Please login again." });
       }
     } catch (_redisErr) {
-      // Redis unavailable — proceed without blacklist check
+      return res.status(503).json({ message: "Auth service temporarily unavailable. Please try again." });
     }
 
     try {

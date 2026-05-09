@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthCenter } from "../../components/auth/AuthLayout";
+import AuthLayout, { AuthCenter } from "../../components/auth/AuthLayout";
 import {
   AuthBtn,
   GhostBtn,
@@ -9,45 +8,47 @@ import {
   FormSubtitle,
 } from "../../components/auth/AuthField";
 import { useAuthStore } from "../../store/authStore";
-import { authApi } from "../../api/auth";
 
-const LogoutPage = () => {
+export default function LoggedOutPage() {
   const navigate = useNavigate();
-  const { pendingRole, logout } = useAuthStore();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const logout = useAuthStore((s) => s.logout);
 
-  const confirmLogout = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      if (pendingRole === "admin") {
-        await authApi.adminLogout();
-      } else {
-        await authApi.logout(pendingRole);
-      }
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Logout failed. Please try again.",
-      );
-      setLoading(false);
-      return;
-    }
+  const handleGuest = () => {
     logout();
-    navigate("/logged-out");
+    navigate("/");
+  };
+
+  const handleSignin = () => {
+    logout();
   };
 
   return (
     <AuthCenter>
-      <div
-        style={{
-          textAlign: "center",
-          width: "100%",
-          maxWidth: 380,
-          margin: "0 auto",
-        }}
-      >
-        {/* Badge */}
+      <div style={{ textAlign: "center" }}>
+        <div
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+            background: "rgba(74,124,89,0.12)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 28px",
+          }}
+        >
+          <svg
+            width="36"
+            height="36"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#c9a96e"
+            strokeWidth="2"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+
         <div
           style={{
             display: "inline-flex",
@@ -60,7 +61,7 @@ const LogoutPage = () => {
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: "#c9a96e",
-            marginBottom: 20,
+            marginBottom: 14,
           }}
         >
           <span
@@ -68,49 +69,32 @@ const LogoutPage = () => {
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: "#c9a96e",
+              background: "#4a7c59",
             }}
           />
-          Confirm sign out
+          Session Terminated
         </div>
 
         <FormTitle style={{ marginBottom: 12 }}>
-          Are you sure?
+          You've been
           <br />
-          Sign out now.
+          signed out.
         </FormTitle>
-        <FormSubtitle style={{ marginBottom: 28 }}>
-          This will invalidate your current session and remove access to
-          protected pages until you sign in again.
+        <FormSubtitle style={{ marginBottom: 32 }}>
+          Your session token has been invalidated. Protected routes are now
+          inaccessible until you sign in again.
         </FormSubtitle>
 
         <div
           style={{ display: "grid", gap: 12, maxWidth: 320, margin: "0 auto" }}
         >
-          <AuthBtn type="button" loading={loading} onClick={confirmLogout}>
-            Confirm Sign Out
+          <AuthBtn type="button" onClick={handleSignin}>
+            Sign Back In →
           </AuthBtn>
-          <GhostBtn
-            type="button"
-            onClick={() => navigate(-1)}
-            disabled={loading}
-          >
-            Cancel
+          <GhostBtn type="button" onClick={handleGuest}>
+            Continue as Guest
           </GhostBtn>
         </div>
-
-        {error && (
-          <p
-            style={{
-              marginTop: 20,
-              color: "#e87f7f",
-              fontSize: 13,
-              lineHeight: 1.5,
-            }}
-          >
-            {error}
-          </p>
-        )}
 
         <div
           style={{
@@ -118,17 +102,14 @@ const LogoutPage = () => {
             display: "flex",
             gap: 16,
             justifyContent: "center",
-            flexWrap: "wrap",
           }}
         >
           <TextLink onClick={() => navigate("/")}>← Home</TextLink>
-          <TextLink onClick={() => navigate("/account")}>
-            Stay signed in
+          <TextLink onClick={() => navigate("/register")}>
+            Create Account
           </TextLink>
         </div>
       </div>
     </AuthCenter>
   );
-};
-
-export default LogoutPage;
+}
