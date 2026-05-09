@@ -14,6 +14,7 @@ const connectDB = async () => {
     logError("Failed to connect to MongoDB", error, {
       url: config.database.mongoUrl ? "provided" : "missing",
     });
+    process.exit(1);
   }
 };
 
