@@ -57,12 +57,7 @@ export default function AdminLoginPage() {
       title="Full administrative control over"
       titleAccent="products, orders, analytics"
       body="Manage multi-vendor operations, inventory, user data, and system analytics with AI-powered insights."
-      features={[
-        "Multi-vendor marketplace oversight",
-        "Real-time analytics & reporting",
-        "Inventory & order management",
-        "User & vendor administration",
-      ]}
+      
       leftGlow="#8b6340"
       leftGlow2="#4a5c47"
     >

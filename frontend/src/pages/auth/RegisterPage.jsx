@@ -63,12 +63,6 @@ export default function RegisterPage() {
       title="Curated for those who"
       titleAccent="know better"
       body="Join thousands experiencing commerce elevated by neural intelligence."
-      features={[
-        "Email verification via OTP",
-        "bcrypt-secured password hashing",
-        "JWT stored in httpOnly cookie",
-        "Google OAuth supported",
-      ]}
     >
       <StepBar current={1} />
       <FormEyebrow>Create Account</FormEyebrow>

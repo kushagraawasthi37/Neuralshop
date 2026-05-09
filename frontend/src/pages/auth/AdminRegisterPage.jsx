@@ -62,12 +62,6 @@ export default function AdminRegisterPage() {
       title="Elevate to"
       titleAccent="administrative intelligence"
       body="Register as an administrator to access full system controls and multi-vendor management."
-      features={[
-        "Admin email verification",
-        "Secure admin credentials",
-        "Role-based access control",
-        "System analytics access",
-      ]}
       leftGlow="#8b6340"
       leftGlow2="#4a5c47"
     >

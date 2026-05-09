@@ -73,12 +73,7 @@ export default function LoginPage() {
       title="Where machine intelligence meets"
       titleAccent="human desire"
       body="A curated ecosystem of products discovered, verified, and elevated by AI — refined by you."
-      features={[
-        "105+ curated product endpoints",
-        "Multi-vendor neural marketplace",
-        "Real-time AI recommendations",
-        "Secured by JWT + idempotency",
-      ]}
+
     >
       <FormEyebrow>Customer Portal</FormEyebrow>
       <FormTitle>
