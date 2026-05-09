@@ -14,6 +14,8 @@ import { useAuthStore } from "./store/authStore";
 import { userApi } from "./api/user";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
+import VoiceAssistant from "./components/VoiceAssistant";
+import { getSessionId } from "./hooks/useBehaviorTracker";
 
 /* Route-level lazy imports — each page loads only when navigated to */
 const LandingPage = lazy(() => import("./pages/LandingPage"));
@@ -96,6 +98,9 @@ function AppShell() {
 
   const setAuth = useAuthStore((s) => s.setAuth);
   const logout = useAuthStore((s) => s.logout);
+
+  // Seed session ID on first visit so behavior tracking works immediately
+  useEffect(() => { getSessionId(); }, []);
 
   // ✅ FIX: non-blocking auth
   useEffect(() => {
@@ -251,6 +256,8 @@ function AppShell() {
       </Suspense>
 
       {!isAuth && !isAdmin && <Footer />}
+
+      <VoiceAssistant />
     </>
   );
 }

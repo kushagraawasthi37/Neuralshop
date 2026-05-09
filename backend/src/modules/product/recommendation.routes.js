@@ -1,5 +1,6 @@
 import express from "express";
-import isAuth from "../../middlewares/auth.middleware.js";
+import jwt from "jsonwebtoken";
+import config from "../../config/environment.config.js";
 import {
   getSimilarProducts,
   getRelatedProducts,
@@ -10,6 +11,20 @@ import {
   getPersonalized,
 } from "./recommendation.controller.js";
 import { cacheMiddleware } from "../../middlewares/cache.middleware.js";
+
+const softAuth = (req, _res, next) => {
+  const authHeader = req.header("Authorization");
+  const token =
+    req.cookies?.userToken ||
+    (authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1].trim() : null);
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, config.jwt.secret);
+      req.userId = decoded?.userId;
+    } catch (_) {}
+  }
+  next();
+};
 
 const recommendationRoutes = express.Router();
 
@@ -55,7 +70,7 @@ recommendationRoutes.get(
   getRecommended,
 );
 
-// Get personalized recommendations (user must be logged in)
-recommendationRoutes.get("/personalized", isAuth, getPersonalized);
+// Get personalized recommendations (logged-in users + guests via sessionId)
+recommendationRoutes.get("/personalized", softAuth, getPersonalized);
 
 export default recommendationRoutes;

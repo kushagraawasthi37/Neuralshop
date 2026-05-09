@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productApi, reviewApi } from "../api/products";
@@ -11,6 +11,7 @@ import ProductGallery from "../components/product/ProductGallery";
 import ProductInfo from "../components/product/ProductInfo";
 import ReviewSection from "../components/product/ReviewSection";
 import RelatedProducts from "../components/product/RelatedProducts";
+import { useProductViewTracker, useBehaviorTracker } from "../hooks/useBehaviorTracker";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -31,6 +32,11 @@ export default function ProductDetailPage() {
     comment: "",
   });
   const [addingCart, setAddingCart] = useState(false);
+  const [selectedSize, setSelectedSize] = useState(null);
+
+  // Behavior tracking
+  useProductViewTracker(product);
+  const { track } = useBehaviorTracker();
 
   const showToast = (msg) => {
     setToast({ show: true, msg });
@@ -90,8 +96,49 @@ export default function ProductDetailPage() {
     onSuccess: (_, add) => {
       qc.invalidateQueries(["wishlist-check", id]);
       showToast(add ? "Added to wishlist" : "Removed from wishlist");
+      if (add && product) {
+        track("wishlist_add", product._id || product.id, {
+          productName: product.name,
+          category: product.category,
+          price: product.price,
+        });
+      }
     },
   });
+
+  // Broadcast product context to VoiceAssistant
+  useEffect(() => {
+    if (!product) return;
+    const availableSizes = (product.sizes || [])
+      .filter((s) => s.stock > 0)
+      .map((s) => s.size);
+    window.dispatchEvent(
+      new CustomEvent("voice:product_context", {
+        detail: {
+          productId: product._id || product.id,
+          productName: product.name,
+          availableSizes,
+          selectedSize,
+        },
+      }),
+    );
+  }, [product, selectedSize]);
+
+  // Listen for voice-triggered add-to-cart
+  useEffect(() => {
+    const handler = (e) => {
+      const { size } = e.detail || {};
+      const targetSize =
+        size ||
+        (product?.sizes || []).filter((s) => s.stock > 0).map((s) => s.size)[0];
+      if (targetSize) {
+        setSelectedSize(targetSize);
+        handleAddToCart({ selectedSize: targetSize, quantity: 1 });
+      }
+    };
+    window.addEventListener("voice:add_to_cart", handler);
+    return () => window.removeEventListener("voice:add_to_cart", handler);
+  }, [product]);
 
   const reviewMutation = useMutation({
     mutationFn: ({ rating, comment }) =>
@@ -142,6 +189,12 @@ export default function ProductDetailPage() {
       } else {
         guestAddItem({ productId, quantity, size: selectedSize, priceAtAdd, name: product.name, image });
       }
+      track("add_to_cart", productId, {
+        productName: product.name,
+        category: product.category,
+        price: priceAtAdd,
+        size: selectedSize,
+      });
       showToast("Added to cart");
     } catch (err) {
       showToast(err?.response?.data?.message || "Could not add to cart");

@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { cartApi } from "../api/cart";
 import { couponsApi } from "../api/orders";
+import { productApi } from "../api/products";
 import { useAuthStore } from "../store/authStore";
 import { useGuestCartStore } from "../store/guestCartStore";
 import Toast from "../components/ui/Toast";
+import { getSessionId } from "../hooks/useBehaviorTracker";
 
 const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
@@ -222,6 +224,150 @@ function OrderSummary({
   );
 }
 
+function CompleteTheLook({ firstProductId }) {
+  const navigate = useNavigate();
+
+  const { data: picks = [] } = useQuery({
+    queryKey: ["complete-look", firstProductId],
+    queryFn: () =>
+      (firstProductId
+        ? productApi.related(firstProductId)
+        : productApi.personalized(getSessionId())
+      ).then((r) => (r.data.data || []).slice(0, 4)),
+    staleTime: 10 * 60 * 1000,
+    retry: 0,
+    enabled: true,
+  });
+
+  if (picks.length < 2) return null;
+
+  return (
+    <div
+      style={{
+        marginTop: 40,
+        paddingTop: 32,
+        borderTop: "1px solid rgba(201,169,110,0.1)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
+        <span
+          style={{
+            width: 20,
+            height: 1,
+            background: "linear-gradient(to right, transparent, #c9a96e)",
+            display: "inline-block",
+          }}
+        />
+        <span
+          style={{
+            fontSize: 9,
+            letterSpacing: "0.28em",
+            textTransform: "uppercase",
+            color: "#c9a96e",
+          }}
+        >
+          Complete the Look
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+          gap: 12,
+        }}
+      >
+        {picks.map((p) => {
+          const pid = p._id || p.id;
+          const img = p.images?.[0];
+          return (
+            <div
+              key={pid}
+              onClick={() => navigate(`/product/${pid}`)}
+              style={{
+                background: "#1a1916",
+                border: "1px solid rgba(201,169,110,0.12)",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "rgba(201,169,110,0.35)";
+                e.currentTarget.style.transform = "translateY(-3px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "rgba(201,169,110,0.12)";
+                e.currentTarget.style.transform = "none";
+              }}
+            >
+              <div
+                style={{
+                  aspectRatio: "3/4",
+                  background: "#0d0c0b",
+                  overflow: "hidden",
+                }}
+              >
+                {img ? (
+                  <img
+                    src={img}
+                    alt={p.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <svg width="28" height="28" viewBox="0 0 60 60" fill="none">
+                      <rect x="10" y="10" width="40" height="40" stroke="rgba(201,169,110,0.2)" strokeWidth="0.8" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div style={{ padding: "10px 10px 12px" }}>
+                <div
+                  style={{
+                    fontFamily: "'Cormorant Garamond',serif",
+                    fontSize: 13,
+                    fontWeight: 300,
+                    color: "#f0e6d0",
+                    marginBottom: 4,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {p.name}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'Cormorant Garamond',serif",
+                    fontSize: 15,
+                    color: "#c9a96e",
+                  }}
+                >
+                  {"₹" + Number(p.price || 0).toLocaleString("en-IN")}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function CartPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -391,6 +537,8 @@ export default function CartPage() {
                     onRemove={(args) => removeMutation.mutate(args)}
                   />
                 ))}
+
+                <CompleteTheLook firstProductId={items[0]?.productId} />
 
                 <CouponInput
                   couponCode={couponCode}

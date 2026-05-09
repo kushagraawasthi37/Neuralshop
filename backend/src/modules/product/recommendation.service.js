@@ -1,5 +1,10 @@
 import { Product } from "./product.model.js";
 import mongoose from "mongoose";
+import { callGroq } from "../../utils/groq.js";
+import {
+  getBehaviorEventsService,
+  buildBehaviorSummary,
+} from "../behavior/behavior.service.js";
 
 // ============================================
 // GET SIMILAR PRODUCTS (by category)
@@ -188,24 +193,90 @@ export const getYouMayLikeService = async (productId, { limit = 10 } = {}) => {
 };
 
 // ============================================
-// PERSONALIZED RECOMMENDATIONS (Future: AI/ML)
+// PERSONALIZED RECOMMENDATIONS (Groq AI)
 // ============================================
 export const getPersonalizedRecommendationsService = async (
   userId,
+  sessionId,
   { limit = 10 } = {},
 ) => {
   try {
-    // This is a placeholder for future ML-based recommendations
-    // For now, return top-rated products from various categories
+    // Fetch user behavior events
+    const events = await getBehaviorEventsService(userId, sessionId, 80);
 
-    const recommendations = await Product.aggregate([
-      { $match: { rating: { $gt: 3 } } },
-      { $group: { _id: "$category", products: { $push: "$$ROOT" } } },
-      { $limit: limit },
-    ]);
+    if (events.length < 3) {
+      // Not enough data — return bestsellers as cold-start fallback
+      return getRecommendedProductsService(null, { limit });
+    }
 
-    return recommendations;
+    const summary = buildBehaviorSummary(events);
+
+    // Pre-filter candidates by top-interest categories
+    const topCats = summary.topCategories.map((c) => c.cat).filter(Boolean);
+    const candidateFilter =
+      topCats.length > 0 ? { category: { $in: topCats } } : {};
+
+    const candidates = await Product.find(candidateFilter)
+      .sort({ rating: -1, reviewCount: -1 })
+      .limit(50)
+      .select("_id name price images category subCategory rating reviewCount bestseller sizes")
+      .lean();
+
+    if (candidates.length === 0) {
+      return getRecommendedProductsService(null, { limit });
+    }
+
+    // Ask Groq to rank candidates based on user behavior
+    const systemPrompt =
+      "You are a luxury fashion AI recommendation engine for NeuralShop. " +
+      "Analyze user behavior and return the best product IDs in order of relevance. " +
+      "Return only valid JSON.";
+
+    const userPrompt =
+      `User behavior summary:\n${JSON.stringify(summary, null, 2)}\n\n` +
+      `Candidate products (id | name | category | price | rating):\n` +
+      candidates
+        .slice(0, 40)
+        .map(
+          (p) =>
+            `${p._id} | ${p.name} | ${p.category} | ₹${p.price} | ★${p.rating}`,
+        )
+        .join("\n") +
+      `\n\nReturn JSON: {"recommendedIds": ["id1","id2",...], "reason": "brief explanation"}` +
+      `\nPick the top ${limit} most relevant IDs.`;
+
+    let ids = [];
+    try {
+      const raw = await callGroq(
+        [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        { temperature: 0.2, maxTokens: 600 },
+      );
+      const parsed = JSON.parse(raw);
+      ids = (parsed.recommendedIds || []).slice(0, limit);
+    } catch (_) {
+      // Groq failed or hit rate limit — fall back to top-rated candidates
+      return candidates.slice(0, limit);
+    }
+
+    // Hydrate in the recommended order
+    const map = Object.fromEntries(candidates.map((p) => [String(p._id), p]));
+    const ordered = ids.map((id) => map[id]).filter(Boolean);
+
+    // Pad with candidates if Groq returned fewer than limit
+    if (ordered.length < limit) {
+      const seen = new Set(ordered.map((p) => String(p._id)));
+      for (const p of candidates) {
+        if (ordered.length >= limit) break;
+        if (!seen.has(String(p._id))) ordered.push(p);
+      }
+    }
+
+    return ordered;
   } catch (error) {
-    throw error;
+    // Ultimate fallback
+    return getRecommendedProductsService(null, { limit });
   }
 };

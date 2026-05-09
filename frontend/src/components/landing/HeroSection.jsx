@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { productApi } from "../../api/products";
+import { getSessionId } from "../../hooks/useBehaviorTracker";
 
 function CountUp({ target, suffix = "" }) {
   const ref = useRef(null);
@@ -24,6 +27,20 @@ function CountUp({ target, suffix = "" }) {
 
 export default function HeroSection() {
   const stageRef = useRef(null);
+  const navigate = useNavigate();
+
+  const { data: heroProducts = [] } = useQuery({
+    queryKey: ["hero-picks"],
+    queryFn: () =>
+      productApi
+        .personalized(getSessionId())
+        .then((r) => (r.data.data || []).slice(0, 3)),
+    staleTime: 0,
+    retry: 0,
+  });
+
+  const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+  const [p0, p1, p2] = heroProducts;
 
   // 3D tilt — only on pointer devices
   useEffect(() => {
@@ -380,6 +397,8 @@ export default function HeroSection() {
                 opacity: 0.7,
               }}
               small
+              imgSrc={p0?.images?.[0]}
+              onClick={() => p0 && navigate(`/product/${p0._id || p0.id}`)}
             >
               <div
                 style={{
@@ -389,7 +408,7 @@ export default function HeroSection() {
                   marginBottom: 4,
                 }}
               >
-                Phantom Watch
+                {p0?.name || "Phantom Watch"}
               </div>
               <div
                 style={{
@@ -398,7 +417,7 @@ export default function HeroSection() {
                   color: "#c9a96e",
                 }}
               >
-                ₹48,000
+                {p0 ? fmt(p0.price) : "₹48,000"}
               </div>
             </ProductCard3D>
 
@@ -412,6 +431,8 @@ export default function HeroSection() {
                 transform: "translate(-50%, -50%)",
               }}
               badge="Neural Pick"
+              imgSrc={p1?.images?.[0]}
+              onClick={() => p1 && navigate(`/product/${p1._id || p1.id}`)}
             >
               <div
                 style={{
@@ -421,7 +442,7 @@ export default function HeroSection() {
                   marginBottom: 4,
                 }}
               >
-                Aeon Vessel
+                {p1?.name || "Aeon Vessel"}
               </div>
               <div
                 style={{
@@ -431,7 +452,7 @@ export default function HeroSection() {
                   marginBottom: 12,
                 }}
               >
-                Limited Edition · S/S 2026
+                {p1?.category || "Limited Edition"} · S/S 2026
               </div>
               <div
                 style={{
@@ -447,7 +468,7 @@ export default function HeroSection() {
                     color: "#f0e6d0",
                   }}
                 >
-                  ₹1,24,000
+                  {p1 ? fmt(p1.price) : "₹1,24,000"}
                 </div>
                 <div
                   style={{
@@ -473,6 +494,8 @@ export default function HeroSection() {
               }}
               small
               dark
+              imgSrc={p2?.images?.[0]}
+              onClick={() => p2 && navigate(`/product/${p2._id || p2.id}`)}
             >
               <div
                 style={{
@@ -482,7 +505,7 @@ export default function HeroSection() {
                   marginBottom: 4,
                 }}
               >
-                Moss Scent
+                {p2?.name || "Moss Scent"}
               </div>
               <div
                 style={{
@@ -491,7 +514,7 @@ export default function HeroSection() {
                   color: "#c9a96e",
                 }}
               >
-                ₹6,800
+                {p2 ? fmt(p2.price) : "₹6,800"}
               </div>
             </ProductCard3D>
           </div>
@@ -730,11 +753,12 @@ export default function HeroSection() {
   );
 }
 
-function ProductCard3D({ children, style, badge, small, dark }) {
+function ProductCard3D({ children, style, badge, small, dark, imgSrc, onClick }) {
   const imgH = small ? 80 : 150;
   return (
     <div
       className={`product-card-3d${dark ? " dark" : ""}`}
+      onClick={onClick}
       style={{
         position: "absolute",
         background: dark
@@ -777,21 +801,30 @@ function ProductCard3D({ children, style, badge, small, dark }) {
           border: dark
             ? "1px solid rgba(255,255,255,0.08)"
             : "1px solid rgba(201,169,110,0.08)",
+          overflow: "hidden",
         }}
       >
-        <svg
-          viewBox="0 0 80 80"
-          fill="none"
-          stroke="#c9a96e"
-          strokeWidth="1"
-          width={small ? 40 : 60}
-          height={small ? 40 : 60}
-          opacity={0.4}
-        >
-          <path d="M40 10 L65 25 L65 55 L40 70 L15 55 L15 25 Z" />
-          <path d="M40 10 L40 70M15 25 L65 55M65 25 L15 55" />
-          <circle cx="40" cy="40" r="8" fill="rgba(201,169,110,0.1)" />
-        </svg>
+        {imgSrc ? (
+          <img
+            src={imgSrc}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <svg
+            viewBox="0 0 80 80"
+            fill="none"
+            stroke="#c9a96e"
+            strokeWidth="1"
+            width={small ? 40 : 60}
+            height={small ? 40 : 60}
+            opacity={0.4}
+          >
+            <path d="M40 10 L65 25 L65 55 L40 70 L15 55 L15 25 Z" />
+            <path d="M40 10 L40 70M15 25 L65 55M65 25 L15 55" />
+            <circle cx="40" cy="40" r="8" fill="rgba(201,169,110,0.1)" />
+          </svg>
+        )}
       </div>
       {children}
     </div>

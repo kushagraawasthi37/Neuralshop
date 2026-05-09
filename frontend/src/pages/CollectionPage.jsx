@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/products";
 import { cartApi } from "../api/cart";
 import { wishlistApi } from "../api/user";
 import { useAuthStore } from "../store/authStore";
 import { useGuestCartStore } from "../store/guestCartStore";
+import { getSessionId, useBehaviorTracker } from "../hooks/useBehaviorTracker";
 
 const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const LIMIT = 5;
@@ -458,7 +459,177 @@ function sortProducts(products, sortBy) {
   return arr;
 }
 
+function PersonalisedStrip({ isLoggedIn }) {
+  const navigate = useNavigate();
+  const guestAddItem = useGuestCartStore((s) => s.addItem);
+  const { track } = useBehaviorTracker();
+
+  const { data: picks = [], isLoading } = useQuery({
+    queryKey: ["personalized-collection", isLoggedIn],
+    queryFn: () =>
+      productApi
+        .personalized(getSessionId())
+        .then((r) => (r.data.data || []).slice(0, 8)),
+    staleTime: 5 * 60 * 1000,
+    retry: 0,
+  });
+
+  if (isLoading || picks.length < 2) return null;
+
+  return (
+    <div
+      style={{
+        padding: "28px 0 0",
+        marginBottom: 32,
+        borderBottom: "1px solid rgba(201,169,110,0.07)",
+        paddingBottom: 32,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 18,
+        }}
+      >
+        <span
+          style={{
+            width: 24,
+            height: 1,
+            background: "linear-gradient(to right, transparent, #c9a96e)",
+            display: "inline-block",
+          }}
+        />
+        <span
+          style={{
+            fontSize: 9,
+            letterSpacing: "0.28em",
+            textTransform: "uppercase",
+            color: "#c9a96e",
+          }}
+        >
+          Curated For You
+        </span>
+        <span
+          style={{
+            fontSize: 9,
+            letterSpacing: "0.1em",
+            color: "rgba(201,169,110,0.3)",
+            textTransform: "uppercase",
+          }}
+        >
+          · AI Picks
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          overflowX: "auto",
+          paddingBottom: 8,
+          scrollbarWidth: "none",
+        }}
+      >
+        {picks.map((p) => {
+          const pid = p._id || p.id;
+          const img = p.images?.[0];
+          return (
+            <div
+              key={pid}
+              onClick={() => navigate(`/product/${pid}`)}
+              style={{
+                flex: "0 0 160px",
+                background: "#1a1916",
+                border: "1px solid rgba(201,169,110,0.14)",
+                cursor: "pointer",
+                transition: "all 0.35s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "rgba(201,169,110,0.38)";
+                e.currentTarget.style.transform = "translateY(-3px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "rgba(201,169,110,0.14)";
+                e.currentTarget.style.transform = "none";
+              }}
+            >
+              <div
+                style={{
+                  aspectRatio: "3/4",
+                  background: "#0d0c0b",
+                  overflow: "hidden",
+                }}
+              >
+                {img ? (
+                  <img
+                    src={img}
+                    alt={p.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <svg width="32" height="32" viewBox="0 0 60 60" fill="none">
+                      <rect x="10" y="10" width="40" height="40" stroke="rgba(201,169,110,0.2)" strokeWidth="0.8" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div style={{ padding: "10px 12px 14px" }}>
+                <div
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "rgba(201,169,110,0.45)",
+                    marginBottom: 4,
+                  }}
+                >
+                  {p.category}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'Cormorant Garamond',serif",
+                    fontSize: 13,
+                    fontWeight: 300,
+                    color: "#f0e6d0",
+                    marginBottom: 6,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {p.name}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'Cormorant Garamond',serif",
+                    fontSize: 16,
+                    color: "#c9a96e",
+                  }}
+                >
+                  {"₹" + Number(p.price || 0).toLocaleString("en-IN")}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function CollectionPage() {
+  const { isLoggedIn } = useAuthStore();
   const [searchParams] = useSearchParams();
   const [category, setCategory] = useState(
     searchParams.get("category") || "All",
@@ -1001,6 +1172,9 @@ export default function CollectionPage() {
 
         {/* Main Content */}
         <div className="listing-content">
+          {/* AI Personalized Strip */}
+          {!hasFilters && <PersonalisedStrip isLoggedIn={isLoggedIn} />}
+
           {/* Filter chips + count bar */}
           <div
             style={{

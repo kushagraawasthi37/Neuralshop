@@ -12,6 +12,9 @@ const TrendingSection = lazy(
   () => import("../components/landing/TrendingSection"),
 );
 const Newsletter = lazy(() => import("../components/landing/Newsletter"));
+const PersonalizedSection = lazy(
+  () => import("../components/landing/PersonalizedSection"),
+);
 
 // Minimal skeleton — no heavy loader, respects reduced motion
 const SectionSkeleton = () => (
@@ -39,6 +42,7 @@ export default function LandingPage() {
       {/* ⚡ Fold 2 */}
       <Suspense fallback={<SectionSkeleton />}>
         <FeaturedProducts />
+        <PersonalizedSection />
         <StorySection />
       </Suspense>
 

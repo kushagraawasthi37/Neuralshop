@@ -121,26 +121,24 @@ export const getYouMayLike = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, mayLike, "You may like products retrieved"));
 });
 
-// Get personalized recommendations
+// Get personalized recommendations (works for both logged-in users and guests)
 export const getPersonalized = asyncHandler(async (req, res) => {
-  const { limit = 10 } = req.query;
-  const userId = req.userId;
+  const { limit = 10, sessionId } = req.query;
+  const userId = req.userId || null;
 
-  if (!userId) {
-    throw new ApiError(400, "User must be logged in", [], "product");
+  if (!userId && !sessionId) {
+    throw new ApiError(400, "userId or sessionId required", [], "product");
   }
 
-  const personalized = await getPersonalizedRecommendationsService(userId, {
-    limit: parseInt(limit),
-  });
+  const personalized = await getPersonalizedRecommendationsService(
+    userId,
+    sessionId,
+    { limit: parseInt(limit) },
+  );
 
   res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        personalized,
-        "Personalized recommendations retrieved",
-      ),
+      new ApiResponse(200, personalized, "Personalized recommendations retrieved"),
     );
 });

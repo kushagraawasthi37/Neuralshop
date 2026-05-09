@@ -12,7 +12,8 @@ export const productApi = {
   similar: (id) => api.get(`/recommendations/similar/${id}`),
   related: (id) => api.get(`/recommendations/related/${id}`),
   youMayLike: (id) => api.get(`/recommendations/you-may-like/${id}`),
-  personalized: () => api.get("/recommendations/personalized"),
+  personalized: (sessionId) =>
+    api.get("/recommendations/personalized", { params: { sessionId } }),
 };
 
 export const reviewApi = {
