@@ -13,20 +13,29 @@ const CATEGORIES = [
   "Clothing",
 ];
 
+const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL"];
+
+const emptyProduct = () => ({
+  name: "",
+  category: "",
+  subCategory: "",
+  price: "",
+  description: "",
+  bestseller: false,
+  sizes: SIZE_OPTIONS.map((s) => ({ size: s, stock: "" })),
+  image1: null,
+  image2: null,
+  image3: null,
+  image4: null,
+});
+
 export default function ProductsPanel({ showToast }) {
   const qc = useQueryClient();
   const [productModal, setProductModal] = useState(false);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [newProduct, setNewProduct] = useState({
-    name: "",
-    category: "",
-    price: "",
-    originalPrice: "",
-    description: "",
-    isActive: true,
-  });
+  const [newProduct, setNewProduct] = useState(emptyProduct);
 
   // Fetch all products (backend ignores filter params — we filter client-side)
   const { data: allProducts = [] } = useQuery({
@@ -96,24 +105,86 @@ export default function ProductsPanel({ showToast }) {
   }, [allProducts, search, filterCategory, filterStatus]);
 
   const createProductMutation = useMutation({
-    mutationFn: (data) => adminProductsApi.create(data),
+    mutationFn: (formData) => adminProductsApi.create(formData),
     onSuccess: () => {
       qc.invalidateQueries(["admin-products"]);
       setProductModal(false);
-      setNewProduct({
-        name: "",
-        category: "",
-        price: "",
-        originalPrice: "",
-        description: "",
-        isActive: true,
-      });
+      setNewProduct(emptyProduct());
       showToast("Product created successfully");
     },
-    onError: () => showToast("Failed to create product"),
+    onError: (err) =>
+      showToast(
+        err?.response?.data?.message ||
+          err?.response?.data?.errors?.[0]?.msg ||
+          "Failed to create product",
+      ),
   });
 
   const set = (key, val) => setNewProduct((p) => ({ ...p, [key]: val }));
+
+  const setSizeStock = (size, stock) =>
+    setNewProduct((p) => ({
+      ...p,
+      sizes: p.sizes.map((s) => (s.size === size ? { ...s, stock } : s)),
+    }));
+
+  const handleSubmit = () => {
+    const stockedSizes = newProduct.sizes
+      .filter((s) => s.stock !== "" && Number(s.stock) > 0)
+      .map((s) => ({ size: s.size, stock: Number(s.stock) }));
+
+    if (!newProduct.name.trim() || newProduct.name.trim().length < 3) {
+      showToast("Name must be at least 3 characters");
+      return;
+    }
+    if (
+      !newProduct.description.trim() ||
+      newProduct.description.trim().length < 10
+    ) {
+      showToast("Description must be at least 10 characters");
+      return;
+    }
+    if (!newProduct.price || Number(newProduct.price) < 0) {
+      showToast("Valid price is required");
+      return;
+    }
+    if (!newProduct.category.trim()) {
+      showToast("Category is required");
+      return;
+    }
+    if (!newProduct.subCategory.trim()) {
+      showToast("Sub-category is required");
+      return;
+    }
+    if (stockedSizes.length === 0) {
+      showToast("Add stock to at least one size");
+      return;
+    }
+    if (
+      !newProduct.image1 ||
+      !newProduct.image2 ||
+      !newProduct.image3 ||
+      !newProduct.image4
+    ) {
+      showToast("All 4 product images are required");
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append("name", newProduct.name.trim());
+    fd.append("description", newProduct.description.trim());
+    fd.append("price", String(Number(newProduct.price)));
+    fd.append("category", newProduct.category.trim());
+    fd.append("subCategory", newProduct.subCategory.trim());
+    fd.append("sizes", JSON.stringify(stockedSizes));
+    fd.append("bestseller", newProduct.bestseller ? "true" : "false");
+    fd.append("image1", newProduct.image1);
+    fd.append("image2", newProduct.image2);
+    fd.append("image3", newProduct.image3);
+    fd.append("image4", newProduct.image4);
+
+    createProductMutation.mutate(fd);
+  };
 
   return (
     <div className="ns-content">
@@ -159,6 +230,15 @@ export default function ProductsPanel({ showToast }) {
             </div>
             <div className="form-row three">
               <div className="form-group">
+                <div className="form-label">Sub-category</div>
+                <input
+                  className="ns-input"
+                  placeholder="e.g. Topwear"
+                  value={newProduct.subCategory}
+                  onChange={(e) => set("subCategory", e.target.value)}
+                />
+              </div>
+              <div className="form-group">
                 <div className="form-label">Price (₹)</div>
                 <input
                   className="ns-input"
@@ -169,17 +249,7 @@ export default function ProductsPanel({ showToast }) {
                 />
               </div>
               <div className="form-group">
-                <div className="form-label">Compare At (₹)</div>
-                <input
-                  className="ns-input"
-                  type="number"
-                  placeholder="0"
-                  value={newProduct.originalPrice}
-                  onChange={(e) => set("originalPrice", e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <div className="form-label">Status</div>
+                <div className="form-label">Bestseller</div>
                 <div
                   style={{
                     display: "flex",
@@ -191,14 +261,14 @@ export default function ProductsPanel({ showToast }) {
                   <label className="ns-toggle">
                     <input
                       type="checkbox"
-                      checked={newProduct.isActive}
-                      onChange={(e) => set("isActive", e.target.checked)}
+                      checked={newProduct.bestseller}
+                      onChange={(e) => set("bestseller", e.target.checked)}
                     />
                     <div className="ns-toggle-track" />
                     <div className="ns-toggle-thumb" />
                   </label>
                   <span style={{ fontSize: 12, color: "var(--text-mid)" }}>
-                    Active
+                    Featured
                   </span>
                 </div>
               </div>
@@ -213,10 +283,133 @@ export default function ProductsPanel({ showToast }) {
                   className="ns-input"
                   rows={3}
                   style={{ resize: "vertical" }}
-                  placeholder="Product description…"
+                  placeholder="Product description (min 10 characters)…"
                   value={newProduct.description}
                   onChange={(e) => set("description", e.target.value)}
                 />
+              </div>
+            </div>
+            <div
+              className="form-row"
+              style={{ gridTemplateColumns: "1fr", marginBottom: 16 }}
+            >
+              <div className="form-group">
+                <div className="form-label">Sizes & Stock</div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(6, 1fr)",
+                    gap: 8,
+                  }}
+                >
+                  {newProduct.sizes.map((s) => (
+                    <div key={s.size}>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "var(--text-muted)",
+                          marginBottom: 4,
+                          textAlign: "center",
+                        }}
+                      >
+                        {s.size}
+                      </div>
+                      <input
+                        className="ns-input"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={s.stock}
+                        onChange={(e) => setSizeStock(s.size, e.target.value)}
+                        style={{ textAlign: "center" }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    marginTop: 6,
+                  }}
+                >
+                  Leave a size blank or 0 to skip it.
+                </div>
+              </div>
+            </div>
+            <div
+              className="form-row"
+              style={{ gridTemplateColumns: "1fr", marginBottom: 16 }}
+            >
+              <div className="form-group">
+                <div className="form-label">Product Images (4 required)</div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gap: 10,
+                  }}
+                >
+                  {[1, 2, 3, 4].map((n) => {
+                    const key = `image${n}`;
+                    const file = newProduct[key];
+                    return (
+                      <label
+                        key={key}
+                        style={{
+                          display: "block",
+                          border: "1px dashed var(--border-gold)",
+                          background: file
+                            ? "transparent"
+                            : "rgba(201,169,110,0.04)",
+                          cursor: "pointer",
+                          aspectRatio: "1 / 1",
+                          position: "relative",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          onChange={(e) =>
+                            set(key, e.target.files?.[0] || null)
+                          }
+                        />
+                        {file ? (
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt=""
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexDirection: "column",
+                              gap: 4,
+                              color: "var(--text-muted)",
+                              fontSize: 11,
+                            }}
+                          >
+                            <span style={{ fontSize: 18, opacity: 0.5 }}>
+                              +
+                            </span>
+                            Image {n}
+                          </div>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             </div>
             <div className="modal-actions">
@@ -231,13 +424,7 @@ export default function ProductsPanel({ showToast }) {
                 type="button"
                 className="ns-btn ns-btn-primary"
                 disabled={createProductMutation.isPending}
-                onClick={() =>
-                  createProductMutation.mutate({
-                    ...newProduct,
-                    price: Number(newProduct.price),
-                    originalPrice: Number(newProduct.originalPrice),
-                  })
-                }
+                onClick={handleSubmit}
               >
                 {createProductMutation.isPending ? "Creating…" : "Add Product"}
               </button>
