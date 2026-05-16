@@ -12,6 +12,7 @@ EventEmitter.defaultMaxListeners = 20;
 import app from "./app.js";
 import config from "./config/environment.config.js";
 import { logStartup, logDatabase } from "./utils/logger.js";
+import { startKeepAlive } from "./utils/keep-alive.js";
 
 // Redis
 import redisClient from "./config/redis.js";
@@ -36,6 +37,9 @@ app.listen(PORT, async () => {
     port: PORT,
     environment: config.app.env,
   });
+
+  // Keep Render free-tier dyno awake by self-pinging /api/healthCheck
+  startKeepAlive();
 
   logDatabase(
     `MongoDB ${config.database.mongoUrl ? "connected" : "not configured"}`,

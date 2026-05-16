@@ -401,6 +401,8 @@ export default function HeroSection() {
               onClick={() => p0 && navigate(`/product/${p0._id || p0.id}`)}
             >
               <div
+                className="hero-card-title"
+                title={p0?.name || "Phantom Watch"}
                 style={{
                   fontFamily: "'Cormorant Garamond', serif",
                   fontSize: 12,
@@ -435,6 +437,8 @@ export default function HeroSection() {
               onClick={() => p1 && navigate(`/product/${p1._id || p1.id}`)}
             >
               <div
+                className="hero-card-title"
+                title={p1?.name || "Aeon Vessel"}
                 style={{
                   fontFamily: "'Cormorant Garamond', serif",
                   fontSize: 16,
@@ -498,6 +502,8 @@ export default function HeroSection() {
               onClick={() => p2 && navigate(`/product/${p2._id || p2.id}`)}
             >
               <div
+                className="hero-card-title"
+                title={p2?.name || "Moss Scent"}
                 style={{
                   fontFamily: "'Cormorant Garamond', serif",
                   fontSize: 12,
@@ -701,9 +707,15 @@ export default function HeroSection() {
         @media (hover: hover) {
           .product-card-3d:hover {
             border-color: rgba(201,169,110,0.4);
-            transform: translateY(-8px) scale(1.02) !important;
             box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 40px rgba(201,169,110,0.08);
           }
+        }
+        .product-card-3d .hero-card-title {
+          display: block;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
         }
         .card-img-placeholder {
           width: 100%;

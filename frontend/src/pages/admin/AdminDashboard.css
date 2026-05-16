@@ -1009,8 +1009,11 @@ table.ns-table td.primary {
   backdrop-filter: blur(8px);
   z-index: 500;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 16px;
   animation: fadeIn 0.2s ease
 }
 
@@ -1030,8 +1033,7 @@ table.ns-table td.primary {
   padding: 40px;
   width: 580px;
   max-width: 90vw;
-  max-height: 85vh;
-  overflow-y: auto;
+  margin: auto;
   position: relative;
   animation: modalIn 0.35s var(--ease)
 }
@@ -1592,8 +1594,7 @@ table.ns-table td.primary {
     width: calc(100vw - 24px);
     max-width: 100%;
     padding: 24px 20px;
-    max-height: 90vh;
-    margin: 12px;
+    margin: 12px auto;
   }
 
   .modal-title {
