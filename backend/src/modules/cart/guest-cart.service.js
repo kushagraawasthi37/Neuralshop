@@ -1,4 +1,5 @@
 import prisma from "../../prisma/client.js";
+import { mergeCartService } from "./cart.service.js";
 
 // ============================================
 // CREATE GUEST CART (persistent storage)
@@ -170,9 +171,9 @@ export const migrateGuestCartToUserService = async (sessionId, userId) => {
       return { message: "No items to migrate" };
     }
 
-    // Note: This assumes you have a function to add items to user's Redis cart
-    // In practice, you'll import the addItemToCartService from cart service
-    // and add each item one by one
+    const cart = await mergeCartService(userId, {
+      items: guestCart.items,
+    });
 
     // Delete guest cart after migration
     await deleteGuestCartService(sessionId);

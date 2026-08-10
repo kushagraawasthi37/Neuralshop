@@ -18,6 +18,7 @@ const normalizeSize = (size) =>
   String(size || "")
     .trim()
     .toUpperCase();
+
 const assertCartItemLimit = (cart) => {
   if (cart.items.length > MAX_CART_ITEMS) {
     throw new Error(
@@ -49,7 +50,7 @@ const parseRedisCart = (payload) => {
 
 const cacheCart = async (userId, cart) => {
   if (!userId || !cart)
-    throw new Error("Cannot cache cart; missing userId or cart");
+    throw new Error("Cannot cache cart, missing userId or cart");
   cart.updatedAt = new Date();
   await redisClient.set(
     getRedisKey(userId),
@@ -62,6 +63,7 @@ const cacheCart = async (userId, cart) => {
 
 const _modifyCartWithTransaction = async (userId, modifierFn) => {
   if (!userId) throw new Error("userId is required");
+
   if (typeof modifierFn !== "function")
     throw new Error("modifierFn must be a function");
 
@@ -190,6 +192,7 @@ export const addItemToCartService = async (userId, item) => {
   const normalizedProductId = normalizeId(productId);
   const normalizedSize = normalizeSize(size);
 
+  //Sanitize the input
   if (!normalizedProductId) throw new Error("productId is required");
   if (!normalizedSize) throw new Error("size is required");
   if (!["XS", "S", "M", "L", "XL", "XXL"].includes(normalizedSize))
@@ -318,10 +321,13 @@ export const validateCartService = async (userId) => {
   const productIds = cart.items
     .map((item) => normalizeId(item.productId))
     .filter((id) => id && mongoose.Types.ObjectId.isValid(id));
+
   const uniqueProductIds = [...new Set(productIds)];
+
   const products = uniqueProductIds.length
     ? await Product.find({ _id: { $in: uniqueProductIds } }).lean()
     : [];
+
   const productMap = new Map(
     products.map((product) => [String(product._id), product]),
   );
@@ -362,6 +368,7 @@ export const validateCartService = async (userId) => {
     }
 
     const product = productMap.get(itemId);
+
     if (!product) {
       issues.push(`item[${idx}] product not found`);
       continue;
@@ -371,6 +378,7 @@ export const validateCartService = async (userId) => {
       issues.push(`item[${idx}] invalid product data`);
       continue;
     }
+
     const sizeEntry = product.sizes.find(
       (s) => normalizeSize(s.size) === itemSize,
     );
@@ -408,10 +416,13 @@ export const checkoutCartService = async (userId) => {
   const productIds = cart.items
     .map((item) => normalizeId(item.productId))
     .filter((id) => id && mongoose.Types.ObjectId.isValid(id));
+
   const uniqueProductIds = [...new Set(productIds)];
+
   const products = uniqueProductIds.length
     ? await Product.find({ _id: { $in: uniqueProductIds } }).lean()
     : [];
+
   const productMap = new Map(
     products.map((product) => [String(product._id), product]),
   );
@@ -430,7 +441,6 @@ export const checkoutCartService = async (userId) => {
     totalPrice += item.quantity * item.priceAtAdd;
   }
 
-  // Stock should be reserved here to avoid race conditions
   return {
     totalItems,
     totalPrice,
@@ -494,7 +504,7 @@ export const mergeCartService = async (userId, guestCartPayload) => {
           productId: normalizedProductId,
           size: normalizedSize,
           quantity: guestItem.quantity,
-          priceAtAdd: guestItem.priceAtAdd ?? 0,
+          priceAtAdd: guestItem.priceAtAdd ?? guestItem.price ?? 0,
           name: guestItem.name,
           image: guestItem.image,
         });
