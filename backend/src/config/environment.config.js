@@ -1,154 +1,170 @@
-/**
- * Central Configuration Management
- * All environment variables and app config in one place
- */
+// ─── Fail-Fast Environment Configuration ─────────────────────────────────
+// Validates and coerces all environment variables at startup.
+// If a REQUIRED variable is missing the process crashes immediately with a
+// clear error message rather than failing silently 5 requests later.
+//
+// WHY fail-fast: "undefined is not a function" 10 requests in is much harder
+// to debug than "MISSING ENV: JWT_SECRET" at process.stdout on startup.
 
-const getEnvVariable = (key, defaultValue = null) => {
+// ─── Helpers ──────────────────────────────────────────────────────────────
+const missing = [];
+
+const required = (key) => {
   const value = process.env[key];
-  if (!value && defaultValue === null) {
-    console.warn(`⚠️  Environment variable ${key} is not set`);
+  if (!value || !value.trim()) {
+    missing.push(key);
+    return "";
   }
-  return value || defaultValue;
+  return value;
 };
 
+const optional = (key, defaultValue = "") =>
+  process.env[key] ?? defaultValue;
+
+const optionalInt = (key, defaultValue) => {
+  const val = process.env[key];
+  if (!val) return defaultValue;
+  const parsed = parseInt(val, 10);
+  if (isNaN(parsed)) {
+    console.error(`ENV ERROR: ${key} must be an integer, got "${val}"`);
+    missing.push(key);
+    return defaultValue;
+  }
+  return parsed;
+};
+
+const optionalUrl = (key, defaultValue) => {
+  const val = process.env[key];
+  if (!val) return defaultValue;
+  try {
+    new URL(val);
+    return val;
+  } catch {
+    console.error(`ENV ERROR: ${key} must be a valid URL, got "${val}"`);
+    missing.push(key);
+    return defaultValue;
+  }
+};
+
+const isDev = optional("NODE_ENV", "development") === "development";
+const isProd = optional("NODE_ENV", "development") === "production";
+
+// ─── Configuration ────────────────────────────────────────────────────────
 export const config = {
-  // App Config
   app: {
-    name: getEnvVariable("APP_NAME", "NeuralShop Backend"),
-    env: getEnvVariable("NODE_ENV", "development"),
-    port: parseInt(getEnvVariable("PORT", "6000")),
-    isDevelopment: getEnvVariable("NODE_ENV", "development") === "development",
-    isProduction: getEnvVariable("NODE_ENV", "development") === "production",
+    name: optional("APP_NAME", "NeuralShop Backend"),
+    env: optional("NODE_ENV", "development"),
+    port: optionalInt("PORT", 6000),
+    isDevelopment: isDev,
+    isProduction: isProd,
   },
 
-  // Frontend URLs
   frontend: {
-    userUrl: getEnvVariable("FRONTEND_URL_USER", "http://localhost:3000"),
-    adminUrl: getEnvVariable("FRONTEND_URL_ADMIN", "http://localhost:3001"),
+    userUrl: optional("FRONTEND_URL_USER", "http://localhost:5173"),
+    adminUrl: optional("FRONTEND_URL_ADMIN", "http://localhost:5174"),
   },
 
-  // Database Config
   database: {
-    mongoUrl: getEnvVariable("MONGO_URL"),
-    postgresUrl: getEnvVariable("DATABASE_URL"),
+    mongoUrl: required("MONGO_URL"),
+    postgresUrl: required("DATABASE_URL"),
   },
 
-  // JWT Config
   jwt: {
-    secret: getEnvVariable("JWT_SECRET"),
-    expiryTime: getEnvVariable("JWT_EXPIRY_TIME", "7d"),
+    secret: required("JWT_SECRET"),
+    refreshSecret: optional("JWT_REFRESH_SECRET"),  // falls back to JWT_SECRET if missing
+    expiryTime: optional("JWT_EXPIRY_TIME", "15m"),
   },
 
-  // Cloudinary Config
   cloudinary: {
-    name: getEnvVariable("CLOUDINARY_NAME"),
-    apiKey: getEnvVariable("CLOUDINARY_API_KEY"),
-    apiSecret: getEnvVariable("CLOUDINARY_API_SECRET"),
+    name: required("CLOUDINARY_NAME"),
+    apiKey: required("CLOUDINARY_API_KEY"),
+    apiSecret: required("CLOUDINARY_API_SECRET"),
   },
 
-  // Redis Config
   redis: {
-    url: getEnvVariable("REDIS_URL", "localhost"),
+    url: optional("REDIS_URL", "redis://localhost:6379"),
   },
 
-  // Kafka Config
   kafka: {
-    broker: getEnvVariable("KAFKA_BROKER", "localhost:9092"),
-    clientId: getEnvVariable("KAFKA_CLIENT_ID", "neural-shop"),
-    groupId: getEnvVariable("KAFKA_GROUP_ID", "neural-shop-consumer-group"),
-    username: getEnvVariable("KAFKA_USERNAME", ""),
-    password: getEnvVariable("KAFKA_PASSWORD", ""),
+    broker: optional("KAFKA_BROKER", "localhost:9092"),
+    clientId: optional("KAFKA_CLIENT_ID", "neural-shop"),
+    groupId: optional("KAFKA_GROUP_ID", "neural-shop-consumer-group"),
+    username: optional("KAFKA_USERNAME", ""),
+    password: optional("KAFKA_PASSWORD", ""),
   },
 
-  // Google OAuth Config
   google: {
-    clientId: getEnvVariable("GOOGLE_CLIENT_ID"),
+    clientId: optional("GOOGLE_CLIENT_ID"),
   },
 
-  // Razorpay Config
   razorpay: {
-    keyId: getEnvVariable("RAZORPAY_KEY_ID"),
-    keySecret: getEnvVariable("RAZORPAY_KEY_SECRET"),
+    keyId: required("RAZORPAY_KEY_ID"),
+    keySecret: required("RAZORPAY_KEY_SECRET"),
+    // webhookSecret used in webhookVerification.middleware.js
+    webhookSecret: optional("RAZORPAY_WEBHOOK_SECRET"),
   },
 
-  // SendGrid Config
   sendgrid: {
-    apiKey: getEnvVariable("SENDGRID_API_KEY"),
-    fromEmail: getEnvVariable("SENDGRID_FROM_EMAIL"),
+    apiKey: required("SENDGRID_API_KEY"),
+    fromEmail: required("SENDGRID_FROM_EMAIL"),
   },
 
-  // Elasticsearch Config
   elasticsearch: {
-    node: getEnvVariable("ELASTICSEARCH_NODE", "http://localhost:9200"),
-    key: getEnvVariable("ELASTICSEARCH_API_KEY"),
+    node: optional("ELASTICSEARCH_NODE", "http://localhost:9200"),
+    key: optional("ELASTICSEARCH_API_KEY"),
   },
-  // Logging Config
+
   logging: {
-    level: getEnvVariable("LOG_LEVEL", "debug"),
-    enableFileLogging: getEnvVariable("ENABLE_FILE_LOGGING", "true") === "true",
-    enableConsoleLogging:
-      getEnvVariable("ENABLE_CONSOLE_LOGGING", "true") === "true",
-
-    // File rotation settings
-    maxFileSize: parseInt(getEnvVariable("LOG_MAX_FILE_SIZE", "5242880")), // 5MB
-    maxFiles: parseInt(getEnvVariable("LOG_MAX_FILES", "5")),
-
-    // Category-specific settings
+    level: optional("LOG_LEVEL", isDev ? "debug" : "info"),
+    enableFileLogging: optional("ENABLE_FILE_LOGGING", "true") === "true",
+    enableConsoleLogging: optional("ENABLE_CONSOLE_LOGGING", "true") === "true",
+    maxFileSize: optionalInt("LOG_MAX_FILE_SIZE", 5_242_880),
+    maxFiles: optionalInt("LOG_MAX_FILES", 5),
     categories: {
-      http: {
-        enabled: getEnvVariable("LOG_HTTP_ENABLED", "true") === "true",
-        maxFiles: parseInt(getEnvVariable("LOG_HTTP_MAX_FILES", "10")),
-      },
-      database: {
-        enabled: getEnvVariable("LOG_DATABASE_ENABLED", "true") === "true",
-        maxFiles: parseInt(getEnvVariable("LOG_DB_MAX_FILES", "10")),
-      },
-      auth: {
-        enabled: getEnvVariable("LOG_AUTH_ENABLED", "true") === "true",
-        maxFiles: parseInt(getEnvVariable("LOG_AUTH_MAX_FILES", "15")),
-      },
       performance: {
-        enabled: getEnvVariable("LOG_PERFORMANCE_ENABLED", "true") === "true",
-        maxFiles: parseInt(getEnvVariable("LOG_PERF_MAX_FILES", "10")),
-        threshold: parseInt(getEnvVariable("LOG_PERF_THRESHOLD_MS", "1000")), // Alert if operation > 1s
-      },
-      payment: {
-        enabled: getEnvVariable("LOG_PAYMENT_ENABLED", "true") === "true",
-        maxFiles: parseInt(getEnvVariable("LOG_PAYMENT_MAX_FILES", "20")),
+        threshold: optionalInt("LOG_PERF_THRESHOLD_MS", 1000),
       },
     },
   },
 
-  // Cors Config
   cors: {
     origin: [
-      getEnvVariable("FRONTEND_URL_USER", "http://localhost:3000"),
-      getEnvVariable("FRONTEND_URL_ADMIN", "http://localhost:3001"),
+      optional("FRONTEND_URL_USER", "http://localhost:5173"),
+      optional("FRONTEND_URL_ADMIN", "http://localhost:5174"),
       "http://localhost:4173",
+      "http://localhost:3000",
+      "http://localhost:3001",
       "https://neuralshop-usermode.onrender.com",
-      "http://localhost:5173",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   },
 
-  // Cookie Config
   cookie: {
     httpOnly: true,
-    secure: getEnvVariable("NODE_ENV", "development") === "production",
-    sameSite:
-      getEnvVariable("NODE_ENV", "development") === "production"
-        ? "none"
-        : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",//CSRF(Cross-Site Request Forgery) attack.
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   },
 
-  // Rate Limiting Config (future use)
   rateLimit: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100, // limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 100,
   },
 };
+
+// ─── Fail-fast check ──────────────────────────────────────────────────────
+// In production every required variable must be present.
+// In development print warnings but don't crash (allows local dev without full stack).
+if (missing.length > 0) {
+  const msg = `\n\n🔴 MISSING REQUIRED ENVIRONMENT VARIABLES:\n  ${missing.join("\n  ")}\n\nSet these in your .env file. See .env.example for reference.\n`;
+  if (isProd) {
+    console.error(msg);
+    process.exit(1);
+  } else {
+    console.warn(msg);
+  }
+}
 
 export default config;

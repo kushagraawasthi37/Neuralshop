@@ -1,0 +1,137 @@
+import { asyncHandler } from "../../utils/async-handler.js";
+import ApiResponse from "../../utils/api-response.js";
+import { ApiError } from "../../utils/api-error.js";
+import {
+  getSimilarProductsService,
+  getRelatedProductsService,
+  getRecommendedProductsService,
+  getTopRatedProductsService,
+  getTrendingProductsService,
+  getYouMayLikeService,
+  getPersonalizedRecommendationsService,
+} from "./recommendation.service.js";
+
+export const getSimilarProducts = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { limit = 10 } = req.query;
+
+  if (!productId) {
+    throw new ApiError(400, "Product ID is required", [], "product");
+  }
+
+  const similar = await getSimilarProductsService(productId, {
+    limit: parseInt(limit),
+  });
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, similar, "Similar products retrieved successfully"),
+    );
+});
+
+export const getRelatedProducts = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { limit = 10 } = req.query;
+
+  if (!productId) {
+    throw new ApiError(400, "Product ID is required", [], "product");
+  }
+
+  const related = await getRelatedProductsService(productId, {
+    limit: parseInt(limit),
+  });
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, related, "Related products retrieved successfully"),
+    );
+});
+
+export const getRecommended = asyncHandler(async (req, res) => {
+  const { limit = 10 } = req.query;
+  const userId = req.userId || null;
+
+  const recommended = await getRecommendedProductsService(userId, {
+    limit: parseInt(limit),
+  });
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        recommended,
+        "Recommended products retrieved successfully",
+      ),
+    );
+});
+
+export const getTopRated = asyncHandler(async (req, res) => {
+  const { limit = 10 } = req.query;
+
+  const topRated = await getTopRatedProductsService({
+    limit: parseInt(limit),
+  });
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, topRated, "Top rated products retrieved"));
+});
+
+export const getTrending = asyncHandler(async (req, res) => {
+  const { limit = 10 } = req.query;
+
+  const trending = await getTrendingProductsService({
+    limit: parseInt(limit),
+  });
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        trending,
+        "Trending products retrieved successfully",
+      ),
+    );
+});
+
+export const getYouMayLike = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { limit = 10 } = req.query;
+
+  if (!productId) {
+    throw new ApiError(400, "Product ID is required", [], "product");
+  }
+
+  const mayLike = await getYouMayLikeService(productId, {
+    limit: parseInt(limit),
+  });
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, mayLike, "You may like products retrieved"));
+});
+
+export const getPersonalized = asyncHandler(async (req, res) => {
+  const { limit = 10, sessionId } = req.query;
+  const userId = req.userId || null;
+
+  if (!userId && !sessionId) {
+    throw new ApiError(400, "userId or sessionId required", [], "product");
+  }
+
+  const personalized = await getPersonalizedRecommendationsService(
+    userId,
+    sessionId,
+    { limit: parseInt(limit) },
+  );
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, personalized, "Personalized recommendations retrieved"),
+    );
+});

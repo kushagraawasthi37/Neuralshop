@@ -1,56 +1,43 @@
-// Order Consumer - Consumes order events
-import { createKafkaConsumer } from "../../config/kafka.js";
+import { BaseConsumer } from "../../kafka/base.consumer.js";
 import { orderEvents } from "../event-types.js";
+import { logger } from "../../utils/logger.js";
+
+class OrderConsumer extends BaseConsumer {
+  constructor() {
+    super("order-group", "orders");
+  }
+
+  async processMessage(_topic, _partition, _message, event) {
+    const { orderId, userId, totalAmount } = event.data ?? {};
+
+    switch (event.eventType) {
+      case orderEvents.ORDER_CREATED:
+        logger.info("Order created event received", { orderId, userId, totalAmount });
+        break;
+
+      case orderEvents.ORDER_SHIPPED:
+        logger.info("Order shipped event received", { orderId });
+        break;
+
+      case orderEvents.ORDER_DELIVERED:
+        logger.info("Order delivered event received", { orderId });
+        break;
+
+      case orderEvents.ORDER_CANCELLED:
+        logger.info("Order cancelled event received", { orderId });
+        break;
+
+      default:
+        logger.warn("OrderConsumer: unknown event type", { eventType: event.eventType });
+    }
+  }
+}
 
 export const startOrderConsumer = async () => {
-  const consumer = createKafkaConsumer("order-group");
+  const consumer = new OrderConsumer();
   try {
-    await consumer.connect();
-    await consumer.subscribe({ topic: "orders" });
-
-    await consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        const event = JSON.parse(message.value.toString());
-        console.log("Order event consumed:", event);
-
-        // Handle order events
-        switch (event.eventType) {
-          case orderEvents.ORDER_CREATED:
-            // Order created - could trigger notifications, emails, etc.
-            console.log("Order created event received:", event.data);
-            const { orderId, userId, totalAmount } = event.data;
-            // Could send order confirmation email, SMS, etc.
-            break;
-
-          case orderEvents.ORDER_SHIPPED:
-            // Item shipped - notify customer
-            console.log("Order shipped event received:", event.data);
-            const shipmentData = event.data;
-            // Send shipping notification to customer
-            // Update order tracking, send email, SMS, push notification
-            break;
-
-          case orderEvents.ORDER_DELIVERED:
-            // Item delivered - notify customer
-            console.log("Order delivered event received:", event.data);
-            const deliveryData = event.data;
-            // Send delivery confirmation
-            // Request review/feedback from customer
-            // Mark as fulfillment complete
-            break;
-
-          case orderEvents.ORDER_CANCELLED:
-            // Order cancelled
-            console.log("Order cancelled event received:", event.data);
-            // Refund notification, cancellation confirmation email
-            break;
-
-          default:
-            console.log("Unknown order event:", event.eventType);
-        }
-      },
-    });
-  } catch (error) {
-    console.error("Error starting order consumer:", error);
+    return await consumer.start();
+  } catch (err) {
+    logger.warn("Order consumer not started", { error: err.message });
   }
 };

@@ -15,17 +15,32 @@ import {
 import config from "../../config/environment.config.js";
 import { OTP_TYPES, ROLES } from "./otp.service.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 import redisClient from "../../config/redis.js";
 import firebaseAdmin from "../../config/firebaseAdmin.js";
+import { User } from "../user/user.model.js";
+import { genToken, genRefreshToken } from "../../config/jwt.js";
 
 const isProd = config.app.isProduction;
 
+// Access token cookie — 15 min (same as JWT expiry)
 const setUserCookie = (res, token) => {
   res.cookie("userToken", token, {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
+    maxAge: 15 * 60 * 1000,
+  });
+};
+
+// Refresh token cookie — 7 days
+const setRefreshCookie = (res, token) => {
+  res.cookie("refreshToken", token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/api/auth/refresh", // scoped so browser only sends on refresh endpoint
   });
 };
 
@@ -316,4 +331,63 @@ export const getCurrentAdmin = async (req, res) => {
       .status(403)
       .json({ message: "Something went wrong.Login again" });
   }
+};
+
+// ─── POST /api/auth/refresh ───────────────────────────────────────────────
+// Silent re-auth: client sends the refreshToken cookie, gets a new access token.
+// The old refreshToken is rotated (old hash deleted, new one stored) to detect
+// refresh token reuse attacks (a stolen token can only be used once).
+export const refreshAccessToken = async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, message: "No refresh token" });
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(
+      refreshToken,
+      config.jwt.refreshSecret ?? config.jwt.secret,
+    );
+  } catch {
+    return res.status(401).json({ success: false, message: "Invalid or expired refresh token" });
+  }
+
+  if (payload.type !== "refresh") {
+    return res.status(401).json({ success: false, message: "Invalid token type" });
+  }
+
+  // Fetch user with refresh token hash (select: false fields need explicit projection)
+  const user = await User.findById(payload.userId).select("+refreshTokenHash +refreshTokenExpiry");
+  if (!user) {
+    return res.status(401).json({ success: false, message: "User not found" });
+  }
+
+  if (!user.refreshTokenHash || !user.refreshTokenExpiry || user.refreshTokenExpiry < new Date()) {
+    return res.status(401).json({ success: false, message: "Refresh token expired. Please log in again." });
+  }
+
+  const isValid = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+  if (!isValid) {
+    // Possible token reuse — invalidate all sessions for this user
+    await User.findByIdAndUpdate(payload.userId, {
+      $unset: { refreshTokenHash: 1, refreshTokenExpiry: 1 },
+    });
+    return res.status(401).json({ success: false, message: "Refresh token reuse detected. All sessions invalidated." });
+  }
+
+  // Rotate: generate new pair
+  const newAccessToken = genToken(user._id.toString());
+  const newRefreshToken = genRefreshToken(user._id.toString());
+  const newHash = await bcrypt.hash(newRefreshToken, 10);
+
+  await User.findByIdAndUpdate(payload.userId, {
+    refreshTokenHash: newHash,
+    refreshTokenExpiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+
+  setUserCookie(res, newAccessToken);
+  setRefreshCookie(res, newRefreshToken);
+
+  return res.status(200).json({ success: true, message: "Token refreshed" });
 };

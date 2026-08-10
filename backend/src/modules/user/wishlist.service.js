@@ -108,7 +108,7 @@ export const isInWishlistService = async (userId, productId) => {
       "items.productId": new mongoose.Types.ObjectId(productId),
     });
 
-    return !!wishlist;
+    return !!wishlist;//It converts any value into a boolean.
   } catch (error) {
     throw error;
   }

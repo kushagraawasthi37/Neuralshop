@@ -14,7 +14,10 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\frontend\\\\src\\\\pages\\\\account\\\\\" | Select-Object Name, FullName)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\" -Recurse -Depth 2)",
       "Bash(Select-Object FullName)",
-      "Bash(Select-String -Path \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\backend\\\\.env\" -Pattern \"GOOGLE\")"
+      "Bash(Select-String -Path \"c:\\\\Users\\\\kusha\\\\OneDrive\\\\Desktop\\\\WebDevelopment\\\\PROJECTs\\\\NeuralShop\\\\backend\\\\.env\" -Pattern \"GOOGLE\")",
+      "Bash(ls /mnt/c/Users/kusha/OneDrive/Desktop/WebDevelopment/PROJECTs/NeuralShop/backend/ | grep -i docker)",
+      "Read(//mnt/c/Users/kusha/OneDrive/Desktop/WebDevelopment/PROJECTs/NeuralShop/**)",
+      "Bash(node --input-type=module --eval ' *)"
     ]
   }
 }

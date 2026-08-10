@@ -15,6 +15,7 @@ const sortKeys = (obj) => {
   return obj;
 };
 
+//  creates a deterministic MD5 hash from an object, useful for generating consistent cache keys.
 export const stableHash = (obj) =>
   crypto
     .createHash("md5")
@@ -35,6 +36,7 @@ export const setCache = async (key, data, ttl) => {
     await redisClient.set(key, JSON.stringify(data), "EX", ttl);
   } catch {
     // silent — cache failure must never break the request
+    logger.error("Failed to set cache", { key, category: "cache" });
   }
 };
 
@@ -43,10 +45,11 @@ export const deleteCache = async (key) => {
     await redisClient.del(key);
     logger.debug("Cache invalidated", { key, category: "cache" });
   } catch {
-    // silent
+    logger.error("Failed to invalidate cache", { key, category: "cache" });
   }
 };
 
+// scans Redis for all keys matching a pattern and deletes them, which is a bulk cache invalidation helper.
 export const deleteByPattern = async (pattern) => {
   try {
     let cursor = "0";
@@ -69,6 +72,9 @@ export const deleteByPattern = async (pattern) => {
       }
     } while (cursor !== "0");
   } catch {
-    // silent
+    logger.error("Failed to invalidate cache by pattern", {
+      pattern,
+      category: "cache",
+    });
   }
 };

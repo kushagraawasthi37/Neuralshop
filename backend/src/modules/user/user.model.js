@@ -76,8 +76,16 @@ const userSchema = new mongoose.Schema(
     resetToken: String,
     resetTokenExpiry: Date,
 
-    // ⚠️ NOTE: Cart is in Redis, NOT in this schema
-    // Use: cart:userId → Redis
+    // 🔄 Refresh token (hashed) — supports silent re-auth without re-login
+    // Storing the HASH (not the plaintext) means a DB leak doesn't handout live tokens. The client holds the plaintext in an httpOnly cookie.
+    refreshTokenHash: {
+      type: String,
+      select: false,
+    },
+    refreshTokenExpiry: {
+      type: Date,
+      select: false,
+    },
   },
   { timestamps: true },
 );

@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
+import fs from "fs/promises";
+import { existsSync } from "fs";
 import config from "./environment.config.js";
 
 const uploadOnCloudinary = async (filePath) => {
@@ -26,13 +27,21 @@ const uploadOnCloudinary = async (filePath) => {
     const uploadResult = await cloudinary.uploader.upload(filePath);
     console.log("Upload successful:", uploadResult.secure_url);
 
-    fs.unlinkSync(filePath);
+    // Delete local file asynchronously
+    await fs.unlink(filePath);
+
     return uploadResult.secure_url;
   } catch (error) {
     console.error("Cloudinary upload error:", error);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Clean up local file if it exists
+    if (filePath && existsSync(filePath)) {
+      try {
+        await fs.unlink(filePath);
+      } catch (deleteError) {
+        console.error("Failed to delete local file:", deleteError);
+      }
     }
+
     return null;
   }
 };

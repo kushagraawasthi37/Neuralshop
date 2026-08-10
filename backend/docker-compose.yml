@@ -1,30 +1,174 @@
 name: NeuralShop
 
-services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-
-    container_name: elasticsearch
-
-    restart: always
-
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms256m -Xmx256m
-
-    ports:
-      - "9200:9200"
-
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-
-    networks:
-      - neural_net
-
+# ─── Named volumes ────────────────────────────────────────────────────────
 volumes:
+  pg_data:
+  mongo_data:
+  redis_data:
   elasticsearch_data:
+  kafka_data:
+  zk_data:
 
+# ─── Networks ─────────────────────────────────────────────────────────────
 networks:
   neural_net:
     driver: bridge
+
+# ─── Services ─────────────────────────────────────────────────────────────
+services:
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: neural_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-neural}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-neural_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-neuralshop}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks: [neural_net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-neural} -d ${POSTGRES_DB:-neuralshop}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── MongoDB ──────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: neural_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-neural}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-neural_secret}
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks: [neural_net]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Redis ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: neural_redis
+    restart: unless-stopped
+    # AOF persistence with fsync every second — good balance of durability vs performance
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks: [neural_net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Zookeeper ────────────────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: neural_zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zk_data:/var/lib/zookeeper/data
+    networks: [neural_net]
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Kafka ────────────────────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: neural_kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Internal (service-to-service) + external (host machine) listeners
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    ports:
+      - "29092:29092"
+    networks: [neural_net]
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list 2>/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── Elasticsearch ────────────────────────────────────────────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks: [neural_net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Backend App ──────────────────────────────────────────────────────
+  # Uncomment when you add a Dockerfile to the backend directory.
+  # backend:
+  #   build: .
+  #   restart: unless-stopped
+  #   depends_on:
+  #     postgres: { condition: service_healthy }
+  #     mongo:    { condition: service_healthy }
+  #     redis:    { condition: service_healthy }
+  #     kafka:    { condition: service_healthy }
+  #     elasticsearch: { condition: service_healthy }
+  #   env_file: .env
+  #   environment:
+  #     DATABASE_URL: postgresql://neural:neural_secret@postgres:5432/neuralshop?connection_limit=10
+  #     MONGO_URL: mongodb://neural:neural_secret@mongo:27017/neuralshop?authSource=admin
+  #     REDIS_URL: redis://redis:6379
+  #     KAFKA_BROKER: kafka:9092
+  #     ELASTICSEARCH_NODE: http://elasticsearch:9200
+  #   ports:
+  #     - "${PORT:-6000}:${PORT:-6000}"
+  #   volumes:
+  #     - ./logs:/app/logs
+  #   networks: [neural_net]

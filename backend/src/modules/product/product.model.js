@@ -87,6 +87,8 @@ const productSchema = new mongoose.Schema(
     },
 
     // 🔍 SEO fields
+
+    // unique product identifier used to track inventory.
     sku: {
       type: String,
       unique: true,

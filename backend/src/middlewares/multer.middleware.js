@@ -3,6 +3,8 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
+
+// Instead of storing uploaded files permanently, they are temporarily saved in the OS temp folder before being processed or uploaded to cloud storage (e.g., Cloudinary or S3).
 const uploadDir = path.join(os.tmpdir(), "neuralshop-uploads");
 
 if (!fs.existsSync(uploadDir)) {

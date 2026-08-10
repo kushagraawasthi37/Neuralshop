@@ -2,81 +2,81 @@ import jwt from "jsonwebtoken";
 import config from "../config/environment.config.js";
 import redisClient from "../config/redis.js";
 
-//User
+// ─── isAuth — user routes ─────────────────────────────────────────────────
+// Returns 401 (not 400) so the frontend Axios interceptor knows to trigger
+// a silent refresh via POST /api/auth/refresh.
 const isAuth = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
     const token =
       req.cookies?.userToken ||
-      (authHeader && authHeader.startsWith("Bearer ")
-        ? authHeader.split(" ")[1].trim()
-        : null);
+      (authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1].trim() : null);
 
     if (!token) {
-      return res.status(400).json({ message: "user does not have token" });
+      return res.status(401).json({ success: false, message: "Authentication required" });
     }
 
     try {
       const blacklisted = await redisClient.get(`blacklisted_token:${token}`);
       if (blacklisted) {
-        return res
-          .status(401)
-          .json({ message: "Token invalidated. Please login again." });
+        return res.status(401).json({ success: false, message: "Session invalidated. Please log in again." });
       }
-    } catch (_redisErr) {
-      // Redis unavailable — reject to prevent blacklisted tokens from passing through
-      return res.status(503).json({ message: "Auth service temporarily unavailable. Please try again." });
+    } catch {
+      return res.status(503).json({ success: false, message: "Auth service temporarily unavailable." });
     }
 
     try {
-      const verifyToken = jwt.verify(token, config.jwt.secret);
-      req.userId = verifyToken?.userId;
+      const payload = jwt.verify(token, config.jwt.secret);
+      req.userId = payload.userId;
       req.token = token;
       next();
-    } catch (error) {
-      return res.status(401).json({ message: `isAuth error ${error.message}` });
+    } catch (jwtErr) {
+      // Distinguish expired vs invalid so the frontend can decide to refresh
+      if (jwtErr.name === "TokenExpiredError") {
+        return res.status(401).json({ success: false, message: "Token expired", code: "TOKEN_EXPIRED" });
+      }
+      return res.status(401).json({ success: false, message: "Invalid token" });
     }
-  } catch (error) {
-    return res.status(500).json({ message: `isAuth error ${error}` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Internal auth error" });
   }
 };
 
+// ─── isAuthAdmin — admin routes ──────────────────────────────────────────
 const isAuthAdmin = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
     const token =
-      (authHeader && authHeader.startsWith("Bearer ")
-        ? authHeader.split(" ")[1].trim()
-        : null) || req.cookies?.adminToken;
+      req.cookies?.adminToken ||
+      (authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1].trim() : null);
 
     if (!token) {
-      return res.status(400).json({ message: "Admin authentication required" });
+      return res.status(401).json({ success: false, message: "Admin authentication required" });
     }
 
     try {
       const blacklisted = await redisClient.get(`blacklisted_token:${token}`);
       if (blacklisted) {
-        return res
-          .status(401)
-          .json({ message: "Token invalidated. Please login again." });
+        return res.status(401).json({ success: false, message: "Session invalidated. Please log in again." });
       }
-    } catch (_redisErr) {
-      return res.status(503).json({ message: "Auth service temporarily unavailable. Please try again." });
+    } catch {
+      return res.status(503).json({ success: false, message: "Auth service temporarily unavailable." });
     }
 
     try {
-      const verifyToken = jwt.verify(token, config.jwt.secret);
-      req.email = verifyToken?.email;
-      req.adminId = verifyToken?.adminId;
+      const payload = jwt.verify(token, config.jwt.secret);
+      req.email = payload.email;
+      req.adminId = payload.adminId;
       req.token = token;
       next();
-    } catch (error) {
-      return res
-        .status(401)
-        .json({ message: `isAuthAdmin error ${error.message}` });
+    } catch (jwtErr) {
+      if (jwtErr.name === "TokenExpiredError") {
+        return res.status(401).json({ success: false, message: "Token expired", code: "TOKEN_EXPIRED" });
+      }
+      return res.status(401).json({ success: false, message: "Invalid token" });
     }
-  } catch (error) {
-    return res.status(500).json({ message: `isAuthAdmin error ${error}` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Internal auth error" });
   }
 };
 

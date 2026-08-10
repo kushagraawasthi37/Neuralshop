@@ -24,8 +24,8 @@ export const adminInventoryApi = {
   getById: (productId) => api.get(`/admin/inventory/${productId}`),
   getLowStock: (threshold = 10) =>
     api.get('/admin/inventory/low-stock', { params: { threshold } }),
-  update: (productId, totalStock, reason) =>
-    api.patch(`/admin/inventory/${productId}`, { totalStock, reason }),
+  update: (productId, totalStock, reason, size) =>
+    api.patch(`/admin/inventory/${productId}`, { totalStock, reason, size }),
   importCsv: (formData) =>
     api.post('/admin/inventory/bulk/csv', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

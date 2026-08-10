@@ -1,5 +1,21 @@
 import { body, param, query } from "express-validator";
 
+// Reusable MongoDB ObjectId validator
+const isMongoId = (field) =>
+  body(field)
+    .notEmpty()
+    .withMessage(`${field} is required`)
+    .isMongoId()
+    .withMessage(`${field} must be a valid MongoDB ObjectId (24-char hex)`);
+
+// Reusable UUID validator (Prisma IDs)
+const isUUID = (field) =>
+  body(field)
+    .notEmpty()
+    .withMessage(`${field} is required`)
+    .isUUID()
+    .withMessage(`${field} must be a valid UUID`);
+
 // ========== AUTH VALIDATIONS ==========
 export const authValidations = {
   registration: [
@@ -418,6 +434,69 @@ export const orderValidations = {
       .withMessage("Status is required")
       .isIn(["Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"])
       .withMessage("Invalid order status"),
+  ],
+};
+
+// ========== CHECKOUT VALIDATIONS ==========
+export const checkoutValidations = {
+  checkout: [
+    body("addressId")
+      .notEmpty().withMessage("addressId is required")
+      .isUUID().withMessage("addressId must be a valid UUID"),
+
+    body("couponCode")
+      .optional()
+      .trim()
+      .isLength({ min: 3, max: 20 })
+      .withMessage("Coupon code must be 3-20 characters")
+      .matches(/^[A-Z0-9_-]+$/i)
+      .withMessage("Coupon code may only contain letters, numbers, hyphens, underscores"),
+  ],
+};
+
+// ========== COUPON VALIDATIONS ==========
+export const couponValidations = {
+  create: [
+    body("code")
+      .trim()
+      .notEmpty().withMessage("Coupon code is required")
+      .isLength({ min: 3, max: 20 }).withMessage("Code must be 3-20 characters")
+      .matches(/^[A-Z0-9_-]+$/i).withMessage("Code may only contain letters, numbers, hyphens, underscores")
+      .toUpperCase(),
+
+    body("discountType")
+      .notEmpty().withMessage("discountType is required")
+      .isIn(["PERCENTAGE", "FLAT"]).withMessage("discountType must be PERCENTAGE or FLAT"),
+
+    body("discountValue")
+      .notEmpty().withMessage("discountValue is required")
+      .isFloat({ min: 0.01 }).withMessage("discountValue must be a positive number"),
+
+    // Extra check: percentage discount must be ≤ 100
+    body("discountValue").custom((value, { req }) => {
+      if (req.body.discountType === "PERCENTAGE" && parseFloat(value) > 100) {
+        throw new Error("Percentage discount cannot exceed 100");
+      }
+      return true;
+    }),
+
+    body("minOrderAmount")
+      .optional()
+      .isFloat({ min: 0 }).withMessage("minOrderAmount must be a non-negative number"),
+
+    body("maxUses")
+      .optional()
+      .isInt({ min: 1 }).withMessage("maxUses must be a positive integer"),
+
+    body("expiresAt")
+      .notEmpty().withMessage("expiresAt is required")
+      .isISO8601().withMessage("expiresAt must be a valid ISO 8601 date")
+      .custom((value) => {
+        if (new Date(value) <= new Date()) {
+          throw new Error("expiresAt must be in the future");
+        }
+        return true;
+      }),
   ],
 };
 

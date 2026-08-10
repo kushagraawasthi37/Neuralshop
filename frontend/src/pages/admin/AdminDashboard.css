@@ -1033,7 +1033,8 @@ table.ns-table td.primary {
   padding: 40px;
   width: 580px;
   max-width: 90vw;
-  margin: auto;
+  max-height: 85vh;
+  overflow-y: auto;
   position: relative;
   animation: modalIn 0.35s var(--ease)
 }
@@ -1594,7 +1595,8 @@ table.ns-table td.primary {
     width: calc(100vw - 24px);
     max-width: 100%;
     padding: 24px 20px;
-    margin: 12px auto;
+    max-height: 90vh;
+    margin: 12px;
   }
 
   .modal-title {

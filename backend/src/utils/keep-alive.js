@@ -20,6 +20,7 @@ export function startKeepAlive() {
 
   const ping = async () => {
     try {
+      //Used to cancel the request if it takes too long.
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 10_000);
       const res = await fetch(url, { signal: ctrl.signal });

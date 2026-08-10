@@ -20,32 +20,32 @@ const parseSizes = (sizesInput) => {
   return sizesInput;
 };
 
-const calculateTotalStock = (sizes) =>
-  sizes.reduce((sum, item) => sum + (Number(item.stock) || 0), 0);
-
 //Checked
 export const addProductService = async (productData, adminEmail, files) => {
-  // console.log("Adding product with data:", productData);
   const { name, description, price, category, subCategory, sizes, bestseller } =
     productData;
 
-  console.log("Received files:", files);
+  const imageFields = ["image1", "image2", "image3", "image4"];
 
-  if (
-    !files?.image1?.[0] ||
-    !files?.image2?.[0] ||
-    !files?.image3?.[0] ||
-    !files?.image4?.[0]
-  ) {
-    throw new ApiError(400, "All 4 images are required", [], "product");
+  // Validate all required images
+  for (const field of imageFields) {
+    if (!files?.[field]?.[0]) {
+      throw new ApiError(
+        400,
+        `Missing required image: ${field}`,
+        [],
+        "product",
+      );
+    }
   }
 
-  const image1 = await uploadOnCloudinary(files.image1[0].path);
-  const image2 = await uploadOnCloudinary(files.image2[0].path);
-  const image3 = await uploadOnCloudinary(files.image3[0].path);
-  const image4 = await uploadOnCloudinary(files.image4[0].path);
+  // Upload all images concurrently
+  const images = await Promise.all(
+    imageFields.map((field) => uploadOnCloudinary(files[field][0].path)),
+  );
 
-  if (!image1 || !image2 || !image3 || !image4) {
+  // Ensure all uploads succeeded
+  if (images.some((image) => !image)) {
     throw new ApiError(
       500,
       "Failed to upload images to Cloudinary",
@@ -53,6 +53,9 @@ export const addProductService = async (productData, adminEmail, files) => {
       "product",
     );
   }
+
+  // If you need individual variables
+  const [image1, image2, image3, image4] = images;
 
   const owner = await Admin.findOne({ email: adminEmail });
   if (!owner) {
@@ -71,15 +74,17 @@ export const addProductService = async (productData, adminEmail, files) => {
     images: [image1, image2, image3, image4],
     owner: owner._id,
   });
-
   try {
-    for (const sizeEntry of parsedSizes) {
-      await initializeInventoryService(
-        product._id.toString(),
-        sizeEntry.size,
-        Number(sizeEntry.stock) || 0,
-      );
-    }
+    await Promise.all(
+      parsedSizes.map((sizeEntry) =>
+        initializeInventoryService(
+          owner._id.toString(),
+          product._id.toString(),
+          sizeEntry.size,
+          Number(sizeEntry.stock) || 0,
+        ),
+      ),
+    );
   } catch (inventoryError) {
     await product.deleteOne().catch(() => {});
     throw inventoryError;
@@ -97,219 +102,207 @@ export const addProductService = async (productData, adminEmail, files) => {
 
 //Checked
 export const listProductService = async (queryParams) => {
+  const {
+    search,
+    category,
+    subCategory,
+    priceMin,
+    priceMax,
+    ratingMin,
+    bestseller,
+    sort,
+    sortBy,
+    order,
+    page = 1,
+    skip,
+    limit = 10,
+  } = queryParams;
+
+  const limitNum = parseInt(limit);
+  const skipNum = skip !== undefined ? parseInt(skip) : 0;
+  const pageNum = queryParams.page
+    ? parseInt(page)
+    : Math.floor(skipNum / limitNum) + 1;
+
+  const effectiveSort = sortBy && order ? `${sortBy}_${order}` : sort;
+
+  const filters = {};
+  if (category) filters.category = category;
+  if (subCategory) filters.subCategory = subCategory;
+  if (priceMin !== undefined) filters.priceMin = parseFloat(priceMin);
+  if (priceMax !== undefined) filters.priceMax = parseFloat(priceMax);
+  if (ratingMin !== undefined) filters.ratingMin = parseFloat(ratingMin);
+  if (bestseller !== undefined) filters.bestseller = bestseller === "true";
+
+  // Try Elasticsearch first — only use results if it actually finds products
   try {
-    const {
+    const result = await searchProducts(
       search,
-      category,
-      subCategory,
-      priceMin,
-      priceMax,
-      ratingMin,
-      bestseller,
-      sort,
-      sortBy,
-      order,
-      page = 1,
-      skip,
-      limit = 10,
-    } = queryParams;
+      filters,
+      effectiveSort,
+      pageNum,
+      limitNum,
+    );
 
-    const limitNum = parseInt(limit);
-    const skipNum = skip !== undefined ? parseInt(skip) : 0;
-    const pageNum = queryParams.page
-      ? parseInt(page)
-      : Math.floor(skipNum / limitNum) + 1;
-
-    const effectiveSort = sortBy && order ? `${sortBy}_${order}` : sort;
-
-    const filters = {};
-    if (category) filters.category = category;
-    if (subCategory) filters.subCategory = subCategory;
-    if (priceMin !== undefined) filters.priceMin = parseFloat(priceMin);
-    if (priceMax !== undefined) filters.priceMax = parseFloat(priceMax);
-    if (ratingMin !== undefined) filters.ratingMin = parseFloat(ratingMin);
-    if (bestseller !== undefined) filters.bestseller = bestseller === "true";
-
-    // Try Elasticsearch first — only use results if it actually finds products
-    try {
-      const result = await searchProducts(
-        search,
-        filters,
-        effectiveSort,
-        pageNum,
-        limitNum,
-      );
-
-      if (result.total > 0) {
-        // Enrich ALL ES results with full MongoDB data so prices/reviews/sizes are always fresh
-        const productIds = result.products.map((p) => p._id);
-        const dbProducts = await Product.find({ _id: { $in: productIds } })
-          .select(
-            "name price as offerPrice images category rating reviewCount bestseller sizes createdAt",
-          )
-          .lean();
-
-        const productMap = Object.fromEntries(
-          dbProducts.map((p) => [p._id.toString(), p]),
-        );
-
-        // Merge ES doc (for _id/score) with MongoDB fields (for fresh data)
-        result.products = result.products.map((p) => {
-          const db = productMap[p._id] || {};
-          const { price, ...restDb } = db;
-          return { ...p, ...restDb, offerPrice: price, _id: p._id };
-        });
-
-        return result;
-      }
-      // ES returned 0 — fall through to MongoDB (index may be empty or stale)
-    } catch (esError) {
-      console.warn(
-        "Elasticsearch unavailable, falling back to MongoDB:",
-        esError.message,
-      );
-    }
-
-    // MongoDB fallback — always runs when ES returns nothing or errors
-    const query = {};
-
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { category: { $regex: search, $options: "i" } },
-        { subCategory: { $regex: search, $options: "i" } },
-        { tags: { $regex: search, $options: "i" } },
-      ];
-    }
-
-    // Case-insensitive exact match for category/subCategory
-    if (category) query.category = { $regex: `^${category}$`, $options: "i" };
-    if (subCategory)
-      query.subCategory = { $regex: `^${subCategory}$`, $options: "i" };
-
-    if (priceMin !== undefined || priceMax !== undefined) {
-      query.price = {};
-      if (priceMin !== undefined) query.price.$gte = parseFloat(priceMin);
-      if (priceMax !== undefined) query.price.$lte = parseFloat(priceMax);
-    }
-
-    if (ratingMin !== undefined) {
-      query.rating = { $gte: parseFloat(ratingMin) };
-    }
-
-    if (bestseller !== undefined) {
-      query.bestseller = bestseller === "true";
-    }
-
-    const sortOptions = {};
-    switch (effectiveSort) {
-      case "price_asc":
-        sortOptions.price = 1;
-        break;
-      case "price_desc":
-        sortOptions.price = -1;
-        break;
-      case "newest":
-      case "createdAt_desc":
-        sortOptions.createdAt = -1;
-        break;
-      case "createdAt_asc":
-        sortOptions.createdAt = 1;
-        break;
-      case "rating":
-      case "rating_desc":
-        sortOptions.rating = -1;
-        break;
-      case "name_asc":
-        sortOptions.name = 1;
-        break;
-      case "name_desc":
-        sortOptions.name = -1;
-        break;
-      default:
-        sortOptions.createdAt = -1;
-        break;
-    }
-
-    const [products, total] = await Promise.all([
-      Product.find(query)
-        .sort(sortOptions)
-        .skip(skipNum)
-        .limit(limitNum)
+    if (result.total > 0) {
+      // Enrich ALL ES results with full MongoDB data so prices/reviews/sizes are always fresh
+      const productIds = result.products.map((p) => p._id);
+      const dbProducts = await Product.find({ _id: { $in: productIds } })
         .select(
           "name price as offerPrice images category rating reviewCount bestseller sizes createdAt",
         )
-        .lean(),
-      Product.countDocuments(query),
-    ]);
+        .lean();
 
-    return { products, total, page: pageNum, skip: skipNum, limit: limitNum };
-  } catch (error) {
-    console.error("Error in listProductService:", error);
-    throw error;
+      const productMap = Object.fromEntries(
+        dbProducts.map((p) => [p._id.toString(), p]),
+      );
+
+      // Merge ES doc (for _id/score) with MongoDB fields (for fresh data)
+      result.products = result.products.map((p) => {
+        const db = productMap[p._id] || {};
+        const { price, ...restDb } = db;
+        return { ...p, ...restDb, offerPrice: price, _id: p._id };
+      });
+
+      return result;
+    }
+    // ES returned 0 — fall through to MongoDB (index may be empty or stale)
+  } catch (esError) {
+    console.warn(
+      "Elasticsearch unavailable, falling back to MongoDB:",
+      esError.message,
+    );
   }
+
+  // MongoDB fallback — always runs when ES returns nothing or errors
+  const query = {};
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+      { category: { $regex: search, $options: "i" } },
+      { subCategory: { $regex: search, $options: "i" } },
+      { tags: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  // Case-insensitive exact match for category/subCategory
+  if (category) query.category = { $regex: `^${category}$`, $options: "i" };
+  if (subCategory)
+    query.subCategory = { $regex: `^${subCategory}$`, $options: "i" };
+
+  if (priceMin !== undefined || priceMax !== undefined) {
+    query.price = {};
+    if (priceMin !== undefined) query.price.$gte = parseFloat(priceMin);
+    if (priceMax !== undefined) query.price.$lte = parseFloat(priceMax);
+  }
+
+  if (ratingMin !== undefined) {
+    query.rating = { $gte: parseFloat(ratingMin) };
+  }
+
+  if (bestseller !== undefined) {
+    query.bestseller = bestseller === "true";
+  }
+
+  const sortOptions = {};
+  switch (effectiveSort) {
+    case "price_asc":
+      sortOptions.price = 1;
+      break;
+    case "price_desc":
+      sortOptions.price = -1;
+      break;
+    case "newest":
+    case "createdAt_desc":
+      sortOptions.createdAt = -1;
+      break;
+    case "createdAt_asc":
+      sortOptions.createdAt = 1;
+      break;
+    case "rating":
+    case "rating_desc":
+      sortOptions.rating = -1;
+      break;
+    case "name_asc":
+      sortOptions.name = 1;
+      break;
+    case "name_desc":
+      sortOptions.name = -1;
+      break;
+    default:
+      sortOptions.createdAt = -1;
+      break;
+  }
+
+  const [products, total] = await Promise.all([
+    Product.find(query)
+      .sort(sortOptions)
+      .skip(skipNum)
+      .limit(limitNum)
+      .select(
+        "name price as offerPrice images category rating reviewCount bestseller sizes createdAt",
+      )
+      .lean(),
+    Product.countDocuments(query),
+  ]);
+
+  return { products, total, page: pageNum, skip: skipNum, limit: limitNum };
 };
 
 //Checked
 export const listAdminProductsService = async (adminEmail) => {
-  try {
-    const owner = await Admin.findOne({ email: adminEmail });
-    if (!owner) {
-      throw new ApiError(404, "Admin not found", [], "product");
-    }
-    const products = await Product.find({ owner: owner._id });
-    return products;
-  } catch (error) {
-    throw error;
+  const owner = await Admin.findOne({ email: adminEmail });
+  if (!owner) {
+    throw new ApiError(404, "Admin not found", [], "product");
   }
+  const products = await Product.find({ owner: owner._id });
+  return products;
 };
 
 //Checked
 export const removeProductService = async (productId, adminEmail) => {
-  try {
-    const admin = await Admin.findOne({ email: adminEmail });
-    if (!admin) {
-      throw new ApiError(401, "Unauthorized", [], "product");
-    }
-
-    const product = await Product.findById(productId);
-    if (!product) {
-      throw new ApiError(404, "Product not found", [], "product");
-    }
-
-    if (product.owner.toString() !== admin._id.toString()) {
-      throw new ApiError(403, "Forbidden", [], "product");
-    }
-
-    await product.deleteOne();
-
-    // Delete from Elasticsearch index
-    await deleteProductIndex(productId);
-
-    await deleteCache(`product:${productId}`);
-    await deleteByPattern("products:*");
-    await deleteByPattern("search:*");
-    await deleteByPattern("similar:*");
-    await deleteByPattern("related:*");
-    await deleteCache("trending_products");
-    await deleteCache("recommended_products");
-    await deleteCache("top_rated_products");
-
-    return { message: "Product deleted successfully" };
-  } catch (error) {
-    throw error;
+  const admin = await Admin.findOne({ email: adminEmail });
+  if (!admin) {
+    throw new ApiError(401, "Unauthorized", [], "product");
   }
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new ApiError(404, "Product not found", [], "product");
+  }
+
+  if (product.owner.toString() !== admin._id.toString()) {
+    throw new ApiError(403, "Forbidden", [], "product");
+  }
+
+  await product.deleteOne();
+
+  // Delete from Elasticsearch index
+  await deleteProductIndex(productId);
+
+  const cacheKeys = [
+    `product:${productId}`,
+    "trending_products",
+    "recommended_products",
+    "top_rated_products",
+  ];
+
+  const patterns = ["products:*", "search:*", "similar:*", "related:*"];
+
+  //"Since cache invalidations are independent of each other, I used Promise.all() to delete all caches concurrently, reducing the overall response time and making the code cleaner and easier to maintain.
+  await Promise.all([
+    ...cacheKeys.map(deleteCache),
+    ...patterns.map(deleteByPattern),
+  ]);
+
+  return { message: "Product deleted successfully" };
 };
 
 //Checked
 export const getProductByIdService = async (productId) => {
-  try {
-    const product = await Product.findById(productId);
-    return product;
-  } catch (error) {
-    throw error;
-  }
+  return Product.findById(productId);
 };
 
 //Checked
@@ -377,18 +370,21 @@ export const updateProductService = async (
   const updatedProduct = await Product.findByIdAndUpdate(
     productId,
     updateFields,
-    { new: true },
+    { new: true, runValidators: true },
   );
 
   if (newSizes !== null) {
     try {
-      for (const sizeEntry of newSizes) {
-        await updateTotalStockService(
-          productId,
-          sizeEntry.size,
-          Number(sizeEntry.stock) || 0,
-        );
-      }
+      await Promise.all(
+        newSizes.map((sizeEntry) =>
+          updateTotalStockService(
+            admin._id.toString(),
+            productId,
+            sizeEntry.size,
+            Number(sizeEntry.stock) || 0,
+          ),
+        ),
+      );
     } catch (inventoryError) {
       await Product.findByIdAndUpdate(productId, originalProduct).catch(
         () => {},
@@ -399,14 +395,20 @@ export const updateProductService = async (
 
   updateProductIndex(productId, updateFields).catch(() => {});
 
-  await deleteCache(`product:${productId}`);
-  await deleteByPattern("products:*");
-  await deleteByPattern("search:*");
-  await deleteByPattern("similar:*");
-  await deleteByPattern("related:*");
-  await deleteCache("trending_products");
-  await deleteCache("recommended_products");
-  await deleteCache("top_rated_products");
+  const cacheKeys = [
+    `product:${productId}`,
+    "trending_products",
+    "recommended_products",
+    "top_rated_products",
+  ];
+
+  const cachePatterns = ["products:*", "search:*", "similar:*", "related:*"];
+
+  await Promise.all([
+    // cacheKeys.map((key) => deleteCache(key)) equivalent
+    ...cacheKeys.map(deleteCache),
+    ...cachePatterns.map(deleteByPattern),
+  ]);
 
   return updatedProduct;
 };
@@ -449,7 +451,12 @@ export const updateStockService = async (
   await product.save();
 
   try {
-    await updateTotalStockService(productId, size, newStock);
+    await updateTotalStockService(
+      admin._id.toString(),
+      productId,
+      size,
+      newStock,
+    );
   } catch (inventoryError) {
     await Product.findByIdAndUpdate(productId, originalProduct).catch(() => {});
     throw inventoryError;
@@ -462,30 +469,25 @@ export const updateStockService = async (
 
 //Optimized browse service for home page pagination
 export const browseProductsService = async (skip = 0, limit = 12) => {
-  try {
-    const skipNum = parseInt(skip);
-    const limitNum = parseInt(limit);
+  const skipNum = parseInt(skip);
+  const limitNum = parseInt(limit);
 
-    const products = await Product.find()
-      .select(
-        "name price images category rating reviewCount bestseller sizes createdAt",
-      )
-      .sort({ createdAt: -1 })
-      .skip(skipNum)
-      .limit(limitNum)
-      .lean();
+  const products = await Product.find()
+    .select(
+      "name price images category rating reviewCount bestseller sizes createdAt",
+    )
+    .sort({ createdAt: -1 })
+    .skip(skipNum)
+    .limit(limitNum)
+    .lean();
 
-    const total = await Product.countDocuments();
+  const total = await Product.countDocuments();
 
-    return {
-      products,
-      total,
-      skip: skipNum,
-      limit: limitNum,
-      hasMore: skipNum + limitNum < total,
-    };
-  } catch (error) {
-    console.error("Error in browseProductsService:", error);
-    throw error;
-  }
+  return {
+    products,
+    total,
+    skip: skipNum,
+    limit: limitNum,
+    hasMore: skipNum + limitNum < total,
+  };
 };

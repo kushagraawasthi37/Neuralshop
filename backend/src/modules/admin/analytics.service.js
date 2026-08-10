@@ -1,420 +1,621 @@
 import prisma from "../../prisma/client.js";
+import { runAnalyticsTask } from "../../workers/analytics.worker.js";
 
-// ============================================
-// DASHBOARD OVERVIEW STATS
-// ============================================
-export const getDashboardStatsService = async (sellerId = null) => {
-  try {
-    // Total Orders
-    const ordersQuery = sellerId ? { items: { some: { sellerId } } } : {};
-    const totalOrders = await prisma.order.count({
-      where: ordersQuery,
-    });
+// ============================================================
+// QUERY HELPERS
+// ============================================================
 
-    // Total Revenue (exclude cancelled orders)
-    const revenueQuery = sellerId
-      ? { items: { some: { sellerId } }, status: { not: "CANCELLED" } }
-      : { status: { not: "CANCELLED" } };
-    const revenueResult = await prisma.order.aggregate({
-      _sum: { totalAmount: true },
-      where: revenueQuery,
-    });
-    const totalRevenue = revenueResult._sum.totalAmount || 0;
+const getDateQuery = (startDate, endDate) => ({
+  createdAt: {
+    gte: new Date(startDate),
+    lte: new Date(endDate),
+  },
+});
 
-    // Non-cancelled order count for avg calculation
-    const nonCancelledCount = await prisma.order.count({ where: revenueQuery });
+const getSellerItemFilter = (sellerId) => (sellerId ? { sellerId } : {});
 
-    // Total Customers (unique)
-    const customersQuery = sellerId ? { items: { some: { sellerId } } } : {};
-    const uniqueCustomers = await prisma.order.groupBy({
-      by: ["userId"],
-      where: customersQuery,
-    });
-    const totalCustomers = uniqueCustomers.length;
+const getSellerOrderFilter = (sellerId) =>
+  sellerId
+    ? {
+        items: {
+          some: {
+            sellerId,
+          },
+        },
+      }
+    : {};
 
-    // Pending Orders
-    const pendingOrders = await prisma.order.count({
-      where: {
-        status: "PENDING",
-        ...ordersQuery,
-      },
-    });
+const getActiveItemFilter = ({
+  sellerId = null,
+  startDate = null,
+  endDate = null,
+} = {}) => ({
+  ...getSellerItemFilter(sellerId),
 
-    return {
-      totalOrders,
-      totalRevenue,
-      totalCustomers,
-      pendingOrders,
-      avgOrderValue: nonCancelledCount > 0 ? totalRevenue / nonCancelledCount : 0,
-    };
-  } catch (error) {
-    throw error;
+  ...(startDate && endDate
+    ? {
+        createdAt: getDateQuery(startDate, endDate),
+      }
+    : {}),
+
+  status: {
+    not: "CANCELLED",
+  },
+
+  order: {
+    status: {
+      not: "CANCELLED",
+    },
+  },
+});
+
+const getItemFilter = ({
+  sellerId = null,
+  startDate = null,
+  endDate = null,
+} = {}) => ({
+  ...getSellerItemFilter(sellerId),
+
+  ...(startDate && endDate
+    ? {
+        createdAt: getDateQuery(startDate, endDate),
+      }
+    : {}),
+});
+
+
+const getItemRevenue = (item) => item.price * item.quantity;
+
+const calculateRevenue = (items) =>
+  items.reduce((total, item) => total + getItemRevenue(item), 0);
+
+const getUniqueOrderCount = (items) =>
+  new Set(items.map((item) => item.orderId)).size;
+
+const aggregateByProduct = (items) => {
+  const products = new Map();
+
+  for (const item of items) {
+    if (!products.has(item.productId)) {
+      products.set(item.productId, {
+        productId: item.productId,
+        quantity: 0,
+        revenue: 0,
+        orders: new Set(),
+      });
+    }
+
+    const product = products.get(item.productId);
+
+    product.quantity += item.quantity;
+    product.revenue += getItemRevenue(item);
+    product.orders.add(item.orderId);
   }
+
+  return Array.from(products.values()).map((product) => ({
+    productId: product.productId,
+    quantity: product.quantity,
+    revenue: product.revenue,
+    orders: product.orders.size,
+  }));
 };
 
-// ============================================
+const aggregateByStatus = (items) => {
+  const statuses = new Map();
+
+  for (const item of items) {
+    if (!statuses.has(item.status)) {
+      statuses.set(item.status, {
+        status: item.status,
+        revenue: 0,
+        quantity: 0,
+        count: 0,
+      });
+    }
+
+    const status = statuses.get(item.status);
+
+    status.revenue += getItemRevenue(item);
+    status.quantity += item.quantity;
+    status.count += 1;
+  }
+
+  return Array.from(statuses.values());
+};
+
+const aggregateDailySales = (items) => {
+  const dailySales = new Map();
+
+  for (const item of items) {
+    const date = item.createdAt.toISOString().split("T")[0];
+
+    if (!dailySales.has(date)) {
+      dailySales.set(date, {
+        date,
+        revenue: 0,
+        quantity: 0,
+        orders: new Set(),
+      });
+    }
+
+    const daily = dailySales.get(date);
+
+    daily.revenue += getItemRevenue(item);
+    daily.quantity += item.quantity;
+    daily.orders.add(item.orderId);
+  }
+
+  return Array.from(dailySales.values())
+    .map((day) => ({
+      date: day.date,
+      revenue: day.revenue,
+      quantity: day.quantity,
+      orders: day.orders.size,
+    }))
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+};
+
+// ============================================================
+// DASHBOARD STATS
+// ============================================================
+
+export const getDashboardStatsService = async (sellerId = null) => {
+  const sellerOrderFilter = getSellerOrderFilter(sellerId);
+
+  const sellerItemFilter = getSellerItemFilter(sellerId);
+
+  const [
+    totalOrders,
+    revenueItems,
+    nonCancelledOrders,
+    uniqueCustomers,
+    pendingOrders,
+  ] = await Promise.all([
+    prisma.order.count({
+      where: sellerOrderFilter,
+    }),
+
+    prisma.orderItem.findMany({
+      where: getActiveItemFilter({
+        sellerId,
+      }),
+      select: {
+        price: true,
+        quantity: true,
+      },
+    }),
+
+    prisma.order.count({
+      where: {
+        ...sellerOrderFilter,
+        status: {
+          not: "CANCELLED",
+        },
+      },
+    }),
+
+    prisma.order.groupBy({
+      by: ["userId"],
+      where: sellerOrderFilter,
+    }),
+
+    prisma.order.count({
+      where: {
+        status: "PENDING",
+        ...sellerOrderFilter,
+      },
+    }),
+  ]);
+
+  const totalRevenue = calculateRevenue(revenueItems);
+
+  const totalCustomers = uniqueCustomers.length;
+
+  const avgOrderValue =
+    nonCancelledOrders > 0 ? totalRevenue / nonCancelledOrders : 0;
+
+  return {
+    totalOrders,
+    totalRevenue,
+    totalCustomers,
+    pendingOrders,
+    avgOrderValue,
+  };
+};
+
+// ============================================================
 // SALES ANALYTICS
-// ============================================
+// ============================================================
+
 export const getSalesAnalyticsService = async (
   startDate,
   endDate,
   sellerId = null,
 ) => {
-  try {
-    const dateQuery = {
-      createdAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      },
-    };
+  const salesItems = await prisma.orderItem.findMany({
+    where: getActiveItemFilter({
+      sellerId,
+      startDate,
+      endDate,
+    }),
 
-    const itemsQuery = sellerId ? { sellerId } : {};
+    select: {
+      orderId: true,
+      productId: true,
+      price: true,
+      quantity: true,
+      status: true,
+      createdAt: true,
+    },
+  });
 
-    // Daily sales
-    const dailySales = await prisma.orderItem.groupBy({
-      by: ["createdAt"],
-      _sum: { price: true },
-      _count: true,
-      where: {
-        order: { ...dateQuery },
-        ...itemsQuery,
-      },
-    });
+  const dailySales = aggregateDailySales(salesItems);
 
-    // Top selling products
-    const topProducts = await prisma.orderItem.groupBy({
-      by: ["productId"],
-      _sum: { quantity: true, price: true },
-      _count: true,
-      where: {
-        order: { ...dateQuery },
-        ...itemsQuery,
-      },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: 10,
-    });
+  const topProducts = aggregateByProduct(salesItems)
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 10);
 
-    // Revenue by status
-    const revenueByStatus = await prisma.orderItem.groupBy({
-      by: ["status"],
-      _sum: { price: true },
-      _count: true,
-      where: {
-        order: { ...dateQuery },
-        ...itemsQuery,
-      },
-    });
+  const statusItems = await prisma.orderItem.findMany({
+    where: getItemFilter({
+      sellerId,
+      startDate,
+      endDate,
+    }),
 
-    // Aggregate raw groupBy results into per-day buckets (Prisma groups by exact timestamp)
-    const dailyMap = {};
-    for (const d of dailySales) {
-      const dateKey = new Date(d.createdAt).toISOString().split("T")[0];
-      if (!dailyMap[dateKey]) dailyMap[dateKey] = { date: dateKey, revenue: 0, orders: 0 };
-      dailyMap[dateKey].revenue += d._sum?.price || 0;
-      const cnt = typeof d._count === "number" ? d._count : (d._count?._all || 0);
-      dailyMap[dateKey].orders += cnt;
-    }
-    const aggregatedDailySales = Object.values(dailyMap).sort((a, b) =>
-      a.date.localeCompare(b.date),
-    );
+    select: {
+      status: true,
+      price: true,
+      quantity: true,
+    },
+  });
 
-    return {
-      dailySales: aggregatedDailySales,
-      topProducts,
-      revenueByStatus,
-    };
-  } catch (error) {
-    throw error;
-  }
+  const revenueByStatus = aggregateByStatus(statusItems);
+
+  const aggregatedDailySales = await runAnalyticsTask("dailySales", {
+    dailySales,
+  });
+
+  return {
+    dailySales: aggregatedDailySales,
+    topProducts,
+    revenueByStatus,
+  };
 };
 
-// ============================================
+// ============================================================
 // PAYMENT ANALYTICS
-// ============================================
+// ============================================================
+
 export const getPaymentAnalyticsService = async (startDate, endDate) => {
-  try {
-    const dateQuery = {
-      createdAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      },
-    };
+  const dateQuery = getDateQuery(startDate, endDate);
 
-    // Payment status breakdown
-    const paymentStatus = await prisma.payment.groupBy({
-      by: ["status"],
-      _count: true,
-      _sum: { amount: true },
-      where: dateQuery,
-    });
+  const [paymentStatus, paymentProvider, failedPayments, refundedAmount] =
+    await Promise.all([
+      prisma.payment.groupBy({
+        by: ["status"],
+        _count: true,
+        _sum: {
+          amount: true,
+        },
+        where: dateQuery,
+      }),
 
-    // Payment provider breakdown
-    const paymentProvider = await prisma.payment.groupBy({
-      by: ["provider"],
-      _count: true,
-      _sum: { amount: true },
-      where: dateQuery,
-    });
+      prisma.payment.groupBy({
+        by: ["provider"],
+        _count: true,
+        _sum: {
+          amount: true,
+        },
+        where: dateQuery,
+      }),
 
-    // Failed payments
-    const failedPayments = await prisma.payment.count({
-      where: {
-        status: "failed",
-        ...dateQuery,
-      },
-    });
+      prisma.payment.count({
+        where: {
+          status: "failed",
+          ...dateQuery,
+        },
+      }),
 
-    // Refunded payments
-    const refundedAmount = await prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: {
-        status: "refunded",
-        ...dateQuery,
-      },
-    });
+      prisma.payment.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          status: "refunded",
+          ...dateQuery,
+        },
+      }),
+    ]);
 
-    return {
-      paymentStatus,
-      paymentProvider,
-      failedPayments,
-      refundedAmount: refundedAmount._sum.amount || 0,
-    };
-  } catch (error) {
-    throw error;
-  }
+  return {
+    paymentStatus,
+    paymentProvider,
+    failedPayments,
+    refundedAmount: refundedAmount._sum.amount || 0,
+  };
 };
 
-// ============================================
+// ============================================================
 // CUSTOMER ANALYTICS
-// ============================================
-export const getCustomerAnalyticsService = async (startDate, endDate) => {
-  try {
-    const dateQuery = {
-      createdAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      },
-    };
+// ============================================================
 
-    // New customers
-    const newCustomers = await prisma.order.groupBy({
+export const getCustomerAnalyticsService = async (
+  startDate,
+  endDate,
+  sellerId = null,
+) => {
+  const dateQuery = getDateQuery(startDate, endDate);
+
+  const sellerOrderFilter = getSellerOrderFilter(sellerId);
+
+  const [newCustomers, allCustomers, customerItems] = await Promise.all([
+    prisma.order.groupBy({
       by: ["userId"],
-      where: dateQuery,
-    });
-
-    // Repeat customers (customers with 2+ orders)
-    const allCustomers = await prisma.order.groupBy({
-      by: ["userId"],
-      _count: true,
-    });
-
-    const repeatCustomers = allCustomers.filter((c) => c._count >= 2).length;
-
-    // Average order value by customer
-    const customerValue = await prisma.order.groupBy({
-      by: ["userId"],
-      _avg: { totalAmount: true },
-      _count: true,
-      where: dateQuery,
-    });
-
-    // Top customers by spending
-    const topCustomers = await prisma.order.groupBy({
-      by: ["userId"],
-      _sum: { totalAmount: true },
-      _count: true,
-      where: dateQuery,
-      orderBy: { _sum: { totalAmount: "desc" } },
-      take: 10,
-    });
-
-    return {
-      newCustomers: newCustomers.length,
-      repeatCustomers,
-      avgCustomerValue:
-        customerValue.length > 0
-          ? customerValue.reduce(
-              (sum, c) => sum + (c._avg.totalAmount || 0),
-              0,
-            ) / customerValue.length
-          : 0,
-      topCustomers,
-    };
-  } catch (error) {
-    throw error;
-  }
-};
-
-// ============================================
-// INVENTORY ANALYTICS
-// ============================================
-export const getInventoryAnalyticsService = async (sellerId = null) => {
-  try {
-    // Low stock items
-    const lowStock = await prisma.inventory.findMany({
       where: {
-        totalStock: { lte: 10 },
+        ...dateQuery,
+        ...sellerOrderFilter,
       },
-    });
+    }),
 
-    // Total products
-    const totalProducts = await prisma.inventory.groupBy({
-      by: ["productId"],
-    });
+    prisma.order.groupBy({
+      by: ["userId"],
+      _count: true,
+      where: sellerOrderFilter,
+    }),
 
-    // Stock value (approximation using avg price)
-    const inventoryValue = await prisma.inventory.aggregate({
-      _sum: { totalStock: true },
-    });
+    prisma.orderItem.findMany({
+      where: getActiveItemFilter({
+        sellerId,
+        startDate,
+        endDate,
+      }),
 
-    // Most reserved items
-    const mostReserved = await prisma.inventory.findMany({
-      orderBy: { reservedStock: "desc" },
-      take: 10,
-    });
+      select: {
+        orderId: true,
+        price: true,
+        quantity: true,
+        order: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    }),
+  ]);
 
-    return {
-      lowStockItems: lowStock.length,
-      totalProducts: totalProducts.length,
-      totalStock: inventoryValue._sum.totalStock || 0,
-      mostReserved,
-    };
-  } catch (error) {
-    throw error;
+  const customers = new Map();
+
+  for (const item of customerItems) {
+    const userId = item.order.userId;
+
+    if (!customers.has(userId)) {
+      customers.set(userId, {
+        userId,
+        revenue: 0,
+        orders: new Set(),
+      });
+    }
+
+    const customer = customers.get(userId);
+    customer.revenue += getItemRevenue(item);
+    customer.orders.add(item.orderId);
   }
+
+  const customerValue = Array.from(customers.values()).map((customer) => ({
+    userId: customer.userId,
+    _avg: {
+      totalAmount:
+        customer.orders.size > 0 ? customer.revenue / customer.orders.size : 0,
+    },
+    _count: customer.orders.size,
+    revenue: customer.revenue,
+  }));
+
+  const topCustomers = customerValue
+    .map((customer) => ({
+      userId: customer.userId,
+      totalRevenue: customer.revenue,
+      orderCount: customer._count,
+    }))
+    .sort((a, b) => b.totalRevenue - a.totalRevenue)
+    .slice(0, 10);
+
+  const { repeatCustomers, avgCustomerValue } = await runAnalyticsTask(
+    "customerAnalytics",
+    {
+      allCustomers,
+      customerValue,
+    },
+  );
+
+  return {
+    newCustomers: newCustomers.length,
+    repeatCustomers,
+    avgCustomerValue,
+    topCustomers,
+  };
 };
 
-// ============================================
+// ============================================================
+// INVENTORY ANALYTICS
+// ============================================================
+
+export const getInventoryAnalyticsService = async (adminId = null) => {
+  const ownerFilter = adminId ? { adminId } : {};
+
+  const [lowStock, totalProducts, stockSummary, mostReserved] =
+    await Promise.all([
+      prisma.inventory.findMany({
+        where: {
+          ...ownerFilter,
+          totalStock: {
+            gt: 0,
+          },
+        },
+        select: {
+          id: true,
+          adminId: true,
+          productId: true,
+          size: true,
+          totalStock: true,
+          reservedStock: true,
+        },
+      }),
+
+      prisma.inventory.groupBy({
+        by: ["productId"],
+        where: ownerFilter,
+      }),
+
+      prisma.inventory.aggregate({
+        where: ownerFilter,
+        _sum: {
+          totalStock: true,
+          reservedStock: true,
+        },
+      }),
+
+      prisma.inventory.findMany({
+        where: ownerFilter,
+        orderBy: {
+          reservedStock: "desc",
+        },
+        take: 10,
+        select: {
+          id: true,
+          adminId: true,
+          productId: true,
+          size: true,
+          totalStock: true,
+          reservedStock: true,
+        },
+      }),
+    ]);
+
+  const lowStockItems = lowStock.filter(
+    (item) => item.totalStock - item.reservedStock <= 10,
+  );
+
+  const totalStock = stockSummary._sum.totalStock || 0;
+
+  const reservedStock = stockSummary._sum.reservedStock || 0;
+
+  return {
+    lowStockItems: lowStockItems.length,
+    totalProducts: totalProducts.length,
+    totalStock,
+    reservedStock,
+    availableStock: totalStock - reservedStock,
+    mostReserved,
+  };
+};
+
+// ============================================================
 // ORDER STATUS DISTRIBUTION
-// ============================================
+// ============================================================
+
 export const getOrderStatusDistributionService = async (
   startDate,
   endDate,
   sellerId = null,
 ) => {
-  try {
-    const dateQuery = {
-      createdAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      },
-    };
+  const distribution = await prisma.orderItem.groupBy({
+    by: ["status"],
+    _count: true,
 
-    const itemsQuery = sellerId ? { sellerId } : {};
+    where: getItemFilter({
+      sellerId,
+      startDate,
+      endDate,
+    }),
+  });
 
-    const distribution = await prisma.orderItem.groupBy({
-      by: ["status"],
-      _count: true,
-      where: {
-        order: { ...dateQuery },
-        ...itemsQuery,
-      },
-    });
-
-    return distribution;
-  } catch (error) {
-    throw error;
-  }
+  return distribution;
 };
 
-// ============================================
-// COUPON USAGE ANALYTICS
-// ============================================
-export const getCouponAnalyticsService = async (startDate, endDate) => {
-  try {
-    const dateQuery = {
-      createdAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      },
-    };
+// ============================================================
+// COUPON ANALYTICS
+// ============================================================
 
-    // Most used coupons
-    const topCoupons = await prisma.orderDiscount.groupBy({
+export const getCouponAnalyticsService = async (startDate, endDate) => {
+  const dateQuery = getDateQuery(startDate, endDate);
+
+  const [topCoupons, totalDiscount] = await Promise.all([
+    prisma.orderDiscount.groupBy({
       by: ["couponId"],
       _count: true,
-      _sum: { discountAmount: true },
+      _sum: {
+        discountAmount: true,
+      },
       where: dateQuery,
-      orderBy: { _count: "desc" },
+      orderBy: {
+        _count: "desc",
+      },
       take: 10,
-    });
+    }),
 
-    // Total discount given
-    const totalDiscount = await prisma.orderDiscount.aggregate({
-      _sum: { discountAmount: true },
+    prisma.orderDiscount.aggregate({
+      _sum: {
+        discountAmount: true,
+      },
       where: dateQuery,
-    });
+    }),
+  ]);
 
-    return {
-      topCoupons,
-      totalDiscountGiven: totalDiscount._sum.discountAmount || 0,
-    };
-  } catch (error) {
-    throw error;
-  }
+  return {
+    topCoupons,
+    totalDiscountGiven: totalDiscount._sum.discountAmount || 0,
+  };
 };
 
-// ============================================
+// ============================================================
 // SELLER ANALYTICS
-// ============================================
+// ============================================================
+
 export const getSellerAnalyticsService = async (
   sellerId,
   startDate,
   endDate,
 ) => {
-  try {
-    const dateQuery = {
-      createdAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      },
-    };
+  const sellerItems = await prisma.orderItem.findMany({
+    where: getActiveItemFilter({
+      sellerId,
+      startDate,
+      endDate,
+    }),
 
-    // Seller's orders
-    const orders = await prisma.orderItem.findMany({
-      where: {
-        sellerId,
-        order: { ...dateQuery },
-      },
-      include: { order: true },
-    });
+    select: {
+      orderId: true,
+      productId: true,
+      price: true,
+      quantity: true,
+      status: true,
+    },
+  });
 
-    const totalOrders = orders.length;
-    const totalRevenue = orders.reduce(
-      (sum, o) => sum + o.price * o.quantity,
-      0,
-    );
+  const totalOrders = getUniqueOrderCount(sellerItems);
 
-    // Order status breakdown
-    const statusBreakdown = await prisma.orderItem.groupBy({
-      by: ["status"],
-      _count: true,
-      where: {
-        sellerId,
-        order: { ...dateQuery },
-      },
-    });
+  const totalRevenue = calculateRevenue(sellerItems);
 
-    // Top products sold
-    const topProducts = await prisma.orderItem.groupBy({
-      by: ["productId"],
-      _sum: { quantity: true },
-      _count: true,
-      where: {
-        sellerId,
-        order: { ...dateQuery },
-      },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: 5,
-    });
+  const statusBreakdown = await prisma.orderItem.groupBy({
+    by: ["status"],
+    _count: true,
 
-    return {
-      totalOrders,
-      totalRevenue,
-      statusBreakdown,
-      topProducts,
-    };
-  } catch (error) {
-    throw error;
-  }
+    where: getItemFilter({
+      sellerId,
+      startDate,
+      endDate,
+    }),
+  });
+
+  const topProducts = aggregateByProduct(sellerItems)
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 5);
+
+  return {
+    totalOrders,
+    totalRevenue,
+    statusBreakdown,
+    topProducts,
+  };
 };

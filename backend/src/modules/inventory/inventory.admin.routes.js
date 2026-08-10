@@ -15,6 +15,21 @@ import { isAuthAdmin } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
+export const getIncomingInventorySize = (req) => {
+  const rawSize = req.body?.size ?? req.query?.size;
+
+  if (typeof rawSize === "string") {
+    const trimmed = rawSize.trim();
+    return trimmed || null;
+  }
+
+  if (typeof rawSize === "number" && Number.isFinite(rawSize)) {
+    return String(rawSize);
+  }
+
+  return null;
+};
+
 // Multer for CSV file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -43,7 +58,7 @@ router.get(
       throw new ApiError(400, "Threshold cannot be negative", [], "inventory");
     }
 
-    const products = await getLowStockProductsService(threshold);
+    const products = await getLowStockProductsService(req.adminId, threshold);
 
     return res
       .status(200)
@@ -72,7 +87,7 @@ router.post(
       throw new ApiError(400, "Inventory must be an array", [], "inventory");
     }
 
-    const result = await bulkUpdateInventoryService(inventory);
+    const result = await bulkUpdateInventoryService(req.adminId, inventory);
 
     return res
       .status(200)
@@ -99,7 +114,7 @@ router.post(
     }
 
     const csvContent = req.file.buffer.toString("utf-8");
-    const result = await parseAndUploadCSVService(csvContent);
+    const result = await parseAndUploadCSVService(req.adminId, csvContent);
 
     return res
       .status(200)
@@ -124,13 +139,20 @@ router.patch(
   asyncHandler(async (req, res) => {
     const { productId } = req.params;
     const { totalStock, reason } = req.body;
+    const size = getIncomingInventorySize(req);
+
+    if (!size) {
+      throw new ApiError(400, "size is required", [], "inventory");
+    }
 
     if (typeof totalStock !== "number") {
       throw new ApiError(400, "totalStock must be a number", [], "inventory");
     }
 
     const result = await updateInventoryManuallyService(
+      req.adminId,
       productId,
+      size,
       totalStock,
       reason,
     );
@@ -150,7 +172,13 @@ router.get(
   isAuthAdmin,
   asyncHandler(async (req, res) => {
     const { productId } = req.params;
-    const inventory = await getInventoryService(productId);
+    const size = getIncomingInventorySize(req);
+
+    if (!size) {
+      throw new ApiError(400, "size is required", [], "inventory");
+    }
+
+    const inventory = await getInventoryService(req.adminId, productId, size);
     return res
       .status(200)
       .json(
@@ -167,7 +195,7 @@ router.get(
   "/",
   isAuthAdmin,
   asyncHandler(async (req, res) => {
-    const inventory = await getAllInventoryService();
+    const inventory = await getAllInventoryService(req.adminId);
     return res
       .status(200)
       .json(

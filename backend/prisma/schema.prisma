@@ -117,17 +117,19 @@ model Payment {
 // INVENTORY MODEL
 // ============================================
 
-/// Stock management for products (size-based)
+/// Stock management for products (size-based) and admin ownership
 model Inventory {
+  id            String   @id @default(uuid())
+  adminId       String   @default("") // MongoDB admin id that owns this inventory row
   productId     String // Reference to MongoDB Product
   size          String   @default("M") // Size variant (XS, S, M, L, XL, XXL)
   totalStock    Int // Total stock available
   reservedStock Int // Reserved during checkout
   updatedAt     DateTime @updatedAt
 
-  // Composite key: (productId, size) is unique
-  @@id([productId, size])
-  @@index([productId])
+  @@unique([adminId, productId, size])
+  @@index([adminId])
+  @@index([adminId, productId])
 }
 
 // ============================================

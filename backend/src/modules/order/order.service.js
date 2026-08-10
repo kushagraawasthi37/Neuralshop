@@ -121,8 +121,12 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
   try {
     for (const item of orderItems) {
       const cleanProductId = item.productId.trim();
-      // ✅ UPDATED: Pass size to reserveStockService
-      await reserveStockService(cleanProductId, item.size, item.quantity);
+      await reserveStockService(
+        item.sellerId,
+        cleanProductId,
+        item.size,
+        item.quantity,
+      );
       reservedItems.push(item);
     }
   } catch (error) {
@@ -130,8 +134,12 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
     for (const item of reservedItems) {
       const cleanProductId = item.productId.trim();
       try {
-        // ✅ UPDATED: Pass size to releaseStockService
-        await releaseStockService(cleanProductId, item.size, item.quantity);
+        await releaseStockService(
+          item.sellerId,
+          cleanProductId,
+          item.size,
+          item.quantity,
+        );
       } catch (e) {
         // Ignore release errors
       }
@@ -226,7 +234,12 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
     for (const item of reservedItems) {
       const cleanProductId = item.productId.trim();
       try {
-        await releaseStockService(cleanProductId, item.size, item.quantity);
+        await releaseStockService(
+          item.sellerId,
+          cleanProductId,
+          item.size,
+          item.quantity,
+        );
       } catch (e) {
         // ignore release errors
       }
@@ -375,8 +388,12 @@ export const cancelOrderService = async (userId, orderId) => {
   // ✅ Release stock for each item (with size)
   for (const item of order.items) {
     try {
-      // ✅ UPDATED: Use inventory service with size
-      await releaseStockService(item.productId, item.size, item.quantity);
+      await releaseStockService(
+        item.sellerId,
+        item.productId,
+        item.size,
+        item.quantity,
+      );
     } catch (error) {
       console.error(
         `Failed to release stock for ${item.productId} ${item.size}:`,

@@ -22,12 +22,20 @@ export const createReviewService = async (
     // Check if user already reviewed this product
     const existingReview = await Review.findOne({ productId, userId });
     if (existingReview) {
-      throw new ApiError(409, "You have already reviewed this product", [], "review");
+      throw new ApiError(
+        409,
+        "You have already reviewed this product",
+        [],
+        "review",
+      );
     }
 
     // Auto-generate title from comment if not provided
-    const reviewTitle = title?.trim() ||
-      (comment.length <= 60 ? comment.trim() : comment.trim().substring(0, 57) + "…");
+    const reviewTitle =
+      title?.trim() ||
+      (comment.length <= 60
+        ? comment.trim()
+        : comment.trim().substring(0, 57) + "…");
 
     // Create review
     const review = await Review.create({
@@ -81,11 +89,6 @@ export const getProductReviewsService = async (
       .skip(skip)
       .limit(limit);
 
-    const total = await Review.countDocuments({
-      productId,
-      isVisible: true,
-    });
-
     // Calculate rating stats
     const stats = await Review.aggregate([
       {
@@ -122,7 +125,7 @@ export const getProductReviewsService = async (
 
     return {
       reviews,
-      total,
+      total: stats[0]?.totalReviews || 0,
       avgRating: stats[0]?.avgRating || 0,
       totalReviews: stats[0]?.totalReviews || 0,
       ratingBreakdown,
@@ -147,7 +150,12 @@ export const updateReviewService = async (
     }
 
     if (review.userId.toString() !== userId) {
-      throw new ApiError(403, "Unauthorized: Cannot update another user's review", [], "review");
+      throw new ApiError(
+        403,
+        "Unauthorized: Cannot update another user's review",
+        [],
+        "review",
+      );
     }
 
     review.rating = rating || review.rating;
@@ -176,7 +184,12 @@ export const deleteReviewService = async (reviewId, userId) => {
     }
 
     if (review.userId.toString() !== userId) {
-      throw new ApiError(403, "Unauthorized: Cannot delete another user's review", [], "review");
+      throw new ApiError(
+        403,
+        "Unauthorized: Cannot delete another user's review",
+        [],
+        "review",
+      );
     }
 
     const productId = review.productId;
@@ -323,7 +336,7 @@ const updateProductRating = async (productId) => {
       },
       {
         $group: {
-          _id: null,
+          _id: null, //Put all matched documents into one group.
           avgRating: { $avg: "$rating" },
           reviewCount: { $sum: 1 },
         },

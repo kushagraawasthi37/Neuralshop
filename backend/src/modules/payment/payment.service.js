@@ -297,12 +297,18 @@ export const handleWebhookService = async (
     const deductedItems = [];
     try {
       for (const item of payment.order.items) {
-        await deductStockService(item.productId, item.size, item.quantity);
+        await deductStockService(
+          item.sellerId,
+          item.productId,
+          item.size,
+          item.quantity,
+        );
         deductedItems.push(item);
       }
     } catch (error) {
       for (const item of deductedItems) {
         await releaseStockService(
+          item.sellerId,
           item.productId,
           item.size,
           item.quantity,
@@ -427,9 +433,12 @@ export const handlePaymentFailureService = async (orderId, reason) => {
 
   // Release reserved stock
   for (const item of payment.order.items) {
-    await releaseStockService(item.productId, item.size, item.quantity).catch(
-      () => {},
-    );
+    await releaseStockService(
+      item.sellerId,
+      item.productId,
+      item.size,
+      item.quantity,
+    ).catch(() => {});
   }
 
   // Produce Kafka event for payment failure

@@ -2,6 +2,12 @@ import prisma from "../../prisma/client.js";
 import { ApiError } from "../../utils/api-error.js";
 import { produceInventoryEvent } from "../../events/producers/inventory.producer.js";
 import { inventoryEvents } from "../../events/event-types.js";
+import { parseCsvInWorker } from "../../workers/csvParser.worker.js";
+
+const getAdminInventoryWhere = (adminId, extra = {}) => ({
+  adminId,
+  ...extra,
+});
 
 const validateProductId = (productId) => {
   if (!productId || typeof productId !== "string" || !productId.trim()) {
@@ -31,7 +37,12 @@ const validateQuantity = (quantity) => {
   }
 };
 
-export const reserveStockService = async (productId, size, quantity) => {
+export const reserveStockService = async (
+  adminId,
+  productId,
+  size,
+  quantity,
+) => {
   validateProductId(productId);
   validateSize(size);
   validateQuantity(quantity);
@@ -39,7 +50,8 @@ export const reserveStockService = async (productId, size, quantity) => {
   const result = await prisma.$queryRaw`
     UPDATE "Inventory"
     SET "reservedStock" = "reservedStock" + ${quantity}
-    WHERE "productId" = ${productId} 
+    WHERE "adminId" = ${adminId}
+      AND "productId" = ${productId}
       AND "size" = ${size}
       AND ("totalStock" - "reservedStock") >= ${quantity}
     RETURNING *
@@ -57,7 +69,12 @@ export const reserveStockService = async (productId, size, quantity) => {
   return result[0];
 };
 
-export const releaseStockService = async (productId, size, quantity) => {
+export const releaseStockService = async (
+  adminId,
+  productId,
+  size,
+  quantity,
+) => {
   validateProductId(productId);
   validateSize(size);
   validateQuantity(quantity);
@@ -65,7 +82,8 @@ export const releaseStockService = async (productId, size, quantity) => {
   const result = await prisma.$queryRaw`
     UPDATE "Inventory"
     SET "reservedStock" = "reservedStock" - ${quantity}
-    WHERE "productId" = ${productId} 
+    WHERE "adminId" = ${adminId}
+      AND "productId" = ${productId}
       AND "size" = ${size}
       AND "reservedStock" >= ${quantity}
     RETURNING *
@@ -84,6 +102,7 @@ export const releaseStockService = async (productId, size, quantity) => {
 };
 
 export const deductStockService = async (
+  adminId,
   productId,
   size,
   quantity,
@@ -129,7 +148,8 @@ export const deductStockService = async (
       UPDATE "Inventory"
       SET "totalStock" = "totalStock" - ${quantity},
           "reservedStock" = "reservedStock" - ${quantity}
-      WHERE "productId" = ${productId} 
+      WHERE "adminId" = ${adminId}
+        AND "productId" = ${productId}
         AND "size" = ${size}
         AND "reservedStock" >= ${quantity}
       RETURNING *
@@ -187,12 +207,12 @@ export const deductStockService = async (
   }
 };
 
-export const getStockService = async (productId, size) => {
+export const getStockService = async (adminId, productId, size) => {
   validateProductId(productId);
   validateSize(size);
 
   const inventory = await prisma.inventory.findFirst({
-    where: { productId, size },
+    where: getAdminInventoryWhere(adminId, { productId, size }),
   });
 
   if (!inventory) {
@@ -215,6 +235,7 @@ export const getStockService = async (productId, size) => {
 };
 
 export const initializeInventoryService = async (
+  adminId,
   productId,
   size,
   initialStock = 0,
@@ -236,12 +257,13 @@ export const initializeInventoryService = async (
   }
 
   const existingInventory = await prisma.inventory.findFirst({
-    where: { productId, size },
+    where: getAdminInventoryWhere(adminId, { productId, size }),
   });
 
   if (!existingInventory) {
     await prisma.inventory.create({
       data: {
+        adminId,
         productId,
         size,
         totalStock: initialStock,
@@ -252,6 +274,7 @@ export const initializeInventoryService = async (
 };
 
 export const updateTotalStockService = async (
+  adminId,
   productId,
   size,
   newTotalStock,
@@ -273,12 +296,13 @@ export const updateTotalStockService = async (
   }
 
   const existingInventory = await prisma.inventory.findFirst({
-    where: { productId, size },
+    where: getAdminInventoryWhere(adminId, { productId, size }),
   });
 
   if (!existingInventory) {
     const created = await prisma.inventory.create({
       data: {
+        adminId,
         productId,
         size,
         totalStock: newTotalStock,
@@ -304,7 +328,8 @@ export const updateTotalStockService = async (
   const result = await prisma.$queryRaw`
     UPDATE "Inventory"
     SET "totalStock" = ${newTotalStock}
-    WHERE "productId" = ${productId}
+    WHERE "adminId" = ${adminId}
+    AND "productId" = ${productId}
     AND "size" = ${size}
     RETURNING *
   `;
@@ -330,8 +355,9 @@ export const updateTotalStockService = async (
 // ADMIN INVENTORY MANAGEMENT
 // ============================================
 
-export const getAllInventoryService = async () => {
+export const getAllInventoryService = async (adminId) => {
   const inventory = await prisma.inventory.findMany({
+    where: getAdminInventoryWhere(adminId),
     orderBy: [{ productId: "asc" }, { size: "asc" }, { updatedAt: "desc" }],
   });
 
@@ -345,12 +371,12 @@ export const getAllInventoryService = async () => {
   }));
 };
 
-export const getInventoryService = async (productId, size) => {
+export const getInventoryService = async (adminId, productId, size) => {
   validateProductId(productId);
   validateSize(size);
 
   const inventory = await prisma.inventory.findFirst({
-    where: { productId, size },
+    where: getAdminInventoryWhere(adminId, { productId, size }),
   });
 
   if (!inventory) {
@@ -374,6 +400,7 @@ export const getInventoryService = async (productId, size) => {
 };
 
 export const updateInventoryManuallyService = async (
+  adminId,
   productId,
   size,
   newTotalStock,
@@ -400,12 +427,13 @@ export const updateInventoryManuallyService = async (
   }
 
   let result = await prisma.inventory.findFirst({
-    where: { productId, size },
+    where: getAdminInventoryWhere(adminId, { productId, size }),
   });
 
   if (!result) {
     result = await prisma.inventory.create({
       data: {
+        adminId,
         productId,
         size,
         totalStock: newTotalStock,
@@ -423,7 +451,7 @@ export const updateInventoryManuallyService = async (
     }
 
     result = await prisma.inventory.update({
-      where: { productId, size },
+      where: { id: result.id },
       data: { totalStock: newTotalStock },
     });
   }
@@ -446,7 +474,7 @@ export const updateInventoryManuallyService = async (
 // BULK STOCK UPLOAD
 // ============================================
 
-export const bulkUpdateInventoryService = async (inventoryData) => {
+export const bulkUpdateInventoryService = async (adminId, inventoryData) => {
   if (!Array.isArray(inventoryData) || inventoryData.length === 0) {
     throw new ApiError(
       400,
@@ -513,12 +541,16 @@ export const bulkUpdateInventoryService = async (inventoryData) => {
   for (const item of validated) {
     try {
       let inventory = await prisma.inventory.findFirst({
-        where: { productId: item.productId, size: item.size },
+        where: getAdminInventoryWhere(adminId, {
+          productId: item.productId,
+          size: item.size,
+        }),
       });
 
       if (!inventory) {
         inventory = await prisma.inventory.create({
           data: {
+            adminId,
             productId: item.productId,
             size: item.size,
             totalStock: item.totalStock,
@@ -536,7 +568,7 @@ export const bulkUpdateInventoryService = async (inventoryData) => {
         }
 
         inventory = await prisma.inventory.update({
-          where: { productId: item.productId, size: item.size },
+          where: { id: inventory.id },
           data: { totalStock: item.totalStock },
         });
       }
@@ -574,30 +606,28 @@ export const bulkUpdateInventoryService = async (inventoryData) => {
   };
 };
 
-export const parseAndUploadCSVService = async (csvContent) => {
+export const parseAndUploadCSVService = async (adminId, csvContent) => {
   if (!csvContent || typeof csvContent !== "string") {
     throw new ApiError(400, "CSV content required", [], "inventory");
   }
 
-  const lines = csvContent
-    .trim()
-    .split("\n")
-    .filter((line) => line.trim());
+  const parsedRows = await parseCsvInWorker(csvContent);
 
-  if (lines.length === 0) {
+  if (parsedRows.length === 0) {
     throw new ApiError(400, "CSV is empty", [], "inventory");
   }
 
-  const dataLines = lines[0].toLowerCase().includes("productid")
-    ? lines.slice(1)
-    : lines;
+  const hasHeader = parsedRows[0]?.some((value) =>
+    String(value).toLowerCase().includes("productid"),
+  );
+  const dataRows = hasHeader ? parsedRows.slice(1) : parsedRows;
 
   const inventoryData = [];
 
-  for (let i = 0; i < dataLines.length; i++) {
-    const [productId, size, totalStockStr] = dataLines[i]
-      .split(",")
-      .map((val) => val.trim());
+  for (let i = 0; i < dataRows.length; i++) {
+    const [productId, size, totalStockStr] = dataRows[i].map((val) =>
+      String(val).trim(),
+    );
 
     if (!productId || !size || !totalStockStr) {
       throw new ApiError(400, `Invalid CSV at line ${i + 1}`, [], "inventory");
@@ -620,14 +650,14 @@ export const parseAndUploadCSVService = async (csvContent) => {
     });
   }
 
-  return await bulkUpdateInventoryService(inventoryData);
+  return await bulkUpdateInventoryService(adminId, inventoryData);
 };
 
 // ============================================
 // SEARCH & FILTER
 // ============================================
 
-export const getLowStockProductsService = async (threshold = 10) => {
+export const getLowStockProductsService = async (adminId, threshold = 10) => {
   if (
     typeof threshold !== "number" ||
     threshold < 0 ||
@@ -643,7 +673,8 @@ export const getLowStockProductsService = async (threshold = 10) => {
 
   const inventory = await prisma.$queryRaw`
     SELECT * FROM "Inventory"
-    WHERE ("totalStock" - "reservedStock") <= ${threshold}
+    WHERE "adminId" = ${adminId}
+      AND ("totalStock" - "reservedStock") <= ${threshold}
     ORDER BY ("totalStock" - "reservedStock") ASC, "productId" ASC, "size" ASC
   `;
 

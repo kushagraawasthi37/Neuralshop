@@ -1,60 +1,62 @@
-// Idempotency utilities for preventing duplicate requests using Redis
 import redisClient from "../config/redis.js";
 import { logger } from "./logger.js";
+
+// ─── Idempotency middleware ───────────────────────────────────────────────
+// Prevents duplicate submissions (double-click checkout, network retry) by
+// caching the first response against a client-generated UUID key for 24 h.
+//
+// Why 24 h not 48 h for the cache: if the client retries the same action
+// more than 24 h later it's almost certainly intentional, not a duplicate.
 
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
 export const checkIdempotency = async (req, res, next) => {
   const idempotencyKey = req.headers["idempotency-key"];
 
-  logger.debug("Idempotency check initiated", { idempotencyKey });
-
-  if (!idempotencyKey) {
-    return next();
-  }
+  if (!idempotencyKey) return next();
 
   const redisKey = `idempotency:${idempotencyKey}`;
 
   try {
-    // Check if response is already cached
-    const cachedResponse = await redisClient.get(redisKey);
-    if (cachedResponse) {
-      logger.debug("Idempotency cache hit", { idempotencyKey });
-      const { statusCode, data } = JSON.parse(cachedResponse);
+    const cached = await redisClient.get(redisKey);
+    if (cached) {
+      logger.debug("Idempotency cache hit", {
+        idempotencyKey,
+        requestId: res.locals.requestId,
+      });
+      const { statusCode, data } = JSON.parse(cached);
       return res.status(statusCode).json(data);
     }
-    logger.debug("Idempotency cache miss, proceeding to controller", {
+
+    logger.debug("Idempotency cache miss", {
       idempotencyKey,
+      requestId: res.locals.requestId,
     });
-    // Express ka original response function store kar liya
+
     const originalSend = res.send;
-
-    // Ab jab bhi controller res.send() call karega:
-    // Ye custom function chalega
-    // Ye ek hook/interceptor hai
     res.send = function (data) {
-      // Cache the response in Redis
-      redisClient.set(
-        redisKey,
-        JSON.stringify({
-          statusCode: res.statusCode,
-          data: typeof data === "string" ? JSON.parse(data) : data,
-        }),
-        "EX",
-        IDEMPOTENCY_TTL_SECONDS,
-      );
-
+      // Only cache successful responses — don't cache 4xx/5xx so the client can retry with the same key after fixing the request
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        redisClient
+          .set(
+            redisKey,
+            JSON.stringify({
+              statusCode: res.statusCode,
+              data: typeof data === "string" ? JSON.parse(data) : data,
+            }),
+            "EX",
+            IDEMPOTENCY_TTL_SECONDS,
+          )
+          .catch(() => {});
+      }
       return originalSend.call(this, data);
     };
-    logger.debug("Idempotency hook installed, proceeding to controller", {
-      idempotencyKey,
-    });
 
     next();
   } catch (error) {
-    // If Redis fails, continue without idempotency
-    logger.error("Idempotency check failed, continuing without idempotency", {
+    logger.error("Idempotency check failed — proceeding without idempotency", {
       error: error.message,
+      requestId: res.locals.requestId,
     });
     next();
   }

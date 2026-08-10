@@ -1,5 +1,6 @@
 import admin from "firebase-admin";
 
+// Firebase has already been initialized else create fb app
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
