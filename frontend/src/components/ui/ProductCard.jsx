@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cartApi } from "../../api/cart";
+import { wishlistApi } from "../../api/user";
 
 function formatPrice(price) {
   return "₹" + Number(price).toLocaleString("en-IN");
@@ -246,9 +247,18 @@ export default function ProductCard({ product }) {
 
         {/* Wishlist */}
         <button
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            setWishlisted((w) => !w);
+            const pid = product._id || product.id;
+            try {
+              if (wishlisted) {
+                await wishlistApi.remove(pid);
+                setWishlisted(false);
+              } else {
+                await wishlistApi.add(pid);
+                setWishlisted(true);
+              }
+            } catch (_) {}
           }}
           style={{
             position: "absolute",

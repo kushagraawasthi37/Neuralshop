@@ -19,7 +19,8 @@ const VALID_ACTIONS = [
   "not_understood",
 ];
 
-const buildSystemPrompt = (ctx) => `
+const buildSystemPrompt = (ctx) =>
+  `
 You are a voice assistant for NeuralShop, a luxury fashion e-commerce store.
 Parse the user's spoken command and return a structured JSON action.
 
@@ -73,6 +74,7 @@ export const interpretVoice = asyncHandler(async (req, res) => {
         { role: "system", content: buildSystemPrompt(context) },
         { role: "user", content: transcript.trim() },
       ],
+      //Controls randomness-> Temperature
       { temperature: 0.1, maxTokens: 400 },
     );
     result = JSON.parse(raw);

@@ -24,7 +24,7 @@ app.use(compression({
   level: 6,
   threshold: 1024, //1KB
   filter: (req, res) => {
-    if (req.path === "/webhook") return false;
+    if (req.path === "/webhook" || req.path === "/api/payments/webhook") return false;
     if (req.headers["content-type"]?.includes("multipart")) return false;
     return compression.filter(req, res);
   },
@@ -77,7 +77,7 @@ app.use(cors({
 // ─── 4. Webhook route — raw body parser BEFORE express.json() ─────────────
 // Razorpay signature verification requires the *exact* raw bytes.
 // express.json() would parse them and the HMAC check would fail.
-app.use("/webhook", express.raw({ type: "application/json" }));
+app.use(["/webhook", "/api/payments/webhook"], express.raw({ type: "application/json" }));
 
 // ─── 5. Body parsers ──────────────────────────────────────────────────────
 app.use(express.json({ limit: "10mb" }));

@@ -1,25 +1,24 @@
-import rootApi from './rootAxios'
 import api from './axios'
 import { v4 as uuid } from '../lib/uuid'
 
 export const ordersApi = {
   create: (body) =>
-    rootApi.post('/orders/orders', body, {
+    api.post('/orders', body, {
       headers: { 'Idempotency-Key': uuid() },
     }),
 
-  list: (params) => rootApi.get('/orders/orders', { params }),
+  list: (params) => api.get('/orders/my-orders', { params }),
 
-  get: (orderId) => rootApi.get(`/orders/orders/${orderId}`),
+  get: (orderId) => api.get(`/orders/${orderId}`),
 
-  cancel: (orderId) => rootApi.patch(`/orders/orders/${orderId}/cancel`),
+  cancel: (orderId) => api.patch(`/orders/${orderId}/cancel`),
 
   pay: (orderId) =>
-    rootApi.post(`/orders/${orderId}/pay`, {}, {
+    api.post(`/orders/${orderId}/pay`, {}, {
       headers: { 'Idempotency-Key': uuid() },
     }),
 
-  getPayment: (orderId) => rootApi.get(`/payments/${orderId}`),
+  getPayment: (orderId) => api.get(`/payments/${orderId}`),
 }
 
 export const couponsApi = {

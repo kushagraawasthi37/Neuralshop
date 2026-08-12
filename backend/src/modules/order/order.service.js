@@ -16,6 +16,7 @@ import { orderEvents } from "../../events/event-types.js";
  * 🔁 Reserves stock atomically to prevent overselling
  */
 export const createOrderService = async (userId, addressId, idempotencyKey) => {
+  
   // Validate address belongs to user
   const address = await prisma.address.findFirst({
     where: { id: addressId, userId },

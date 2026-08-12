@@ -246,7 +246,7 @@ function AppShell() {
           <Route path="/collections" element={<CollectionPage />} />
           <Route
             path="/account"
-            element={<PlaceholderPage title="Account" />}
+            element={<Navigate to="/account/profile" replace />}
           />
           <Route path="/about" element={<AboutPage />} />
           <Route

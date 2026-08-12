@@ -11,7 +11,6 @@ import returnRoutes from "../modules/order/return.routes.js";
 import paymentRoutes from "../modules/payment/payment.routes.js";
 import couponRoutes from "../modules/payment/coupon.routes.js";
 import inventoryAdminRoutes from "../modules/inventory/inventory.admin.routes.js";
-import inventoryRoutes from "../modules/inventory/inventory.admin.routes.js";
 import userRoutes from "../modules/user/user.routes.js";
 import wishlistRoutes from "../modules/wishlist/wishlist.routes.js";
 import analyticsRoutes from "../modules/admin/analytics.routes.js";
@@ -34,15 +33,15 @@ export const setupRoutes = (app) => {
 
   // Order routes
   app.use("/api/admin/orders", orderAdminRoutes); // Admin order routes
-  app.use("/orders", orderRoutes); // Order routes at root: /orders
+  app.use("/api/orders", orderRoutes); // Order routes under /api/orders
   app.use("/api/returns", returnRoutes); // Return/refund routes
 
   // Inventory routes
   app.use("/api/admin/inventory", inventoryAdminRoutes); // Admin inventory routes
-  app.use("/api/inventory", inventoryRoutes);
 
   // Payment routes
-  app.use(paymentRoutes); // Payment routes at root: /orders/:id/pay, /payments/:id, /webhook
+  app.use("/api/payments", paymentRoutes); // Payment routes under /api/payments
+  app.use("/api/orders", paymentRoutes); // Allow /api/orders/:id/pay
   app.use("/api/coupons", couponRoutes); // Coupon routes
 
   // User routes

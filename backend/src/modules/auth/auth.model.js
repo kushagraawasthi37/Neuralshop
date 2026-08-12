@@ -30,7 +30,6 @@ const adminSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["admin"],
       enum: {
         values: ["admin", "super_admin"],
         message: "Role must be admin or super_admin",

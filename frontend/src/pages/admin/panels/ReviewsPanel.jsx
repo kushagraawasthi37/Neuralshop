@@ -1,287 +1,147 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminCouponsApi } from "../../../api/admin";
-import { fmt } from "../adminUtils";
+import { adminReviewsApi } from "../../../api/admin";
 
-function isCouponActive(c) {
-  if (c.isActive === false) return false;
-  if (c.expiryDate && new Date(c.expiryDate) < new Date()) return false;
-  if (c.expiresAt && new Date(c.expiresAt) < new Date()) return false;
-  return true;
-}
-
-const cleanCouponData = (data) => ({
-  code: data.code,
-  discountType: data.discountType,
-  discountValue: Number(data.discountValue),
-  minOrderAmount: Number(data.minOrderAmount),
-  maxUses: Number(data.maxUses),
-  maxUsesPerUser: Number(data.maxUsesPerUser || 1),
-  isActive: Boolean(data.isActive),
-  startDate: data.startDate || null,
-  expiryDate: data.expiryDate || null,
-});
-
-export default function CouponsPanel({ showToast }) {
+export default function ReviewsPanel({ showToast }) {
   const qc = useQueryClient();
-  const [couponModal, setCouponModal] = useState(false);
-  const [deleteModal, setDeleteModal] = useState(null);
-  const [editingCoupon, setEditingCoupon] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterRating, setFilterRating] = useState("all");
+  const [respondModal, setRespondModal] = useState(null);
+  const [responseText, setResponseText] = useState("");
 
-  const defaultFormData = {
-    code: "",
-    discountType: "PERCENTAGE",
-    discountValue: 10,
-    minOrderAmount: 0,
-    maxUses: 100,
-    startDate: "",
-    expiryDate: "",
-  };
-
-  const [formData, setFormData] = useState(defaultFormData);
-
-  const { data: coupons = [] } = useQuery({
-    queryKey: ["admin-coupons"],
+  const { data: reviewsData, isLoading } = useQuery({
+    queryKey: ["admin-reviews"],
     queryFn: () =>
-      adminCouponsApi.list().then((r) => {
-        const d = r.data.data;
-        if (Array.isArray(d)) return d;
-        if (Array.isArray(d?.coupons)) return d.coupons;
-        return [];
-      }),
+      adminReviewsApi.list().then((r) => r.data?.data || r.data || []),
   });
 
-  const createCouponMutation = useMutation({
-    mutationFn: (data) => adminCouponsApi.create(data),
+  const rawReviews = Array.isArray(reviewsData)
+    ? reviewsData
+    : Array.isArray(reviewsData?.reviews)
+      ? reviewsData.reviews
+      : [];
+
+  const reviews = rawReviews.filter((r) => {
+    const matchSearch =
+      !search ||
+      (r.comment || "").toLowerCase().includes(search.toLowerCase()) ||
+      (r.userName || r.user?.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (r.productName || r.product?.name || "").toLowerCase().includes(search.toLowerCase());
+    const matchRating =
+      filterRating === "all" || String(r.rating) === filterRating;
+    return matchSearch && matchRating;
+  });
+
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: (id) => adminReviewsApi.toggleVisibility(id),
     onSuccess: () => {
-      qc.invalidateQueries(["admin-coupons"]);
-      setCouponModal(false);
-      setEditingCoupon(null);
-      showToast("Coupon created");
+      qc.invalidateQueries(["admin-reviews"]);
+      showToast("Review visibility updated");
     },
-    onError: () => showToast("Failed to create coupon"),
+    onError: () => showToast("Failed to toggle visibility"),
   });
 
-  const updateCouponMutation = useMutation({
-    mutationFn: ({ id, data }) =>
-      adminCouponsApi.update(id, cleanCouponData(data)),
-
+  const deleteReviewMutation = useMutation({
+    mutationFn: (id) => adminReviewsApi.deleteAny(id),
     onSuccess: () => {
-      qc.invalidateQueries(["admin-coupons"]);
-      setCouponModal(false);
-      setEditingCoupon(null);
-      showToast("Coupon updated");
+      qc.invalidateQueries(["admin-reviews"]);
+      showToast("Review deleted");
     },
-
-    onError: () => showToast("Failed to update coupon"),
+    onError: () => showToast("Failed to delete review"),
   });
 
-  const toggleCouponMutation = useMutation({
-    mutationFn: ({ id, isActive }) => adminCouponsApi.toggle(id, isActive),
+  const respondMutation = useMutation({
+    mutationFn: ({ id, comment }) => adminReviewsApi.respond(id, comment),
     onSuccess: () => {
-      qc.invalidateQueries(["admin-coupons"]);
-      showToast("Coupon status updated");
+      qc.invalidateQueries(["admin-reviews"]);
+      setRespondModal(null);
+      setResponseText("");
+      showToast("Response published");
     },
-    onError: () => showToast("Failed to toggle coupon status"),
+    onError: (err) =>
+      showToast(err.response?.data?.message || "Failed to publish response"),
   });
-
-  const deleteCouponMutation = useMutation({
-    mutationFn: (id) => adminCouponsApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries(["admin-coupons"]);
-      showToast("Coupon deleted");
-    },
-    onError: () => showToast("Failed to delete coupon"),
-  });
-
-  const handleSubmit = () => {
-    if (editingCoupon) {
-      updateCouponMutation.mutate({
-        id: editingCoupon.id || editingCoupon._id,
-        data: formData,
-      });
-    } else {
-      createCouponMutation.mutate(formData);
-    }
-  };
-
-  const setForm = (key, val) => setFormData((p) => ({ ...p, [key]: val }));
 
   return (
     <div className="ns-content">
-      {couponModal && (
+      {respondModal && (
         <div
           className="modal-overlay"
           onClick={() => {
-            setCouponModal(false);
-            setEditingCoupon(null);
+            setRespondModal(null);
+            setResponseText("");
           }}
         >
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="modal-title">
-                {editingCoupon ? "Update Coupon" : "Create Coupon"}
-              </div>
+              <div className="modal-title">Respond to Review</div>
               <button
                 className="modal-close"
                 onClick={() => {
-                  setCouponModal(false);
-                  setEditingCoupon(null);
+                  setRespondModal(null);
+                  setResponseText("");
                 }}
               >
                 ×
               </button>
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <div className="form-label">Coupon Code</div>
-                <input
-                  className="ns-input"
-                  placeholder="e.g. NEURAL20"
-                  value={formData.code}
-                  onChange={(e) => setForm("code", e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <div className="form-label">Discount Type</div>
-                <select
-                  className="ns-select"
-                  style={{ width: "100%" }}
-                  value={formData.discountType}
-                  onChange={(e) => setForm("discountType", e.target.value)}
-                >
-                  <option value="PERCENTAGE">Percentage (%)</option>
-                  <option value="FIXED">Fixed Amount (₹)</option>
-                </select>
-              </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--text-muted)",
+                marginBottom: 12,
+              }}
+            >
+              Author:{" "}
+              <span style={{ color: "var(--champagne)" }}>
+                {respondModal.userName || respondModal.user?.name || "Customer"}
+              </span>
             </div>
-            <div className="form-row three">
-              <div className="form-group">
-                <div className="form-label">Value</div>
-                <input
-                  className="ns-input"
-                  type="number"
-                  value={formData.discountValue}
-                  onChange={(e) =>
-                    setForm("discountValue", Number(e.target.value))
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <div className="form-label">Min Order (₹)</div>
-                <input
-                  className="ns-input"
-                  type="number"
-                  value={formData.minOrderAmount}
-                  onChange={(e) =>
-                    setForm("minOrderAmount", Number(e.target.value))
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <div className="form-label">Max Uses</div>
-                <input
-                  className="ns-input"
-                  type="number"
-                  value={formData.maxUses}
-                  onChange={(e) => setForm("maxUses", Number(e.target.value))}
-                />
-              </div>
+            <div
+              style={{
+                fontSize: 13,
+                fontStyle: "italic",
+                color: "var(--text-mid)",
+                marginBottom: 16,
+                padding: 12,
+                background: "rgba(201,169,110,0.03)",
+                border: "1px solid rgba(201,169,110,0.12)",
+              }}
+            >
+              "{respondModal.comment}"
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <div className="form-label">Start Date</div>
-                <input
-                  className="ns-input"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setForm("startDate", e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <div className="form-label">End Date</div>
-                <input
-                  className="ns-input"
-                  type="date"
-                  value={formData.expiryDate}
-                  onChange={(e) => setForm("expiryDate", e.target.value)}
-                />
-              </div>
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <div className="form-label">Official Store Response</div>
+              <textarea
+                className="ns-input"
+                rows={4}
+                placeholder="Write your official response to this customer…"
+                value={responseText}
+                onChange={(e) => setResponseText(e.target.value)}
+                style={{ resize: "vertical" }}
+              />
             </div>
             <div className="modal-actions">
               <button
                 className="ns-btn ns-btn-ghost"
                 onClick={() => {
-                  setCouponModal(false);
-                  setEditingCoupon(null);
+                  setRespondModal(null);
+                  setResponseText("");
                 }}
               >
                 Cancel
               </button>
               <button
                 className="ns-btn ns-btn-primary"
-                disabled={
-                  editingCoupon
-                    ? updateCouponMutation.isPending
-                    : createCouponMutation.isPending
+                disabled={!responseText.trim() || respondMutation.isPending}
+                onClick={() =>
+                  respondMutation.mutate({
+                    id: respondModal.id || respondModal._id,
+                    comment: responseText.trim(),
+                  })
                 }
-                onClick={handleSubmit}
               >
-                {editingCoupon
-                  ? updateCouponMutation.isPending
-                    ? "Updating…"
-                    : "Update Coupon"
-                  : createCouponMutation.isPending
-                    ? "Creating…"
-                    : "Create Coupon"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deleteModal && (
-        <div className="modal-overlay" onClick={() => setDeleteModal(null)}>
-          <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="del-eyebrow">
-              <span className="del-dot"></span>
-              Confirm deletion
-            </div>
-
-            <div className="del-title">
-              Delete this coupon?
-              <br />
-              This cannot be undone.
-            </div>
-
-            <div className="del-sub">You are about to permanently delete</div>
-
-            <div className="del-code">{deleteModal.code}</div>
-
-            <div className="del-note">
-              This will remove all usage history and the code will no longer be
-              redeemable.
-            </div>
-
-            <div className="del-actions">
-              <button
-                className="del-confirm"
-                disabled={deleteCouponMutation.isPending}
-                onClick={() => {
-                  deleteCouponMutation.mutate(deleteModal.id);
-                  setDeleteModal(null);
-                }}
-              >
-                {deleteCouponMutation.isPending
-                  ? "Deleting..."
-                  : "Delete Coupon"}
-              </button>
-
-              <button
-                className="del-cancel"
-                onClick={() => setDeleteModal(null)}
-              >
-                Cancel
+                {respondMutation.isPending ? "Publishing…" : "Publish Response"}
               </button>
             </div>
           </div>
@@ -289,30 +149,43 @@ export default function CouponsPanel({ showToast }) {
       )}
 
       <div className="page-header">
-        <div className="page-eyebrow">06 — Commerce</div>
+        <div className="page-eyebrow">08 — Intelligence</div>
         <div className="page-title">
-          Coupon <em>Management</em>
+          Review <em>Moderation</em>
         </div>
-        <div className="page-sub">{coupons.length} campaigns</div>
+        <div className="page-sub">{rawReviews.length} customer reviews</div>
       </div>
 
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
+          gap: 12,
+          alignItems: "center",
           marginBottom: 24,
+          flexWrap: "wrap",
         }}
       >
-        <button
-          className="ns-btn ns-btn-primary"
-          onClick={() => {
-            setFormData(defaultFormData);
-            setEditingCoupon(null);
-            setCouponModal(true);
-          }}
+        <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
+          <input
+            className="ns-input"
+            placeholder="Search reviews by customer, product, or content…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <select
+          className="ns-select"
+          style={{ width: 150 }}
+          value={filterRating}
+          onChange={(e) => setFilterRating(e.target.value)}
         >
-          + Create Coupon
-        </button>
+          <option value="all">All Ratings</option>
+          <option value="5">5 Stars ★★★★★</option>
+          <option value="4">4 Stars ★★★★☆</option>
+          <option value="3">3 Stars ★★★☆☆</option>
+          <option value="2">2 Stars ★★☆☆☆</option>
+          <option value="1">1 Star ★☆☆☆☆</option>
+        </select>
       </div>
 
       <div className="card" style={{ padding: 0 }}>
@@ -320,137 +193,135 @@ export default function CouponsPanel({ showToast }) {
           <table className="ns-table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Uses</th>
-                <th>Min Order</th>
-                <th>Expires</th>
+                <th>Customer</th>
+                <th>Rating</th>
+                <th>Review Comment</th>
+                <th>Product</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {coupons.length === 0 ? (
+              {isLoading ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={6}
                     style={{
                       textAlign: "center",
                       padding: "40px 16px",
                       color: "var(--text-muted)",
                     }}
                   >
-                    No coupons found
+                    Loading reviews…
+                  </td>
+                </tr>
+              ) : reviews.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    style={{
+                      textAlign: "center",
+                      padding: "40px 16px",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    No reviews match filter
                   </td>
                 </tr>
               ) : (
-                coupons.map((c) => {
-                  const active = isCouponActive(c);
-                  const id = c.id || c._id;
+                reviews.map((r) => {
+                  const id = r.id || r._id;
+                  const isVisible = r.isVisible !== false;
                   return (
                     <tr key={id}>
                       <td className="primary">
-                        <span className="ns-code">{c.code}</span>
+                        <div>{r.userName || r.user?.name || "Anonymous"}</div>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "var(--text-muted)",
+                            marginTop: 2,
+                          }}
+                        >
+                          {r.createdAt
+                            ? new Date(r.createdAt).toLocaleDateString("en-IN")
+                            : "—"}
+                        </div>
                       </td>
                       <td>
-                        <span
-                          className={
-                            c.discountType === "PERCENTAGE"
-                              ? "badge badge-processing"
-                              : "badge badge-gold"
-                          }
+                        <span style={{ color: "var(--gold)", fontSize: 13 }}>
+                          {"★".repeat(r.rating || 5)}
+                          {"☆".repeat(5 - (r.rating || 5))}
+                        </span>
+                      </td>
+                      <td style={{ maxWidth: 280 }}>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "var(--champagne)",
+                            lineHeight: 1.5,
+                          }}
                         >
-                          {c.discountType === "PERCENTAGE"
-                            ? "% Percent"
-                            : "₹ Fixed"}
+                          {r.comment}
+                        </div>
+                        {r.adminResponse && (
+                          <div
+                            style={{
+                              marginTop: 6,
+                              padding: "6px 10px",
+                              background: "rgba(201,169,110,0.06)",
+                              borderLeft: "2px solid var(--gold)",
+                              fontSize: 11,
+                              color: "var(--gold)",
+                            }}
+                          >
+                            <strong>Store Response:</strong> {r.adminResponse}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <span className="ns-code">
+                          {r.productName || r.product?.name || (r.productId || "").slice(0, 12) || "Product"}
                         </span>
                       </td>
                       <td>
-                        {c.discountType === "PERCENTAGE"
-                          ? `${c.discountValue}%`
-                          : fmt(c.discountValue)}
-                      </td>
-                      <td>
-                        {c.usedCount || 0} / {c.maxUses || "∞"}
-                      </td>
-                      <td>{fmt(c.minOrderAmount)}</td>
-                      <td>
-                        {c.expiryDate
-                          ? new Date(c.expiryDate).toLocaleDateString("en-IN")
-                          : c.expiresAt
-                            ? new Date(c.expiresAt).toLocaleDateString("en-IN")
-                            : "—"}
-                      </td>
-                      <td>
                         <span
                           className={
-                            active
+                            isVisible
                               ? "badge badge-delivered"
                               : "badge badge-cancelled"
                           }
                         >
-                          {active ? "Active" : "Inactive"}
+                          {isVisible ? "Visible" : "Hidden"}
                         </span>
                       </td>
                       <td>
-                        <div style={{ display: "flex", gap: 6 }}>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                           <button
-                            type="button"
+                            className="ns-btn ns-btn-ghost"
+                            style={{ padding: "5px 10px", fontSize: 10 }}
+                            disabled={toggleVisibilityMutation.isPending}
+                            onClick={() => toggleVisibilityMutation.mutate(id)}
+                          >
+                            {isVisible ? "Hide" : "Show"}
+                          </button>
+                          <button
                             className="ns-btn ns-btn-ghost"
                             style={{ padding: "5px 10px", fontSize: 10 }}
                             onClick={() => {
-                              setFormData({
-                                code: c.code,
-                                discountType: c.discountType,
-                                discountValue: c.discountValue,
-                                minOrderAmount: c.minOrderAmount,
-                                maxUses: c.maxUses,
-                                maxUsesPerUser: c.maxUsesPerUser || 1,
-                                isActive: c.isActive,
-                                startDate: c.startDate?.slice(0, 10) || "",
-                                expiryDate: c.expiryDate?.slice(0, 10) || "",
-                              });
-
-                              setEditingCoupon(c);
-                              setCouponModal(true);
+                              setRespondModal(r);
+                              setResponseText(r.adminResponse || "");
                             }}
-                            title="Edit"
                           >
-                            Edit
+                            Respond
                           </button>
                           <button
-                            type="button"
-                            className="ns-btn ns-btn-ghost"
-                            style={{ padding: "5px 10px", fontSize: 10 }}
-                            disabled={toggleCouponMutation.isPending}
-                            onClick={() =>
-                              toggleCouponMutation.mutate({
-                                id: String(id),
-                                isActive: !active,
-                              })
-                            }
-                            title={active ? "Deactivate" : "Activate"}
-                          >
-                            {toggleCouponMutation.isPending
-                              ? "…"
-                              : active
-                                ? "Deactivate"
-                                : "Activate"}
-                          </button>
-                          <button
-                            type="button"
                             className="ns-btn ns-btn-danger"
                             style={{ padding: "5px 10px", fontSize: 10 }}
-                            disabled={deleteCouponMutation.isPending}
-                            onClick={() => {
-                              setDeleteModal({
-                                id: String(id),
-                                code: c.code,
-                              });
-                            }}
+                            disabled={deleteReviewMutation.isPending}
+                            onClick={() => deleteReviewMutation.mutate(id)}
                           >
-                            {deleteCouponMutation.isPending ? "…" : "Delete"}
+                            Delete
                           </button>
                         </div>
                       </td>

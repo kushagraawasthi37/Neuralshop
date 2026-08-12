@@ -23,6 +23,7 @@ export const getBehaviorEventsService = async (userId, sessionId, limit = 80) =>
     .lean();
 };
 
+
 export const buildBehaviorSummary = (events) => {
   const views = events.filter((e) => e.event === "product_view");
   const cartAdds = events.filter((e) => e.event === "add_to_cart");

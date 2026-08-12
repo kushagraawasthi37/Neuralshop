@@ -82,7 +82,8 @@ model OrderItem {
 
   // Relations
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
+   returnRequests ReturnRequest[]
+   
   @@index([orderId])
   @@index([productId])
   @@index([sellerId])
@@ -160,6 +161,7 @@ model IdempotencyKey {
 model Coupon {
   id             String @id @default(uuid())
   code           String @unique
+  
   discountType   String // PERCENTAGE, FIXED
   discountValue  Float // Percentage (0-100) or fixed amount
   minOrderAmount Float? // Minimum order value to use coupon
@@ -219,8 +221,15 @@ model ReturnRequest {
   refundAmount Float?
   refundStatus String @default("PENDING") // PENDING, PROCESSED, FAILED
 
+  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  orderItem OrderItem @relation(
+  fields: [orderItemId],
+  references: [id]
+  )
 
   @@index([userId])
   @@index([status])

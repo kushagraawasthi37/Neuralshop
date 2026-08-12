@@ -9,7 +9,7 @@ import {
 
 /* Checked
  * POST /orders/:orderId/pay - Initiate payment
- * ♻️ Idempotency protected via header
+ * Idempotency protected via header
  */
 export const initiatePayment = asyncHandler(async (req, res) => {
   const { orderId } = req.params;

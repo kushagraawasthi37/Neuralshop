@@ -317,14 +317,12 @@ export const handleWebhookService = async (
       throw error;
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: "success",
-          razorpayPaymentId,
-        },
-      });
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: "success",
+        razorpayPaymentId,
+      },
     });
 
     // Note: Order status will be derived from OrderItems after payment processing

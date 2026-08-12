@@ -99,7 +99,7 @@ export default function ReturnsPage() {
   const [toast, setToast] = useState({ show: false, msg: "" });
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestForm, setRequestForm] = useState({
-    orderId: "",
+    orderItemId: "",
     reason: RETURN_REASONS[0],
     description: "",
   });
@@ -295,21 +295,23 @@ export default function ReturnsPage() {
                 marginBottom: 16,
               }}
             >
-              <label className="return-label">Select Order</label>
+              <label className="return-label">Select Delivered Item</label>
               <select
-                value={requestForm.orderId}
+                value={requestForm.orderItemId}
                 onChange={(e) =>
-                  setRequestForm((p) => ({ ...p, orderId: e.target.value }))
+                  setRequestForm((p) => ({ ...p, orderItemId: e.target.value }))
                 }
                 style={fieldStyle}
               >
-                <option value="">Select a delivered order</option>
-                {deliveredOrders.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.id?.slice(0, 20)}… — ₹
-                    {Number(o.totalAmount || 0).toLocaleString("en-IN")}
-                  </option>
-                ))}
+                <option value="">Select a delivered item to return</option>
+                {deliveredOrders.flatMap((o) =>
+                  (o.items || o.orderItems || []).map((item, idx) => (
+                    <option key={item.id || item._id || `${o.id}-${idx}`} value={item.id || item._id || o.id}>
+                      Order #{o.id?.slice(0, 8)} — {item.name || item.productName || `Item ${idx + 1}`} (₹
+                      {Number(item.price || item.unitPrice || 0).toLocaleString("en-IN")})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -366,7 +368,7 @@ export default function ReturnsPage() {
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <button
                 onClick={() => requestMutation.mutate(requestForm)}
-                disabled={!requestForm.orderId || requestMutation.isPending}
+                disabled={!requestForm.orderItemId || requestMutation.isPending}
                 style={{
                   padding: "13px 28px",
                   background: "#c9a96e",
@@ -380,7 +382,7 @@ export default function ReturnsPage() {
                   fontWeight: 500,
                   minHeight: 44,
                   opacity:
-                    !requestForm.orderId || requestMutation.isPending ? 0.6 : 1,
+                    !requestForm.orderItemId || requestMutation.isPending ? 0.6 : 1,
                   flex: 1,
                 }}
               >

@@ -126,8 +126,6 @@ export const validateCouponService = async (
         coupon: {
           code: couponCode,
         },
-        // You need to get the order's userId through the order relation
-        // This is a simplification - adjust based on your exact schema
       },
     });
 

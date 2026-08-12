@@ -14,18 +14,16 @@ const orderRoutes = express.Router();
 
 // Apply idempotency check to order creation
 orderRoutes.post(
-  "/orders",
+  "/",
   isAuth,
   orderValidations.placeOrder,
   validationErrorHandler,
   checkIdempotency,
   createOrder,
 );
-//Checked
-orderRoutes.get("/orders", isAuth, getOrders);
-//Checked
-orderRoutes.get("/orders/:orderId", isAuth, getOrderById);
-//Checked
-orderRoutes.patch("/orders/:orderId/cancel", isAuth, cancelOrder);
+
+orderRoutes.get("/my-orders", isAuth, getOrders);
+orderRoutes.get("/:orderId", isAuth, getOrderById);
+orderRoutes.patch("/:orderId/cancel", isAuth, cancelOrder);
 
 export default orderRoutes;

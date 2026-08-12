@@ -20,9 +20,10 @@ import {
 
 // Request return
 export const requestReturn = asyncHandler(async (req, res) => {
-  const { orderItemId, reason, description } = req.body;
+  const targetItemId = req.body.orderItemId || req.body.orderId;
+  const { reason, description } = req.body;
 
-  if (!orderItemId || !reason) {
+  if (!targetItemId || !reason) {
     throw new ApiError(
       400,
       "Order item ID and reason are required",
@@ -31,7 +32,7 @@ export const requestReturn = asyncHandler(async (req, res) => {
     );
   }
 
-  const returnRequest = await requestReturnService(orderItemId, req.userId, {
+  const returnRequest = await requestReturnService(targetItemId, req.userId, {
     reason,
     description,
   });
@@ -89,6 +90,7 @@ export const getAllReturns = asyncHandler(async (req, res) => {
   const { skip = 0, limit = 20, status } = req.query;
 
   const result = await getAllReturnRequestsService({
+    adminId: req.userId,
     skip: parseInt(skip),
     limit: parseInt(limit),
     status,
@@ -101,21 +103,27 @@ export const getAllReturns = asyncHandler(async (req, res) => {
     );
 });
 
-// Approve return request — refundAmount is optional, defaults to 0
+// Approve return request — refundAmount is optional, defaults to item price
 export const approveReturn = asyncHandler(async (req, res) => {
   const { returnId } = req.params;
-  const refundAmount = req.body.refundAmount ?? 0;
+  const refundAmount = req.body.refundAmount;
 
-  const returnRequest = await approveReturnService(returnId, refundAmount);
+  const returnRequest = await approveReturnService(
+    returnId,
+    req.userId,
+    refundAmount,
+  );
 
-  res.status(200).json(new ApiResponse(200, returnRequest, "Return request approved"));
+  res
+    .status(200)
+    .json(new ApiResponse(200, returnRequest, "Return request approved"));
 });
 
 // Reject return request
 export const rejectReturn = asyncHandler(async (req, res) => {
   const { returnId } = req.params;
 
-  const returnRequest = await rejectReturnService(returnId);
+  const returnRequest = await rejectReturnService(returnId, req.userId);
 
   res
     .status(200)
@@ -126,7 +134,7 @@ export const rejectReturn = asyncHandler(async (req, res) => {
 export const processRefund = asyncHandler(async (req, res) => {
   const { returnId } = req.params;
 
-  const returnRequest = await processRefundService(returnId);
+  const returnRequest = await processRefundService(returnId, req.userId);
 
   res
     .status(200)
@@ -137,7 +145,7 @@ export const processRefund = asyncHandler(async (req, res) => {
 export const markRefundFailed = asyncHandler(async (req, res) => {
   const { returnId } = req.params;
 
-  const returnRequest = await markRefundFailedService(returnId);
+  const returnRequest = await markRefundFailedService(returnId, req.userId);
 
   res
     .status(200)
@@ -146,7 +154,7 @@ export const markRefundFailed = asyncHandler(async (req, res) => {
 
 // Get return statistics
 export const getReturnStats = asyncHandler(async (req, res) => {
-  const stats = await getReturnStatsService();
+  const stats = await getReturnStatsService(req.userId);
 
   res
     .status(200)
