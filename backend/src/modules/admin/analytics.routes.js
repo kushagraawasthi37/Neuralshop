@@ -9,6 +9,7 @@ import {
   getOrderStatusDistribution,
   getCouponAnalytics,
   getSellerAnalytics,
+  getAgentGrowthAnalytics,
 } from "./analytics.controller.js";
 import { cacheMiddleware } from "../../middlewares/cache.middleware.js";
 import { stableHash } from "../../utils/cache.js";
@@ -96,6 +97,15 @@ analyticsRoutes.get(
     3600,
   ),
   getSellerAnalytics,
+);
+
+analyticsRoutes.get(
+  "/agent-growth",
+  cacheMiddleware(
+    (req) => `analytics:agent-growth:${req.adminId}:${stableHash(req.query)}`,
+    300,
+  ),
+  getAgentGrowthAnalytics,
 );
 
 export default analyticsRoutes;

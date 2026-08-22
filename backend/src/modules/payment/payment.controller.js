@@ -38,11 +38,7 @@ export const handleWebhook = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Missing Razorpay signature", [], "payment");
   }
 
-  const result = await handleWebhookService(
-    req.body,
-    signature,
-    idempotencyKey,
-  );
+  const result = await handleWebhookService(req.body, idempotencyKey);
 
   res
     .status(200)

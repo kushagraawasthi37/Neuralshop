@@ -1,0 +1,192 @@
+.agent-page {
+    min-height: 100vh;
+    padding: 12rem 7vw 6rem;
+    color: #f5efe5;
+    background: radial-gradient(circle at 80% 10%, rgba(166, 122, 52, .16), transparent 34%), #11100f;
+}
+
+.agent-hero {
+    max-width: 930px;
+    margin: 0 auto 4rem;
+}
+
+.agent-kicker,
+.agent-result-label {
+    color: #c9a96e;
+    letter-spacing: .18em;
+    font-size: .72rem;
+}
+
+.agent-hero h1 {
+    max-width: 760px;
+    margin: 1rem 0;
+    font: 500 clamp(3.2rem, 8vw, 7rem)/.92 Georgia, serif;
+    letter-spacing: 0;
+}
+
+.agent-hero h1 em {
+    color: #c9a96e;
+    font-style: italic;
+}
+
+.agent-lede {
+    max-width: 620px;
+    color: #b7afa4;
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.agent-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .7rem;
+    margin-top: 2rem;
+}
+
+.agent-suggestions button,
+.agent-result>button {
+    border: 1px solid rgba(201, 169, 110, .35);
+    border-radius: 999px;
+    padding: .7rem 1rem;
+    background: rgba(255, 255, 255, .03);
+    color: #e9dfd1;
+    cursor: pointer;
+}
+
+.agent-console {
+    max-width: 930px;
+    margin: auto;
+    border-top: 1px solid rgba(201, 169, 110, .28);
+    padding-top: 1.5rem;
+}
+
+.agent-input-row {
+    display: flex;
+    gap: .8rem;
+}
+
+.agent-input-row input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid rgba(255, 255, 255, .18);
+    padding: 1rem 1.1rem;
+    background: rgba(255, 255, 255, .05);
+    color: white;
+    font: inherit;
+}
+
+.agent-send,
+.agent-confirmation button {
+    border: 0;
+    padding: 0 1.4rem;
+    background: #c9a96e;
+    color: #17130e;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.agent-activity {
+    margin-top: 1.5rem;
+    color: #c9a96e;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .7rem;
+    align-items: center;
+    font-size: .86rem;
+}
+
+.agent-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #c9a96e;
+    box-shadow: 0 0 0 7px rgba(201, 169, 110, .14);
+}
+
+.agent-result {
+    margin-top: 2rem;
+    padding: 1.5rem 0;
+}
+
+.agent-message {
+    font: 1.5rem/1.4 Georgia, serif;
+    max-width: 720px;
+}
+
+.agent-confirmation {
+    display: grid;
+    gap: .55rem;
+    max-width: 580px;
+    border-left: 2px solid #c9a96e;
+    padding: 1rem 1.2rem;
+    background: rgba(201, 169, 110, .08);
+}
+
+.agent-confirmation span {
+    color: #b7afa4;
+}
+
+.agent-confirmation button {
+    justify-self: start;
+    padding: .7rem 1rem;
+}
+
+.agent-products {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.agent-product {
+    border: 1px solid rgba(255, 255, 255, .13);
+    background: rgba(255, 255, 255, .04);
+}
+
+.agent-product img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    background: #25221e;
+}
+
+.agent-product div {
+    padding: 1rem;
+}
+
+.agent-product h2 {
+    margin: 0 0 .4rem;
+    font: 1.1rem Georgia, serif;
+}
+
+.agent-product p {
+    color: #b7afa4;
+    margin: 0 0 .8rem;
+}
+
+.agent-product button {
+    border: 0;
+    padding: 0;
+    background: none;
+    color: #c9a96e;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .agent-page {
+        padding: 9rem 1.2rem 4rem;
+    }
+
+    .agent-input-row {
+        flex-direction: column;
+    }
+
+    .agent-send {
+        padding: .9rem;
+    }
+
+    .agent-hero h1 {
+        font-size: 3.8rem;
+    }
+}

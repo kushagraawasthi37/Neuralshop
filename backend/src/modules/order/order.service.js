@@ -1,6 +1,6 @@
 import prisma from "../../prisma/client.js";
 import { ApiError } from "../../utils/api-error.js";
-import { getCartService, clearCartService } from "../cart/cart.service.js";
+import { getCartService } from "../cart/cart.service.js";
 import {
   reserveStockService,
   deductStockService,
@@ -9,6 +9,7 @@ import {
 import { Product } from "../product/product.model.js";
 import { produceOrderEvent } from "../../events/producers/order.producer.js";
 import { orderEvents } from "../../events/event-types.js";
+import { transitionCheckoutState } from "./checkout-state.js";
 
 /* Checked
  * ♻️ Idempotency-protected order creation service
@@ -16,7 +17,6 @@ import { orderEvents } from "../../events/event-types.js";
  * 🔁 Reserves stock atomically to prevent overselling
  */
 export const createOrderService = async (userId, addressId, idempotencyKey) => {
-  
   // Validate address belongs to user
   const address = await prisma.address.findFirst({
     where: { id: addressId, userId },
@@ -158,6 +158,8 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
           totalAmount,
           addressId,
           status: "PENDING",
+          checkoutState: "RESERVED",
+          checkoutSnapshot: cart.items,
         },
       });
 
@@ -166,6 +168,8 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
         data: orderItems.map((item) => ({
           orderId: order.id,
           productId: item.productId,
+          name: item.name,
+          image: item.image,
           size: item.size, // ✅ NEW: Include size
           sellerId: item.sellerId,
           quantity: item.quantity,
@@ -180,6 +184,7 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
           update: {
             response: {
               orderId: order.id,
+              checkoutState: "RESERVED",
               status: "PENDING",
               totalAmount,
             },
@@ -193,6 +198,7 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
             response: {
               orderId: order.id,
               status: "PENDING",
+              checkoutState: "RESERVED",
               totalAmount,
             },
             status: "completed",
@@ -204,17 +210,11 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
       return order;
     });
 
-    // ✅ IMPORTANT: Clear cart after successful order creation
-    try {
-      await clearCartService(userId);
-    } catch (error) {
-      // Don't fail order creation if cart clear fails
-    }
-
     // ✅ Consistent response format
     const payload = {
       orderId: result.id,
       status: "PENDING",
+      checkoutState: "RESERVED",
       totalAmount,
     };
 
@@ -224,6 +224,7 @@ export const createOrderService = async (userId, addressId, idempotencyKey) => {
         userId,
         totalAmount,
         status: "PENDING",
+        checkoutState: "RESERVED",
         items: orderItems,
       });
     } catch (error) {
@@ -376,7 +377,13 @@ export const cancelOrderService = async (userId, orderId) => {
     // ✅ Cancel order
     await tx.order.update({
       where: { id: orderId },
-      data: { status: "CANCELLED" },
+      data: {
+        status: "CANCELLED",
+        checkoutState: transitionCheckoutState(
+          order.checkoutState,
+          "CANCELLED",
+        ),
+      },
     });
 
     // ✅ Cancel ALL items

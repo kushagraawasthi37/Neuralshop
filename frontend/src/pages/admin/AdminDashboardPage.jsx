@@ -17,6 +17,7 @@ import CouponsPanel from "./panels/CouponsPanel";
 import ReturnsPanel from "./panels/ReturnsPanel";
 import ReviewsPanel from "./panels/ReviewsPanel";
 import ProfilePanel from "./panels/ProfilePanel";
+import AgentGrowthPanel from "./panels/AgentGrowthPanel";
 import "./AdminDashboard.css";
 
 const NAV_SECTIONS = [
@@ -133,6 +134,23 @@ const NAV_SECTIONS = [
         ),
       },
       {
+        id: "agent-growth",
+        label: "AI Growth",
+        icon: (
+          <svg
+            className="nav-icon"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          >
+            <path d="M3 15l4-5 3 2 4-7 3 3" />
+            <circle cx="7" cy="10" r="1" />
+            <circle cx="14" cy="5" r="1" />
+          </svg>
+        ),
+      },
+      {
         id: "reviews",
         label: "Reviews",
         icon: (
@@ -225,6 +243,12 @@ const PANEL_TITLES = {
     <>
       {" "}
       Analytics &amp; <em>Reports</em>{" "}
+    </>
+  ),
+  "agent-growth": (
+    <>
+      {" "}
+      AI Commerce <em>Growth</em>{" "}
     </>
   ),
   coupons: (
@@ -328,6 +352,7 @@ export default function AdminDashboardPage() {
     orders: <OrdersPanel showToast={showToast} />,
     inventory: <InventoryPanel showToast={showToast} />,
     analytics: <AnalyticsPanel showToast={showToast} />,
+    "agent-growth": <AgentGrowthPanel />,
     coupons: <CouponsPanel showToast={showToast} />,
     returns: <ReturnsPanel showToast={showToast} />,
     reviews: <ReviewsPanel showToast={showToast} />,

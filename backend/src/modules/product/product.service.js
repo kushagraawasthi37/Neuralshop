@@ -20,6 +20,41 @@ const parseSizes = (sizesInput) => {
   return sizesInput;
 };
 
+const SEARCH_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "available",
+  "best",
+  "below",
+  "find",
+  "for",
+  "in",
+  "less",
+  "me",
+  "need",
+  "of",
+  "option",
+  "outfit",
+  "premium",
+  "rated",
+  "show",
+  "something",
+  "than",
+  "the",
+  "under",
+  "wear",
+  "with",
+]);
+
+const searchTerms = (search) =>
+  String(search || "")
+    .toLowerCase()
+    .replace(/(?:under|below|less than)\s*[₹rs.]*\s*[\d,]+/gi, "")
+    .replace(/\b(?:xs|s|m|l|xl|xxl)\b/gi, "")
+    .split(/[^a-z0-9]+/i)
+    .filter((term) => term.length > 2 && !SEARCH_STOP_WORDS.has(term));
+
 //Checked
 export const addProductService = async (productData, adminEmail, files) => {
   const { name, description, price, category, subCategory, sizes, bestseller } =
@@ -178,13 +213,16 @@ export const listProductService = async (queryParams) => {
   const query = {};
 
   if (search) {
-    query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-      { category: { $regex: search, $options: "i" } },
-      { subCategory: { $regex: search, $options: "i" } },
-      { tags: { $regex: search, $options: "i" } },
-    ];
+    const terms = searchTerms(search);
+    query.$and = (terms.length ? terms : [search]).map((term) => ({
+      $or: [
+        { name: { $regex: term, $options: "i" } },
+        { description: { $regex: term, $options: "i" } },
+        { category: { $regex: term, $options: "i" } },
+        { subCategory: { $regex: term, $options: "i" } },
+        { tags: { $regex: term, $options: "i" } },
+      ],
+    }));
   }
 
   // Case-insensitive exact match for category/subCategory

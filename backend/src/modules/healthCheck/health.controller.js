@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import redisClient from "../config/redis.js";
-import { kafkaProducer } from "../config/kafka.js";
-import { logger } from "../utils/logger.js";
+import redisClient from "../../config/redis.js";
+import { kafkaProducer } from "../../config/kafka.js";
+import { logger } from "../../utils/logger.js";
 
 // ─── Production Health Check ──────────────────────────────────────────────
 // Returns 200 only if all critical services are reachable.
@@ -13,11 +13,17 @@ const checkWithTimeout = async (label, checkFn, timeoutMs = 3000) => {
   try {
     await Promise.race([
       checkFn(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), timeoutMs),
+      ),
     ]);
     return { status: "UP", responseMs: Date.now() - start };
   } catch (err) {
-    return { status: "DOWN", responseMs: Date.now() - start, error: err.message };
+    return {
+      status: "DOWN",
+      responseMs: Date.now() - start,
+      error: err.message,
+    };
   }
 };
 
@@ -25,7 +31,8 @@ export const healthCheck = async (req, res) => {
   const [mongodb, redis, postgres, kafka, elasticsearch] = await Promise.all([
     // MongoDB
     checkWithTimeout("mongodb", async () => {
-      if (mongoose.connection.readyState !== 1) throw new Error("not connected");
+      if (mongoose.connection.readyState !== 1)
+        throw new Error("not connected");
       await mongoose.connection.db.admin().ping();
     }),
 
@@ -33,19 +40,24 @@ export const healthCheck = async (req, res) => {
     checkWithTimeout("redis", () => redisClient.ping()),
 
     // PostgreSQL — use Prisma's raw query
-    checkWithTimeout("postgres", async () => {
-      const { PrismaClient } = await import("@prisma/client");
-      const prisma = new PrismaClient();
-      await prisma.$queryRaw`SELECT 1`;
-      await prisma.$disconnect();
-    }, 5000),
+    checkWithTimeout(
+      "postgres",
+      async () => {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        await prisma.$queryRaw`SELECT 1`;
+        await prisma.$disconnect();
+      },
+      5000,
+    ),
 
     // Kafka — check if producer is connected
     checkWithTimeout("kafka", async () => {
       // kafkaProducer.send throws if not connected; a lightweight approach is
       // tracking the connection state on the singleton
       const kInstance = (await import("../config/kafka.js")).default;
-      if (!kInstance.producerConnected) throw new Error("producer not connected");
+      if (!kInstance.producerConnected)
+        throw new Error("producer not connected");
     }),
 
     // Elasticsearch
@@ -59,7 +71,9 @@ export const healthCheck = async (req, res) => {
   const nonCritical = { kafka, elasticsearch };
 
   const anyDown = Object.values(critical).some((s) => s.status === "DOWN");
-  const anyDegraded = Object.values(nonCritical).some((s) => s.status === "DOWN");
+  const anyDegraded = Object.values(nonCritical).some(
+    (s) => s.status === "DOWN",
+  );
 
   const overallStatus = anyDown ? "DOWN" : anyDegraded ? "DEGRADED" : "UP";
   const httpStatus = anyDown ? 503 : 200;
@@ -84,4 +98,3 @@ export const healthCheck = async (req, res) => {
 
   return res.status(httpStatus).json(payload);
 };
-zz

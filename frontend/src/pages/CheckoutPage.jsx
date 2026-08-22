@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { cartApi } from "../api/cart";
 import { userApi } from "../api/user";
 import { ordersApi } from "../api/orders";
+import { isValidRazorpayPayment } from "../lib/paymentStatus";
 
 const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
@@ -172,6 +173,8 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("razorpay");
   const [processing, setProcessing] = useState(false);
   const [addrError, setAddrError] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+  const [paymentPending, setPaymentPending] = useState("");
 
   const coupon = location.state?.coupon;
 
@@ -212,7 +215,7 @@ export default function CheckoutPage() {
     onSuccess: (res) => {
       const oid =
         res.data.data?.orderId || res.data.data?.id || res.data.data?._id;
-      handlePayment(oid, total);
+      handlePayment(oid);
     },
     onError: (err) => {
       setProcessing(false);
@@ -220,14 +223,13 @@ export default function CheckoutPage() {
     },
   });
 
-  const handlePayment = async (oid, amount) => {
+  const handlePayment = async (oid) => {
     try {
       const payRes = await ordersApi.pay(oid);
       const rzpData = payRes.data.data;
-      if (!rzpData?.razorpayOrderId) {
+      if (!isValidRazorpayPayment(rzpData)) {
         setProcessing(false);
-        queryClient.invalidateQueries({ queryKey: ["cart"] });
-        navigate("/order-confirmation", { state: { orderId: oid } });
+        setPaymentError("Payment could not be started. Please try again.");
         return;
       }
       const options = {
@@ -237,30 +239,46 @@ export default function CheckoutPage() {
         order_id: rzpData.razorpayOrderId,
         name: "NeuralShop",
         description: "Purchase",
-        handler: () => {
-          setProcessing(false);
-          queryClient.invalidateQueries({ queryKey: ["cart"] });
-          navigate("/order-confirmation", { state: { orderId: oid } });
+        handler: async () => {
+          try {
+            await ordersApi.waitForPaymentConfirmation(oid);
+            setProcessing(false);
+            queryClient.invalidateQueries({ queryKey: ["cart"] });
+            navigate("/order-confirmation", { state: { orderId: oid } });
+          } catch {
+            setProcessing(false);
+            setPaymentPending(
+              "Payment was submitted, but confirmation is still pending. Check your orders shortly.",
+            );
+          }
         },
         prefill: {
           name: selectedAddress?.label || "",
           contact: selectedAddress?.phone || newAddr.phone,
         },
         theme: { color: "#c9a96e" },
-        modal: { ondismiss: () => setProcessing(false) },
+        modal: {
+          ondismiss: () => {
+            setProcessing(false);
+            setPaymentError(
+              "Payment was cancelled. Your order was not confirmed.",
+            );
+          },
+        },
       };
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch {
       setProcessing(false);
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      navigate("/order-confirmation", { state: { orderId: oid } });
+      setPaymentError("Payment could not be started. Please try again.");
     }
   };
 
   const placeOrder = async () => {
     setProcessing(true);
     setAddrError("");
+    setPaymentError("");
+    setPaymentPending("");
     let addressId = selectedAddress?.id;
     if (!addressId) {
       if (
@@ -526,6 +544,33 @@ export default function CheckoutPage() {
             }}
           >
             End-to-end encrypted · Razorpay
+          </div>
+        </div>
+      )}
+
+      {(paymentError || paymentPending) && (
+        <div
+          role="status"
+          style={{
+            maxWidth: 1300,
+            margin: "0 auto 20px",
+            padding: "0 var(--page-px)",
+          }}
+        >
+          <div
+            style={{
+              padding: "12px 16px",
+              background: paymentPending
+                ? "rgba(201,169,110,0.08)"
+                : "rgba(180,60,60,0.12)",
+              border: `1px solid ${paymentPending ? "rgba(201,169,110,0.3)" : "rgba(180,60,60,0.3)"}`,
+              fontSize: 12,
+              color: paymentPending
+                ? "rgba(240,230,208,0.8)"
+                : "rgba(240,150,150,0.9)",
+            }}
+          >
+            {paymentError || paymentPending}
           </div>
         </div>
       )}

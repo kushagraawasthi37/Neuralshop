@@ -1,15 +1,20 @@
 import prisma from "../../prisma/client.js";
 import { ApiError } from "../../utils/api-error.js";
-import {
-  deductStockService,
-  releaseStockService,
-} from "../inventory/inventory.service.js";
-import { clearCartService } from "../cart/cart.service.js";
+import { releaseStockService } from "../inventory/inventory.service.js";
+import { clearCartService, restoreCartService } from "../cart/cart.service.js";
+import { transitionCheckoutState } from "../order/checkout-state.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import config from "../../config/environment.config.js";
 import { producePaymentEvent } from "../../events/producers/payment.producer.js";
 import { paymentEvents } from "../../events/event-types.js";
+import {
+  findAgentPaymentAttribution,
+  hasAgentCartAttribution,
+  recordAgentEvent,
+} from "../agent/agent-event.service.js";
+import { writeAgentMemory } from "../agent/agent.memory.service.js";
+import { applyPaymentSuccessTransaction } from "./payment-transaction.js";
 
 // Initialize Razorpay
 let razorpayInstance = null;
@@ -80,6 +85,10 @@ export const initiatePaymentService = async (
     throw new ApiError(400, "Order is not in pending state", [], "payment");
   }
 
+  if (order.checkoutState !== "RESERVED") {
+    throw new ApiError(400, "Order is not reserved for payment", [], "payment");
+  }
+
   if (order.payment) {
     throw new ApiError(
       400,
@@ -123,6 +132,16 @@ export const initiatePaymentService = async (
           provider: "razorpay",
           razorpayOrderId: razorpayOrder.id,
           status: "pending",
+        },
+      });
+
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          checkoutState: transitionCheckoutState(
+            order.checkoutState,
+            "PAYMENT_PENDING",
+          ),
         },
       });
 
@@ -198,11 +217,7 @@ export const initiatePaymentService = async (
  */
 
 // A webhook is an HTTP-based callback function that allows one application to send real-time data to another automatically when a specific event occurs
-export const handleWebhookService = async (
-  webhookBody,
-  signature,
-  idempotencyKey,
-) => {
+export const handleWebhookService = async (webhookBody, idempotencyKey) => {
   // ♻️ Reserve webhook idempotency entry
   if (idempotencyKey) {
     try {
@@ -236,24 +251,22 @@ export const handleWebhookService = async (
   try {
     const { event, payload } = webhookBody;
 
-    if (event !== "payment.captured") {
-      return { status: "ignored" };
+    if (event === "payment.failed") {
+      const paymentEntity = payload?.payment?.entity;
+      const failedPayment = await prisma.payment.findFirst({
+        where: { razorpayOrderId: paymentEntity?.order_id },
+      });
+      if (!failedPayment) {
+        throw new ApiError(404, "Payment record not found", [], "payment");
+      }
+      return handlePaymentFailureService(
+        failedPayment.orderId,
+        paymentEntity?.error_description || "payment_failed",
+      );
     }
 
-    // Verify webhook signature
-    const expectedSignature = crypto
-      .createHmac("sha256", config.razorpay.keySecret)
-      .update(JSON.stringify(webhookBody))
-      .digest("hex");
-
-    const signatureBuffer = Buffer.from(signature || "", "utf8");
-    const expectedBuffer = Buffer.from(expectedSignature, "utf8");
-
-    if (
-      signatureBuffer.length !== expectedBuffer.length ||
-      !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
-    ) {
-      throw new ApiError(400, "Invalid webhook signature", [], "payment");
+    if (event !== "payment.captured") {
+      return { status: "ignored" };
     }
 
     // This is the actual payment object sent by Razorpay inside the webhook payload.
@@ -293,37 +306,35 @@ export const handleWebhookService = async (
       return { status: "already_processed" };
     }
 
-    // ✅ Deduct reserved stock after payment success (with size)
-    const deductedItems = [];
-    try {
-      for (const item of payment.order.items) {
-        await deductStockService(
-          item.sellerId,
-          item.productId,
-          item.size,
-          item.quantity,
-        );
-        deductedItems.push(item);
-      }
-    } catch (error) {
-      for (const item of deductedItems) {
-        await releaseStockService(
-          item.sellerId,
-          item.productId,
-          item.size,
-          item.quantity,
-        ).catch(() => {});
-      }
-      throw error;
-    }
+    const paymentClaimed = await prisma.$transaction((tx) =>
+      applyPaymentSuccessTransaction(tx, payment, razorpayPaymentId),
+    );
 
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: "success",
-        razorpayPaymentId,
-      },
-    });
+    if (!paymentClaimed) return { status: "already_processed" };
+
+    const agentAttribution = await findAgentPaymentAttribution(payment.orderId);
+    const hasCartAttribution =
+      agentAttribution &&
+      (await hasAgentCartAttribution(
+        agentAttribution.sessionId,
+        payment.order.items.map((item) => item.productId),
+        agentAttribution.createdAt,
+      ));
+    if (agentAttribution && hasCartAttribution) {
+      await writeAgentMemory(
+        agentAttribution.sessionId,
+        { pendingAction: null, state: "PAYMENT_CONFIRMED" },
+        payment.order.userId,
+      );
+      recordAgentEvent({
+        event: "agent_payment_confirmed",
+        sessionId: agentAttribution.sessionId,
+        userId: payment.order.userId,
+        orderId: payment.orderId,
+        amount: payment.amount,
+        success: true,
+      });
+    }
 
     // Note: Order status will be derived from OrderItems after payment processing
 
@@ -425,9 +436,22 @@ export const handlePaymentFailureService = async (orderId, reason) => {
 
     await tx.order.update({
       where: { id: orderId },
-      data: { status: "cancelled" },
+      data: {
+        status: "CANCELLED",
+        checkoutState: transitionCheckoutState(
+          payment.order.checkoutState,
+          "FAILED",
+        ),
+      },
     });
   });
+
+  if (Array.isArray(payment.order.checkoutSnapshot)) {
+    await restoreCartService(
+      payment.order.userId,
+      payment.order.checkoutSnapshot,
+    ).catch(() => {});
+  }
 
   // Release reserved stock
   for (const item of payment.order.items) {
@@ -437,6 +461,19 @@ export const handlePaymentFailureService = async (orderId, reason) => {
       item.size,
       item.quantity,
     ).catch(() => {});
+  }
+
+  const failedAgentAttribution = await findAgentPaymentAttribution(orderId);
+  if (failedAgentAttribution) {
+    recordAgentEvent({
+      event: "agent_payment_failed",
+      sessionId: failedAgentAttribution.sessionId,
+      userId: payment.order.userId,
+      orderId,
+      amount: payment.amount,
+      success: false,
+      metadata: { reason: String(reason || "payment_failed").slice(0, 120) },
+    });
   }
 
   // Produce Kafka event for payment failure

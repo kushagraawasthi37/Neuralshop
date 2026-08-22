@@ -6,11 +6,13 @@ EventEmitter.defaultMaxListeners = 20;
 
 import app from "./app.js";
 import config from "./config/environment.config.js";
+import connectDB from "./config/db.js";
+import { createProductIndex } from "./modules/product/elasticsearch.service.js";
 import { logger, logStartup, logDatabase } from "./utils/logger.js";
 import { startKeepAlive } from "./utils/keep-alive.js";
 
 import redisClient from "./config/redis.js";
-import { kafkaProducer } from "./config/kafka.js";
+import kafkaInstance, { kafkaProducer } from "./config/kafka.js";
 import { startMailConsumer } from "./events/consumers/mail.consumer.js";
 import { startOrderConsumer } from "./events/consumers/order.consumer.js";
 import { startPaymentConsumer } from "./events/consumers/payment.consumer.js";
@@ -26,14 +28,13 @@ const PORT = config.app.port;
 const activeConsumers = [];
 
 // ── Start server ──────────────────────────────────────────────────────────
-const server = app.listen(PORT, async () => {
-  logStartup(`Server running on port ${PORT}`, {
-    port: PORT,
-    environment: config.app.env,
+let server;
+const startServer = async () => {
+  await connectDB();
+  await prisma.$connect();
+  logStartup("Required dependencies ready", {
+    services: ["MongoDB", "PostgreSQL"],
   });
-
-  //Prevent render sleep
-  startKeepAlive();
 
   logDatabase(
     `MongoDB ${config.database.mongoUrl ? "configured" : "not configured"}`,
@@ -66,36 +67,39 @@ const server = app.listen(PORT, async () => {
     });
   }
 
-  try {
-    await prisma.$connect();
-    logStartup("Prisma connected");
-  } catch (err) {
-    logStartup("Prisma unavailable — database-backed features degraded", {
-      error: err.message,
-    });
+  if (kafkaInstance.producerConnected) {
+    try {
+      const mailConsumer = await startMailConsumer();
+      const orderConsumer = await startOrderConsumer();
+      const paymentConsumer = await startPaymentConsumer();
+      const inventoryConsumer = await startInventoryConsumer();
+      [mailConsumer, orderConsumer, paymentConsumer, inventoryConsumer]
+        .filter(Boolean)
+        .forEach((c) => activeConsumers.push(c));
+      logStartup("Kafka consumers started");
+    } catch (err) {
+      logStartup("Kafka consumers unavailable", { error: err.message });
+    }
+  } else {
+    logStartup("Kafka consumers skipped — Kafka is degradable and unavailable");
   }
 
-  try {
-    const mailConsumer = await startMailConsumer();
-    const orderConsumer = await startOrderConsumer();
-    const paymentConsumer = await startPaymentConsumer();
-    const inventoryConsumer = await startInventoryConsumer();
-
-    // Consumers may return their instances for graceful disconnect
-    [mailConsumer, orderConsumer, paymentConsumer, inventoryConsumer]
-      .filter(Boolean)
-      .forEach((c) => activeConsumers.push(c));
-
-    logStartup("Kafka consumers started");
-  } catch (err) {
-    logStartup(
-      "Kafka consumers failed to start — event processing unavailable",
-      { error: err.message },
-    );
-  }
-
-  // Start periodic cleanup jobs (idempotency keys, etc.)
+  await createProductIndex();
   startCleanupJob();
+  server = app.listen(PORT, () => {
+    logStartup(`Server running on port ${PORT}`, {
+      port: PORT,
+      environment: config.app.env,
+    });
+    startKeepAlive();
+  });
+};
+
+startServer().catch((error) => {
+  logger.error("Required startup dependency unavailable", {
+    error: error.message,
+  });
+  process.exit(1);
 });
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────
@@ -112,6 +116,7 @@ const shutdown = async (signal) => {
   logger.info(`Received ${signal}. Starting graceful shutdown…`);
 
   // 1. Stop accepting new connections
+  if (!server) return;
   server.close(async () => {
     logger.info("HTTP server closed — no new connections accepted");
 

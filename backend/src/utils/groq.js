@@ -1,9 +1,14 @@
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const DEFAULT_MODEL = "llama-3.1-8b-instant";
+export const DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b";
 
 export const callGroq = async (
   messages,
-  { model = DEFAULT_MODEL, temperature = 0.2, maxTokens = 800, jsonMode = true } = {},
+  {
+    model = DEFAULT_GROQ_MODEL,
+    temperature = 0.2,
+    maxTokens = 800,
+    jsonMode = true,
+  } = {},
 ) => {
   const key = process.env.GROQ_API_KEY;
   if (!key) throw new Error("GROQ_API_KEY not set in environment");

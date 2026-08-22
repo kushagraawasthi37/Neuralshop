@@ -11,6 +11,7 @@ import {
   getCouponAnalyticsService,
   getSellerAnalyticsService,
 } from "./analytics.service.js";
+import { getAgentGrowthAnalyticsService } from "../agent/agent-event.service.js";
 
 // Dashboard overview
 export const getDashboardStats = asyncHandler(async (req, res) => {
@@ -111,4 +112,11 @@ export const getSellerAnalytics = asyncHandler(async (req, res) => {
   const analytics = await getSellerAnalyticsService(req.adminId, startDate, endDate);
 
   res.status(200).json(new ApiResponse(200, analytics, "Seller analytics retrieved"));
+});
+
+export const getAgentGrowthAnalytics = asyncHandler(async (req, res) => {
+  const endDate = req.query.endDate || new Date().toISOString();
+  const startDate = req.query.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const analytics = await getAgentGrowthAnalyticsService({ startDate, endDate });
+  res.status(200).json(new ApiResponse(200, analytics, "AI growth analytics retrieved"));
 });

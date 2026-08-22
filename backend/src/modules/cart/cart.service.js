@@ -309,6 +309,15 @@ export const clearCartService = async (userId) => {
   return buildMutationResult(cart, "Cart cleared successfully");
 };
 
+export const restoreCartService = async (userId, items) => {
+  if (!Array.isArray(items)) throw new Error("Cart snapshot must be an array");
+  const cart = await _modifyCartWithTransaction(userId, (currentCart) => {
+    currentCart.items = items;
+    return currentCart;
+  });
+  return buildMutationResult(cart, "Cart restored successfully");
+};
+
 //Checked
 export const validateCartService = async (userId) => {
   const cart = await getCartService(userId);

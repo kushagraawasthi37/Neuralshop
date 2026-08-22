@@ -49,6 +49,8 @@ model Order {
   id          String   @id @default(uuid())
   userId      String // Reference to MongoDB User
   status      String   @default("PENDING") // PENDING, PARTIALLY_SHIPPED, SHIPPED, DELIVERED, COMPLETED, CANCELLED (derived)
+  checkoutState String  @default("CREATED") // CREATED, RESERVED, PAYMENT_PENDING, PAID, FULFILLED, FAILED, CANCELLED
+  checkoutSnapshot Json?
   totalAmount Float
   addressId   String // Reference to saved Address
   createdAt   DateTime @default(now())
@@ -226,10 +228,7 @@ model ReturnRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orderItem OrderItem @relation(
-  fields: [orderItemId],
-  references: [id]
-  )
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
 
   @@index([userId])
   @@index([status])

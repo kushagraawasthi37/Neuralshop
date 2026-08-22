@@ -18,8 +18,7 @@ const required = (key) => {
   return value;
 };
 
-const optional = (key, defaultValue = "") =>
-  process.env[key] ?? defaultValue;
+const optional = (key, defaultValue = "") => process.env[key] ?? defaultValue;
 
 const optionalInt = (key, defaultValue) => {
   const val = process.env[key];
@@ -54,7 +53,7 @@ export const config = {
   app: {
     name: optional("APP_NAME", "NeuralShop Backend"),
     env: optional("NODE_ENV", "development"),
-    port: optionalInt("PORT", 6000),
+    port: optionalInt("PORT", 8000),
     isDevelopment: isDev,
     isProduction: isProd,
   },
@@ -71,7 +70,7 @@ export const config = {
 
   jwt: {
     secret: required("JWT_SECRET"),
-    refreshSecret: optional("JWT_REFRESH_SECRET"),  // falls back to JWT_SECRET if missing
+    refreshSecret: optional("JWT_REFRESH_SECRET"), // falls back to JWT_SECRET if missing
     expiryTime: optional("JWT_EXPIRY_TIME", "15m"),
   },
 
@@ -102,6 +101,10 @@ export const config = {
     keySecret: required("RAZORPAY_KEY_SECRET"),
     // webhookSecret used in webhookVerification.middleware.js
     webhookSecret: optional("RAZORPAY_WEBHOOK_SECRET"),
+  },
+
+  groq: {
+    apiKey: required("GROQ_API_KEY"),
   },
 
   sendgrid: {
@@ -144,7 +147,7 @@ export const config = {
   cookie: {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? "none" : "lax",//CSRF(Cross-Site Request Forgery) attack.
+    sameSite: isProd ? "none" : "lax", //CSRF(Cross-Site Request Forgery) attack.
     maxAge: 7 * 24 * 60 * 60 * 1000,
   },
 

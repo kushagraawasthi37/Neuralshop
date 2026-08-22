@@ -8,11 +8,17 @@ class PaymentConsumer extends BaseConsumer {
   }
 
   async processMessage(_topic, _partition, _message, event) {
+    // Payment state is authoritative in the verified webhook transaction.
+    // Kafka is intentionally observability-only here to avoid a second state writer.
     const { orderId, userId, amount } = event.data ?? {};
 
     switch (event.eventType) {
       case paymentEvents.PAYMENT_SUCCESS:
-        logger.info("Payment success event received", { orderId, userId, amount });
+        logger.info("Payment success event received", {
+          orderId,
+          userId,
+          amount,
+        });
         break;
 
       case paymentEvents.PAYMENT_FAILED:
@@ -24,7 +30,9 @@ class PaymentConsumer extends BaseConsumer {
         break;
 
       default:
-        logger.warn("PaymentConsumer: unknown event type", { eventType: event.eventType });
+        logger.warn("PaymentConsumer: unknown event type", {
+          eventType: event.eventType,
+        });
     }
   }
 }

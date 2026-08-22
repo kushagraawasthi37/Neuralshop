@@ -17,6 +17,7 @@ import analyticsRoutes from "../modules/admin/analytics.routes.js";
 import adminProfileRoutes from "../modules/admin/admin.profile.routes.js";
 import behaviorRoutes from "../modules/behavior/behavior.routes.js";
 import voiceRoutes from "../modules/voice/voice.routes.js";
+import agentRoutes from "../modules/agent/agent.routes.js";
 
 export const setupRoutes = (app) => {
   app.use("/api/healthCheck", healthRoute);
@@ -57,4 +58,5 @@ export const setupRoutes = (app) => {
   // AI features
   app.use("/api/behavior", behaviorRoutes);
   app.use("/api/voice", voiceRoutes);
+  app.use("/api/agent", agentRoutes);
 };

@@ -1,5 +1,5 @@
 import prisma from "../../prisma/client.js";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiError } from "../../utils/api-error.js";
 
 const RETURN_STATUSES = [
   "REQUESTED",
@@ -55,7 +55,6 @@ const validateDeliveredItem = (orderItem) => {
   }
 };
 
-
 const getReturnForAdmin = async (returnId, adminId) => {
   const returnRequest = await prisma.returnRequest.findFirst({
     where: {
@@ -87,8 +86,6 @@ const getReturnForUser = async (returnId, userId) => {
 
   return returnRequest;
 };
-
-
 
 // ============================================================
 // USER: REQUEST RETURN
@@ -259,7 +256,9 @@ export const approveReturnService = async (returnId, adminId, refundAmount) => {
     returnRequest.orderItem.price * returnRequest.orderItem.quantity;
 
   const targetRefund =
-    refundAmount !== undefined && refundAmount !== null && Number(refundAmount) > 0
+    refundAmount !== undefined &&
+    refundAmount !== null &&
+    Number(refundAmount) > 0
       ? Number(refundAmount)
       : maximumRefund;
 

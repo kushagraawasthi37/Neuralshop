@@ -119,10 +119,10 @@ const fileFmt = winston.format.combine(
 const isDev = (process.env.NODE_ENV || "development") !== "production";
 
 const transports = [
-  new winston.transports.Console({
+  ...(process.env.ENABLE_CONSOLE_LOGGING === "false" ? [] : [new winston.transports.Console({
     format: consoleFmt,
     level: process.env.LOG_LEVEL || "debug",
-  }),
+  })]),
   new DailyRotateFile({
     filename: path.join(logsDir, "error-%DATE%.log"),
     datePattern: "YYYY-MM-DD",

@@ -12,6 +12,18 @@ const DLQ_TOPICS = [
   "inventory.dlq",
 ];
 
+const alertOpsTeam = async ({ topic, event }) => {
+  const webhookUrl = process.env.DLQ_ALERT_WEBHOOK_URL;
+  if (!webhookUrl) return;
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ topic, event }),
+  });
+  if (!response.ok)
+    throw new Error(`DLQ alert webhook returned ${response.status}`);
+};
+
 class DlqConsumer extends BaseConsumer {
   constructor() {
     super("dlq-monitor-group", DLQ_TOPICS);
@@ -30,8 +42,15 @@ class DlqConsumer extends BaseConsumer {
       category: "kafka-dlq",
     });
 
-    // TODO production: add PagerDuty / Slack webhook call here
-    // await alertOpsTeam({ topic, event });
+    try {
+      await alertOpsTeam({ topic, event });
+    } catch (error) {
+      logger.error("DLQ alert delivery failed", {
+        topic,
+        error: error.message,
+        category: "kafka-dlq",
+      });
+    }
   }
 }
 

@@ -1,32 +1,43 @@
-import api from './axios'
-import { v4 as uuid } from '../lib/uuid'
+import api from "./axios";
+import { v4 as uuid } from "../lib/uuid";
+import { waitForPaymentConfirmation } from "../lib/paymentStatus";
 
 export const ordersApi = {
   create: (body) =>
-    api.post('/orders', body, {
-      headers: { 'Idempotency-Key': uuid() },
+    api.post("/orders", body, {
+      headers: { "Idempotency-Key": uuid() },
     }),
 
-  list: (params) => api.get('/orders/my-orders', { params }),
+  list: (params) => api.get("/orders/my-orders", { params }),
 
   get: (orderId) => api.get(`/orders/${orderId}`),
 
   cancel: (orderId) => api.patch(`/orders/${orderId}/cancel`),
 
   pay: (orderId) =>
-    api.post(`/orders/${orderId}/pay`, {}, {
-      headers: { 'Idempotency-Key': uuid() },
-    }),
+    api.post(
+      `/orders/${orderId}/pay`,
+      {},
+      {
+        headers: { "Idempotency-Key": uuid() },
+      },
+    ),
 
   getPayment: (orderId) => api.get(`/payments/${orderId}`),
-}
+  waitForPaymentConfirmation: (orderId, options) =>
+    waitForPaymentConfirmation(
+      () =>
+        ordersApi.getPayment(orderId).then((response) => response.data.data),
+      options,
+    ),
+};
 
 export const couponsApi = {
   validate: (code, orderAmount) =>
-    api.post('/coupons/validate', { couponCode: code, orderAmount }),
+    api.post("/coupons/validate", { couponCode: code, orderAmount }),
 
   getByCode: (code) => api.get(`/coupons/${code}`),
 
   apply: (orderId, couponCode) =>
     api.post(`/coupons/${orderId}/apply`, { couponCode }),
-}
+};

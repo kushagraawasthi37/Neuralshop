@@ -49,6 +49,7 @@ const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const CollectionPage = lazy(() => import("./pages/CollectionPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
+const AgentPage = lazy(() => import("./pages/AgentPage"));
 
 const AUTH_PATHS = [
   "/login",
@@ -100,7 +101,9 @@ function AppShell() {
   const logout = useAuthStore((s) => s.logout);
 
   // Seed session ID on first visit so behavior tracking works immediately
-  useEffect(() => { getSessionId(); }, []);
+  useEffect(() => {
+    getSessionId();
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -218,21 +221,64 @@ function AppShell() {
 
           {/* Commerce pages */}
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
+          <Route
+            path="/checkout"
+            element={
+              <PrivateRoute>
+                <CheckoutPage />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/order-confirmation"
-            element={<PrivateRoute><OrderConfirmationPage /></PrivateRoute>}
+            element={
+              <PrivateRoute>
+                <OrderConfirmationPage />
+              </PrivateRoute>
+            }
           />
           <Route
             path="/orders/:orderId/track"
-            element={<PrivateRoute><OrderTrackingPage /></PrivateRoute>}
+            element={
+              <PrivateRoute>
+                <OrderTrackingPage />
+              </PrivateRoute>
+            }
           />
 
           {/* Account pages */}
-          <Route path="/account/orders" element={<PrivateRoute><OrderHistoryPage /></PrivateRoute>} />
-          <Route path="/account/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-          <Route path="/account/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
-          <Route path="/account/returns" element={<PrivateRoute><ReturnsPage /></PrivateRoute>} />
+          <Route
+            path="/account/orders"
+            element={
+              <PrivateRoute>
+                <OrderHistoryPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/account/profile"
+            element={
+              <PrivateRoute>
+                <ProfilePage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/account/wishlist"
+            element={
+              <PrivateRoute>
+                <WishlistPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/account/returns"
+            element={
+              <PrivateRoute>
+                <ReturnsPage />
+              </PrivateRoute>
+            }
+          />
 
           {/* Admin — heavy dashboard loads only for admin users */}
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
@@ -244,6 +290,7 @@ function AppShell() {
 
           {/* Other pages */}
           <Route path="/collections" element={<CollectionPage />} />
+          <Route path="/agent" element={<AgentPage />} />
           <Route
             path="/account"
             element={<Navigate to="/account/profile" replace />}
@@ -269,7 +316,10 @@ function PrivateRoute({ children }) {
   const { pathname } = useLocation();
 
   if (isInitializing) return <PageLoader />;
-  if (!isLoggedIn) return <Navigate to={`/login?return=${encodeURIComponent(pathname)}`} replace />;
+  if (!isLoggedIn)
+    return (
+      <Navigate to={`/login?return=${encodeURIComponent(pathname)}`} replace />
+    );
   return children;
 }
 

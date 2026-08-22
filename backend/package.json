@@ -8,7 +8,12 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "evaluate-agent": "node scripts/evaluate-agent.js",
+    "test-agent": "node --test tests/*.test.mjs",
+    "test-integration": "node --test tests/payment-lifecycle.integration.test.mjs",
+    "validate-agent-live": "node scripts/validate-agent-live.js",
+    "seed-fixtures": "node scripts/seed-fixtures.js"
   },
   "dependencies": {
     "@elastic/elasticsearch": "^8.19.1",
