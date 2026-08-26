@@ -23,13 +23,13 @@ import { cartApi } from "../../api/cart";
 import { useGuestCartStore } from "../../store/guestCartStore";
 
 const schema = z.object({
-  email: z.string().email("Valid email required"),
+  email: z.email("Valid email required"),
   password: z.string().min(1, "Password required"),
 });
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams(); //React router hook to read and manage the query parameter of the URL
   const setAuth = useAuthStore((s) => s.setAuth);
   const setPendingRole = useAuthStore((s) => s.setPendingRole);
   const guestItems = useGuestCartStore((s) => s.items);
@@ -73,7 +73,6 @@ export default function LoginPage() {
       title="Where machine intelligence meets"
       titleAccent="human desire"
       body="A curated ecosystem of products discovered, verified, and elevated by AI — refined by you."
-
     >
       <FormEyebrow>Customer Portal</FormEyebrow>
       <FormTitle>
@@ -155,7 +154,11 @@ export function GoogleBtn() {
       navigate("/");
     } catch (err) {
       if (err.code !== "auth/popup-closed-by-user") {
-        setError(err.response?.data?.message || err.message || "Google sign-in failed.");
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Google sign-in failed.",
+        );
       }
     } finally {
       setLoading(false);

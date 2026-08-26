@@ -435,6 +435,8 @@ export default function CartPage() {
     }
   };
 
+
+  //On login page we are using the usesearchparam to get the current checkout page after the login
   const handleCheckout = () => {
     if (!isLoggedIn) {
       navigate("/login?return=/checkout");

@@ -179,6 +179,7 @@ export default function CheckoutPage() {
     queryKey: ["cart"],
     queryFn: () => cartApi.get().then((r) => r.data.data),
   });
+
   const { data: addresses, refetch: refetchAddresses } = useQuery({
     queryKey: ["addresses"],
     queryFn: () => userApi.getAddresses().then((r) => r.data.data),
@@ -196,11 +197,13 @@ export default function CheckoutPage() {
     cart?.subtotal ||
     items.reduce((s, i) => s + (i.priceAtAdd || 0) * i.quantity, 0);
   const tax = Math.round(subtotal * 0.18);
+
   const discount = coupon
-    ? Math.round(
-        subtotal *
-          ((coupon.discountValue || coupon.discountPercent || 0) / 100),
-      )
+    ? coupon.discountType === "PERCENTAGE"
+      ? Math.round(subtotal * ((coupon.discountValue || 0) / 100))
+      : coupon.discountType === "FIXED"
+        ? Math.min(coupon.discountValue || 0, subtotal)
+        : 0
     : 0;
   const total = subtotal + tax - discount;
 
@@ -237,6 +240,7 @@ export default function CheckoutPage() {
         order_id: rzpData.razorpayOrderId,
         name: "NeuralShop",
         description: "Purchase",
+        //After payment success, this handler will be called
         handler: () => {
           setProcessing(false);
           queryClient.invalidateQueries({ queryKey: ["cart"] });
@@ -247,9 +251,11 @@ export default function CheckoutPage() {
           contact: selectedAddress?.phone || newAddr.phone,
         },
         theme: { color: "#c9a96e" },
+        // If user closes the payment modal, reset processing state
         modal: { ondismiss: () => setProcessing(false) },
       };
       const rzp = new window.Razorpay(options);
+      // Open the Razorpay payment modal
       rzp.open();
     } catch {
       setProcessing(false);
@@ -276,7 +282,7 @@ export default function CheckoutPage() {
       try {
         const res = await createAddressMutation.mutateAsync(newAddr);
         addressId = res.data.data?.id || res.data.data?._id;
-        await refetchAddresses();
+        await refetchAddresses(); //refetchAddresses is the function returned by useQuery to manually fetch the addresses API again.
       } catch (err) {
         setAddrError(err.response?.data?.message || "Failed to save address.");
         setProcessing(false);

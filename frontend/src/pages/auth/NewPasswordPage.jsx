@@ -23,13 +23,14 @@ const schema = z
     confirmPassword: z.string(),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
+    //refine method is used to add custom validation logic to the schema.
     message: "Passwords don't match",
-    path: ["confirmPassword"],
+    path: ["confirmPassword"], //If rule is violtedd then attach the error message on this path(field) (confirmPassword field)
   });
 
 export default function NewPasswordPage() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useLocation(); //React router hook to access the current location object, which contains information about the current URL, including the state passed from the previous page.
   const { pendingEmail, pendingRole, setPendingEmail } = useAuthStore();
   const [otp] = useState(location.state?.otp || "");
   const [serverError, setServerError] = useState("");

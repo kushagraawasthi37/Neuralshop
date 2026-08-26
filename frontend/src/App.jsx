@@ -326,6 +326,7 @@ function PlaceholderPage({ title }) {
   );
 }
 
+//Query ClientProvider wraps the entire app to provide React Query functionality, and BrowserRouter enables routing. The AppShell component contains the main structure of the app, including navigation, routes, and footer.
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>

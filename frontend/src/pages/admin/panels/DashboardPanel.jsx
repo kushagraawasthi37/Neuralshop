@@ -33,7 +33,7 @@ export default function DashboardPanel({ onNavigate }) {
     queryFn: () => analyticsApi.dashboard().then((r) => r.data.data),
   });
 
-  const { data: salesData, isLoading: salesLoading } = useQuery({
+  const { data: salesData, isLoading: salesLoading ,isError: salesError,} = useQuery({
     queryKey: ["admin-sales"],
     queryFn: () => {
       const now = new Date();
@@ -228,7 +228,7 @@ export default function DashboardPanel({ onNavigate }) {
               </div>
             </div>
           </div>
-          {salesLoading || salesChartData === null ? (
+          {salesLoading ? (
             <div
               style={{
                 height: 180,
@@ -241,7 +241,20 @@ export default function DashboardPanel({ onNavigate }) {
             >
               Loading…
             </div>
-          ) : salesChartData.length > 0 ? (
+          ) : salesError?(
+            <div
+              style={{
+                height: 180,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-muted)",
+                fontSize: 13,
+              }}
+            >
+              Error loading sales data
+            </div>
+          ):salesChartData?.length > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={salesChartData}>
                 <defs>

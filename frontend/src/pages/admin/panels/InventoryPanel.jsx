@@ -137,6 +137,7 @@ export default function InventoryPanel({ showToast }) {
   const outOfStock = inventory.filter(
     (i) => (i.availableStock ?? i.totalStock ?? 0) === 0,
   ).length;
+  
   const totalReserved = inventory.reduce(
     (a, i) => a + (i.reservedStock || 0),
     0,

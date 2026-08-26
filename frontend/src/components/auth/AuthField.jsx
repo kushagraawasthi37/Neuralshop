@@ -1,5 +1,6 @@
 import { useState, forwardRef } from "react";
 
+// forwardRef -> It gives the access of the ref to the child component to parent component 
 const BORDER = "rgba(201,169,110,0.18)";
 const BORDER_FOCUS = "rgba(201,169,110,0.5)";
 const BORDER_ERROR = "rgba(192,57,43,0.6)";

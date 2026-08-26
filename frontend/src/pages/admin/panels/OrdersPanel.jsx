@@ -6,7 +6,7 @@ import { fmt, fmtNum, Badge } from "../adminUtils";
 const STATUSES = ["PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
 
 export default function OrdersPanel({ showToast }) {
-  const qc = useQueryClient();
+  const qc = useQueryClient(); //It is used to manaage and control the tanstack query cache
   const [statusModal, setStatusModal] = useState(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All Statuses");

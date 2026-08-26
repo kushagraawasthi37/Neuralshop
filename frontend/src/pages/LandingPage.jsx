@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 
-// 🔥 Lazy load ALL non-critical sections
+// 🔥 Lazy load ALL non-critical sections -> component based lazy loading
 import HeroSection from "../components/landing/HeroSection";
 const MarqueeStrip = lazy(() => import("../components/landing/MarqueeStrip"));
 const CategoryBento = lazy(() => import("../components/landing/CategoryBento"));

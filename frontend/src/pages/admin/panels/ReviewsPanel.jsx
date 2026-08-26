@@ -15,6 +15,8 @@ export default function ReviewsPanel({ showToast }) {
       adminReviewsApi.list().then((r) => r.data?.data || r.data || []),
   });
 
+  
+
   const rawReviews = Array.isArray(reviewsData)
     ? reviewsData
     : Array.isArray(reviewsData?.reviews)

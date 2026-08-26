@@ -577,6 +577,7 @@ export default function ProductsPage() {
   const rawProducts = Array.isArray(data)
     ? data
     : data?.products || data?.items || [];
+    
   const products = sortProducts(rawProducts, sortBy);
   const total = data?.total || data?.count || rawProducts.length;
   const totalPages = Math.ceil(total / limit);

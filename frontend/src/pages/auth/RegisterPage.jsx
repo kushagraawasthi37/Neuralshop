@@ -193,6 +193,8 @@ export default function RegisterPage() {
   );
 }
 
+
+//StepBar is the resuable component to show the progress of the registeration process
 export function StepBar({ current }) {
   const steps = ["Account", "Verify", "Done"];
   return (

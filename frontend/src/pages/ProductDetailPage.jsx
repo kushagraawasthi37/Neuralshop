@@ -11,7 +11,10 @@ import ProductGallery from "../components/product/ProductGallery";
 import ProductInfo from "../components/product/ProductInfo";
 import ReviewSection from "../components/product/ReviewSection";
 import RelatedProducts from "../components/product/RelatedProducts";
-import { useProductViewTracker, useBehaviorTracker } from "../hooks/useBehaviorTracker";
+import {
+  useProductViewTracker,
+  useBehaviorTracker,
+} from "../hooks/useBehaviorTracker";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -185,9 +188,23 @@ export default function ProductDetailPage() {
       const priceAtAdd = product.offerPrice || product.price || 0;
       const image = (product.image || product.images || [])[0] || "";
       if (isLoggedIn) {
-        await cartApi.addItem(productId, quantity, selectedSize, priceAtAdd, product.name, image);
+        await cartApi.addItem(
+          productId,
+          quantity,
+          selectedSize,
+          priceAtAdd,
+          product.name,
+          image,
+        );
       } else {
-        guestAddItem({ productId, quantity, size: selectedSize, priceAtAdd, name: product.name, image });
+        guestAddItem({
+          productId,
+          quantity,
+          size: selectedSize,
+          priceAtAdd,
+          name: product.name,
+          image,
+        });
       }
       track("add_to_cart", productId, {
         productName: product.name,

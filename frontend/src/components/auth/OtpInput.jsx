@@ -1,7 +1,7 @@
 import { useRef } from "react";
 
 export default function OtpInput({ length = 6, value = "", onChange }) {
-  const refs = useRef([]);
+  const refs = useRef([]);//DOM elements ke references store karta hai.
 
   const digits = Array.from({ length }, (_, i) => value[i] || "");
 
@@ -41,7 +41,7 @@ export default function OtpInput({ length = 6, value = "", onChange }) {
       .getData("text")
       .replace(/\D/g, "")
       .slice(0, length);
-    onChange(pasted.padEnd(length, " ").slice(0, length).trimEnd());
+    onChange(pasted);
     refs.current[Math.min(pasted.length, length - 1)]?.focus();
   };
 

@@ -7,6 +7,10 @@ import ProductCardSkeleton from "../ui/ProductCardSkeleton";
 import { useReveal } from "../../hooks/useReveal";
 import "./styles/FeatureProduct.css";
 
+
+
+//useNavigate-> Use when navigation happens as a result of logic/event:
+//Link ->Use when navigation is directly represented in JSX.
 export default function FeaturedProducts() {
   const scrollRef = useRef(null);
   const headerRef = useReveal();

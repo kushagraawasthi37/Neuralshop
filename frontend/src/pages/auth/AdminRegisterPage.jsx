@@ -21,7 +21,7 @@ import { useAuthStore } from "../../store/authStore";
 
 const schema = z.object({
   name: z.string().min(2, "Min 2 characters"),
-  email: z.string().email("Valid email required"),
+  email: z.email("Valid email required"),
   password: z.string().min(8, "Min 8 characters"),
   agree: z.literal(true, { errorMap: () => ({ message: "Required" }) }),
 });
@@ -35,9 +35,12 @@ export default function AdminRegisterPage() {
   const {
     register,
     handleSubmit,
-    watch,
+    watch, //React hook function that obsereves current value of the form field
     formState: { errors },
   } = useForm({ resolver: zodResolver(schema) });
+
+  //We are doing this to check the password strength as the user types in the password field. The watch function allows us to observe the current value of the password field in real-time.
+  // Value change hone par component re-render ho sakta hai
   const password = watch("password", "");
 
   const onSubmit = async ({ name, email, password }) => {
@@ -75,6 +78,7 @@ export default function AdminRegisterPage() {
 
       <FormError message={serverError} />
 
+      {/* noValidate attribute is used to disable the browser's default validation and allow custom validation logic to be applied. */}
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div
           style={{

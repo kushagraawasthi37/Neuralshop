@@ -50,6 +50,8 @@ export default function ProfilePanel({ showToast }) {
   });
 
   const [info, setInfo] = useState({ name: "", email: "", businessName: "" });
+
+  //infoInit  flag to prevent infinite loop of state updates
   const [infoInit, setInfoInit] = useState(false);
 
   if (profile && !infoInit) {

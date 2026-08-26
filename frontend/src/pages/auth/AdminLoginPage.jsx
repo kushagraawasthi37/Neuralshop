@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useForm } from "react-hook-form";//for form handeling
+import { z } from "zod"; //for Schema-based validation 
 import { zodResolver } from "@hookform/resolvers/zod";
 import AuthLayout from "../../components/auth/AuthLayout";
 import {
@@ -19,7 +19,7 @@ import { authApi } from "../../api/auth";
 import { useAuthStore } from "../../store/authStore";
 
 const schema = z.object({
-  email: z.string().email("Valid email required"),
+  email: z.email("Valid email required"),
   password: z.string().min(1, "Password required"),
 });
 
@@ -31,10 +31,10 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
 
   const {
-    register,
+    register,//React hook function that connects the input fields to the react hook form 
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(schema) });
+  } = useForm({ resolver: zodResolver(schema) }/*It tells the form to use the zod resolver for validation*/);
 
   const onSubmit = async ({ email, password }) => {
     setLoading(true);

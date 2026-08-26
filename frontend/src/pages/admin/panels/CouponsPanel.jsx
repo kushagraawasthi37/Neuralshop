@@ -1,3 +1,4 @@
+//THis hould be belong to the superadmin but right noe this functionality is available to the admin as well. So keeping it here for now.
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminCouponsApi } from "../../../api/admin";
@@ -10,6 +11,7 @@ function isCouponActive(c) {
   return true;
 }
 
+//Clean coupon data before sending to API
 const cleanCouponData = (data) => ({
   code: data.code,
   discountType: data.discountType,

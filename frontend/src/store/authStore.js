@@ -3,6 +3,8 @@ import { create } from "zustand";
 const getRawToken = () => localStorage.getItem("token");
 const isTokenValid = (t) => !!t && t !== "undefined" && t !== "null";
 
+
+//Set is the zustand function to update the store state
 export const useAuthStore = create((set) => ({
   user: null,
   token: isTokenValid(getRawToken()) ? getRawToken() : null,

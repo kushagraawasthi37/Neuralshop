@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { cartApi } from '../api/cart'
 
+//get ->current Zustand state/functions access karne ke liye.
+
 export const useCartStore = create((set, get) => ({
   cart: null,
   loading: false,

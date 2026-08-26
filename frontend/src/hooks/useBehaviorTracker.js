@@ -6,10 +6,7 @@ const SESSION_KEY = "ns_session_id";
 export function getSessionId() {
   let id = localStorage.getItem(SESSION_KEY);
   if (!id) {
-    id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-    });
+    id = crypto.randomUUID()
     localStorage.setItem(SESSION_KEY, id);
   }
   return id;
@@ -19,7 +16,9 @@ export function getSessionId() {
 const fireEvent = (event, productId, metadata) => {
   behaviorApi
     .track({ event, productId, metadata, sessionId: getSessionId() })
-    .catch(() => {});
+    .catch(() => {
+      // Tracking request does not block the user experience, so we ignore any errors
+    });
 };
 
 export function useBehaviorTracker() {

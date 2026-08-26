@@ -37,7 +37,7 @@ export default function ProductsPanel({ showToast }) {
   const [filterStatus, setFilterStatus] = useState("");
   const [newProduct, setNewProduct] = useState(emptyProduct);
 
-  // Fetch all products (backend ignores filter params — we filter client-side)
+  // Fetch all products (backend ignores filter params — we filter in client-side)
   const { data: allProducts = [] } = useQuery({
     queryKey: ["admin-products"],
     queryFn: () =>

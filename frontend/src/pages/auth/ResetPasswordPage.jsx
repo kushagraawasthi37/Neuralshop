@@ -28,6 +28,8 @@ export default function ResetPasswordPage() {
     if (!pendingEmail) navigate("/forgot-password");
   }, [pendingEmail, navigate]);
 
+
+  //It is implementing the OTP resend timer functionlaity 
   useEffect(() => {
     if (resendTimer <= 0) return;
     const t = setTimeout(() => setResendTimer((s) => s - 1), 1000);

@@ -126,7 +126,7 @@ export default function ProductCard({ product }) {
     setAdding(false);
   };
 
-  const handleAddToCart = (e) => {
+  const handleAddToCart = (e) => { 
     e.stopPropagation();
     if (!availableSizes.length) {
       navigate(`/product/${product._id || product.id}`);

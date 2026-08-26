@@ -38,6 +38,7 @@ export default function VerifyEmailPage() {
   }, [timer]);
 
   const handleVerify = async () => {
+    //remove the spaces from the OTP
     if (otp.replace(/\s/g, "").length < 6) {
       setError("Enter all 6 digits");
       return;

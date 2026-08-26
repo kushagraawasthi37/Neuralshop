@@ -8,8 +8,10 @@ const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 export default function OrderConfirmationPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const orderId = location.state?.orderId;
+  const orderId = location.state?.orderId;//orderId is passed via state from the previous page not through the URL
   const [copied, setCopied] = useState(false);
+
+  //Particles generate on the first render and remain static for the lifetime of the component
   const [particles] = useState(() =>
     Array.from({ length: 16 }, (_, i) => ({
       key: i,
@@ -27,7 +29,9 @@ export default function OrderConfirmationPage() {
     enabled: !!orderId,
   });
 
+  // Copy order ID to clipboard
   const copyOrderId = () => {
+    //Browser clipboard API is used to copy the order ID to the clipboard. Usually asynchronous, but here we use the synchronous version for simplicity. It may not work in all browsers or contexts, so error handling is recommended in production code.
     navigator.clipboard.writeText(orderId || "");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

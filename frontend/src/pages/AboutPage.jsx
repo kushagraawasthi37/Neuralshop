@@ -31,10 +31,10 @@ const STATS = [
 ];
 
 const TEAM = [
-  { initials: "AK", name: "Kushagra Awasthi", role: "Founder & Chief Curator" },
-  { initials: "MS", name: "Shivanshu Sharma", role: "Head of AI & Curation" },
-  { initials: "RV", name: "Avneesh", role: "Luxury Partnerships" },
-  { initials: "AD", name: "Aditya", role: "Tech Head" },
+  { initials: "KA", name: "Kushagra Awasthi", role: "Founder & Chief Curator" },
+  { initials: "SS", name: "Shivanshu Sharma", role: "Head of AI & Curation" },
+  { initials: "AV", name: "Avneesh", role: "Luxury Partnerships" },
+  { initials: "AR", name: "Aditya", role: "Tech Head" },
 ];
 
 export default function AboutPage() {

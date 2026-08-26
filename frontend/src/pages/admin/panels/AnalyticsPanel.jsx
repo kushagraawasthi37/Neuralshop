@@ -22,6 +22,7 @@ const tooltipStyle = {
     borderRadius: 0,
   },
 };
+
 const axisTickProps = { fill: "rgba(240,230,208,0.35)", fontSize: 10 };
 
 export default function AnalyticsPanel() {
@@ -29,13 +30,17 @@ export default function AnalyticsPanel() {
 
   const { data: dashboard } = useQuery({
     queryKey: ["admin-dashboard"],
-    queryFn: () => analyticsApi.dashboard().then((r) => r.data.data),
+    queryFn: async () => {
+      const response = await analyticsApi.dashboard();
+      return response.data.data;
+    },
   });
 
   const { data: salesData, isLoading: salesLoading } = useQuery({
     queryKey: ["admin-sales"],
-    queryFn: () => {
+    queryFn: async () => {
       const now = new Date();
+      //End time of todays date
       const end = new Date(
         now.getFullYear(),
         now.getMonth(),
@@ -50,15 +55,14 @@ export default function AnalyticsPanel() {
         now.getMonth(),
         now.getDate() - 30,
       ).toISOString();
-      return analyticsApi
-        .sales({ startDate: start, endDate: end })
-        .then((r) => r.data.data);
+      const response = await analyticsApi.sales({ startDate: start, endDate: end });
+      return response.data.data;
     },
   });
 
   const { data: orderStatus } = useQuery({
     queryKey: ["admin-order-status"],
-    queryFn: () => {
+    queryFn: async () => {
       const now = new Date();
       const end = new Date(
         now.getFullYear(),
@@ -74,15 +78,14 @@ export default function AnalyticsPanel() {
         now.getMonth(),
         now.getDate() - 30,
       ).toISOString();
-      return analyticsApi
-        .orderStatus({ startDate: start, endDate: end })
-        .then((r) => r.data.data);
+      const response = await analyticsApi.orderStatus({ startDate: start, endDate: end });
+      return response.data.data;
     },
   });
 
   const { data: custData } = useQuery({
     queryKey: ["admin-customers"],
-    queryFn: () => {
+    queryFn: async () => {
       const now = new Date();
       const end = new Date(
         now.getFullYear(),
@@ -98,9 +101,8 @@ export default function AnalyticsPanel() {
         now.getMonth(),
         now.getDate() - 30,
       ).toISOString();
-      return analyticsApi
-        .customers({ startDate: start, endDate: end })
-        .then((r) => r.data.data);
+      const response = await analyticsApi.customers({ startDate: start, endDate: end });
+      return response.data.data;
     },
     enabled: tab === "customers",
   });

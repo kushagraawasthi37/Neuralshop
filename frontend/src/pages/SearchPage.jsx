@@ -39,6 +39,7 @@ const SORT_OPTIONS = [
   { label: "Newest", value: "newest" },
 ];
 
+
 const CATEGORIES = [
   "All",
   "Watches",
@@ -49,7 +50,7 @@ const CATEGORIES = [
   "Jewellery",
 ];
 
-function SizePicker({ sizes, onSelect, onClose }) {
+function SizePicker({ sizes, onSelect, onClose }) {  
   const available = (sizes || []).filter((s) => s.stock > 0);
   if (!available.length) return null;
   return (
@@ -481,6 +482,7 @@ export default function SearchPage() {
   };
 
   const removeFilter = (key) => {
+    //Copy of URL params
     const next = new URLSearchParams(searchParams);
     next.delete(key);
     setSearchParams(next);

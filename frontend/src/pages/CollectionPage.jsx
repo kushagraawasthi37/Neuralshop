@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"; //pagination / infinite scroll.
 import { productApi } from "../api/products";
 import { cartApi } from "../api/cart";
 import { wishlistApi } from "../api/user";
@@ -20,6 +20,7 @@ const CATEGORIES = [
   "Accessories",
   "Jewellery",
 ];
+
 const SORT_OPTIONS = [
   { label: "Relevance", value: "" },
   { label: "Price: Low to High", value: "price_asc" },
@@ -173,7 +174,7 @@ function ProductCard({ product }) {
   };
 
   const handleAddToCart = (e) => {
-    e.stopPropagation();
+    e.stopPropagation(); // stop event propagation to prevent triggering the card's onClick
     if (!availableSizes.length) {
       navigate(`/product/${product.id || product._id}`);
       return;
@@ -186,7 +187,7 @@ function ProductCard({ product }) {
   };
 
   const handleWishlist = async (e) => {
-    e.stopPropagation();
+    e.stopPropagation(); // stop event propagation to prevent triggering the card's onClick
     try {
       if (wishlisted) await wishlistApi.remove(product.id || product._id);
       else await wishlistApi.add(product.id || product._id);
@@ -452,10 +453,22 @@ const getTotal = (page) => page?.total || page?.count || 0;
 function sortProducts(products, sortBy) {
   if (!sortBy) return products;
   const arr = [...products];
-  if (sortBy === "price_asc") return arr.sort((a, b) => (a.offerPrice ?? a.price ?? 0) - (b.offerPrice ?? b.price ?? 0));
-  if (sortBy === "price_desc") return arr.sort((a, b) => (b.offerPrice ?? b.price ?? 0) - (a.offerPrice ?? a.price ?? 0));
-  if (sortBy === "newest") return arr.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-  if (sortBy === "rating") return arr.sort((a, b) => (b.rating ?? b.avgRating ?? 0) - (a.rating ?? a.avgRating ?? 0));
+  if (sortBy === "price_asc")
+    return arr.sort(
+      (a, b) => (a.offerPrice ?? a.price ?? 0) - (b.offerPrice ?? b.price ?? 0),
+    );
+  if (sortBy === "price_desc")
+    return arr.sort(
+      (a, b) => (b.offerPrice ?? b.price ?? 0) - (a.offerPrice ?? a.price ?? 0),
+    );
+  if (sortBy === "newest")
+    return arr.sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+    );
+  if (sortBy === "rating")
+    return arr.sort(
+      (a, b) => (b.rating ?? b.avgRating ?? 0) - (a.rating ?? a.avgRating ?? 0),
+    );
   return arr;
 }
 
@@ -566,7 +579,11 @@ function PersonalisedStrip({ isLoggedIn }) {
                   <img
                     src={img}
                     alt={p.name}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
                   />
                 ) : (
                   <div
@@ -579,7 +596,14 @@ function PersonalisedStrip({ isLoggedIn }) {
                     }}
                   >
                     <svg width="32" height="32" viewBox="0 0 60 60" fill="none">
-                      <rect x="10" y="10" width="40" height="40" stroke="rgba(201,169,110,0.2)" strokeWidth="0.8" />
+                      <rect
+                        x="10"
+                        y="10"
+                        width="40"
+                        height="40"
+                        stroke="rgba(201,169,110,0.2)"
+                        strokeWidth="0.8"
+                      />
                     </svg>
                   </div>
                 )}
@@ -655,10 +679,7 @@ export default function CollectionPage() {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery({
-      queryKey: [
-        "collection",
-        { category, priceMin, priceMax, search },
-      ],
+      queryKey: ["collection", { category, priceMin, priceMax, search }],
       queryFn: ({ pageParam = 0 }) => {
         if (!hasFilters) {
           return productApi
@@ -688,10 +709,13 @@ export default function CollectionPage() {
   const displayedProducts = sortProducts(allProducts, sortBy);
   const total = data?.pages[0] ? getTotal(data.pages[0]) : 0;
 
+  //Purpose infinite scroll
   useEffect(() => {
     if (!sentinelRef.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
+        // When the sentinel comes into view, fetch the next page if available
+        //isIntersecting is true when the sentinel is visible in the viewport
         if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
           fetchNextPage();
         }
@@ -881,9 +905,21 @@ export default function CollectionPage() {
       </div>
 
       {/* Mobile filter toggle — opens bottom drawer on mobile */}
-      <button className="listing-filter-toggle" onClick={() => setMobileFiltersOpen(true)}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="14" y2="12" /><line x1="4" y1="18" x2="10" y2="18" />
+      <button
+        className="listing-filter-toggle"
+        onClick={() => setMobileFiltersOpen(true)}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <line x1="4" y1="6" x2="20" y2="6" />
+          <line x1="4" y1="12" x2="14" y2="12" />
+          <line x1="4" y1="18" x2="10" y2="18" />
         </svg>
         Show Filters
       </button>
@@ -891,51 +927,261 @@ export default function CollectionPage() {
       {/* Mobile filter bottom drawer */}
       <div
         className={`col-mobile-filter-overlay${mobileFiltersOpen ? " open" : ""}`}
-        onClick={(e) => { if (e.target === e.currentTarget) setMobileFiltersOpen(false); }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setMobileFiltersOpen(false);
+        }}
       >
         <div className="col-mobile-filter-panel">
           <div className="col-mobile-filter-header">
-            <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 22, fontWeight: 300, color: "#f0e6d0" }}>Filters</div>
-            <button onClick={() => setMobileFiltersOpen(false)} style={{ width: 36, height: 36, border: "1px solid rgba(201,169,110,0.18)", background: "none", color: "rgba(240,230,208,0.5)", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            <div
+              style={{
+                fontFamily: "'Cormorant Garamond',serif",
+                fontSize: 22,
+                fontWeight: 300,
+                color: "#f0e6d0",
+              }}
+            >
+              Filters
+            </div>
+            <button
+              onClick={() => setMobileFiltersOpen(false)}
+              style={{
+                width: 36,
+                height: 36,
+                border: "1px solid rgba(201,169,110,0.18)",
+                background: "none",
+                color: "rgba(240,230,208,0.5)",
+                cursor: "pointer",
+                fontSize: 18,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ×
+            </button>
           </div>
           {/* Search */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(201,169,110,0.5)", marginBottom: 10 }}>Search</div>
-            <form onSubmit={(e) => { e.preventDefault(); setSearch(searchInput.trim()); setMobileFiltersOpen(false); }} style={{ display: "flex", gap: 0 }}>
-              <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search products…" style={{ flex: 1, padding: "8px 10px", background: "rgba(201,169,110,0.04)", border: "1px solid rgba(201,169,110,0.18)", borderRight: "none", color: "#f0e6d0", fontSize: 12, outline: "none", fontFamily: "'DM Sans',sans-serif" }} />
-              <button type="submit" style={{ padding: "8px 12px", background: "rgba(201,169,110,0.12)", border: "1px solid rgba(201,169,110,0.18)", color: "#c9a96e", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>↵</button>
+            <div
+              style={{
+                fontSize: 9,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "rgba(201,169,110,0.5)",
+                marginBottom: 10,
+              }}
+            >
+              Search
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch(searchInput.trim());
+                setMobileFiltersOpen(false);
+              }}
+              style={{ display: "flex", gap: 0 }}
+            >
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search products…"
+                style={{
+                  flex: 1,
+                  padding: "8px 10px",
+                  background: "rgba(201,169,110,0.04)",
+                  border: "1px solid rgba(201,169,110,0.18)",
+                  borderRight: "none",
+                  color: "#f0e6d0",
+                  fontSize: 12,
+                  outline: "none",
+                  fontFamily: "'DM Sans',sans-serif",
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  padding: "8px 12px",
+                  background: "rgba(201,169,110,0.12)",
+                  border: "1px solid rgba(201,169,110,0.18)",
+                  color: "#c9a96e",
+                  cursor: "pointer",
+                  fontSize: 14,
+                  lineHeight: 1,
+                }}
+              >
+                ↵
+              </button>
             </form>
           </div>
           {/* Category */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(201,169,110,0.5)", marginBottom: 12 }}>Category</div>
+            <div
+              style={{
+                fontSize: 9,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "rgba(201,169,110,0.5)",
+                marginBottom: 12,
+              }}
+            >
+              Category
+            </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {CATEGORIES.map((cat) => (
-                <button key={cat} onClick={() => setCategory(cat)} style={{ padding: "7px 14px", background: category === cat ? "rgba(201,169,110,0.1)" : "none", border: `1px solid ${category === cat ? "rgba(201,169,110,0.35)" : "rgba(201,169,110,0.15)"}`, color: category === cat ? "#c9a96e" : "rgba(240,230,208,0.45)", fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>{cat}</button>
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  style={{
+                    padding: "7px 14px",
+                    background:
+                      category === cat ? "rgba(201,169,110,0.1)" : "none",
+                    border: `1px solid ${category === cat ? "rgba(201,169,110,0.35)" : "rgba(201,169,110,0.15)"}`,
+                    color:
+                      category === cat ? "#c9a96e" : "rgba(240,230,208,0.45)",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    fontFamily: "'DM Sans',sans-serif",
+                  }}
+                >
+                  {cat}
+                </button>
               ))}
             </div>
           </div>
           {/* Sort */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(201,169,110,0.5)", marginBottom: 12 }}>Sort By</div>
+            <div
+              style={{
+                fontSize: 9,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "rgba(201,169,110,0.5)",
+                marginBottom: 12,
+              }}
+            >
+              Sort By
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {SORT_OPTIONS.map((opt) => (
-                <button key={opt.value} onClick={() => setSortBy(opt.value)} style={{ textAlign: "left", padding: "9px 12px", background: sortBy === opt.value ? "rgba(201,169,110,0.08)" : "none", border: sortBy === opt.value ? "1px solid rgba(201,169,110,0.25)" : "1px solid transparent", color: sortBy === opt.value ? "#c9a96e" : "rgba(240,230,208,0.45)", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>{opt.label}</button>
+                <button
+                  key={opt.value}
+                  onClick={() => setSortBy(opt.value)}
+                  style={{
+                    textAlign: "left",
+                    padding: "9px 12px",
+                    background:
+                      sortBy === opt.value ? "rgba(201,169,110,0.08)" : "none",
+                    border:
+                      sortBy === opt.value
+                        ? "1px solid rgba(201,169,110,0.25)"
+                        : "1px solid transparent",
+                    color:
+                      sortBy === opt.value
+                        ? "#c9a96e"
+                        : "rgba(240,230,208,0.45)",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    fontFamily: "'DM Sans',sans-serif",
+                  }}
+                >
+                  {opt.label}
+                </button>
               ))}
             </div>
           </div>
           {/* Price */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(201,169,110,0.5)", marginBottom: 10 }}>Price Range</div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(240,230,208,0.45)", marginBottom: 8 }}>
-              <span>₹{priceMin.toLocaleString("en-IN")}</span><span>₹{priceMax.toLocaleString("en-IN")}</span>
+            <div
+              style={{
+                fontSize: 9,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "rgba(201,169,110,0.5)",
+                marginBottom: 10,
+              }}
+            >
+              Price Range
             </div>
-            <input type="range" min={0} max={50000} step={500} value={priceMin} onChange={(e) => { const v = Number(e.target.value); setPriceMin(v); if (v > priceMax) setPriceMax(v); }} style={{ width: "100%", accentColor: "#c9a96e", marginBottom: 8 }} />
-            <input type="range" min={0} max={50000} step={500} value={priceMax} onChange={(e) => { const v = Number(e.target.value); setPriceMax(v); if (v < priceMin) setPriceMin(v); }} style={{ width: "100%", accentColor: "#c9a96e" }} />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 12,
+                color: "rgba(240,230,208,0.45)",
+                marginBottom: 8,
+              }}
+            >
+              <span>₹{priceMin.toLocaleString("en-IN")}</span>
+              <span>₹{priceMax.toLocaleString("en-IN")}</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={50000}
+              step={500}
+              value={priceMin}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setPriceMin(v);
+                if (v > priceMax) setPriceMax(v);
+              }}
+              style={{ width: "100%", accentColor: "#c9a96e", marginBottom: 8 }}
+            />
+            <input
+              type="range"
+              min={0}
+              max={50000}
+              step={500}
+              value={priceMax}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setPriceMax(v);
+                if (v < priceMin) setPriceMin(v);
+              }}
+              style={{ width: "100%", accentColor: "#c9a96e" }}
+            />
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={() => { clearAll(); setMobileFiltersOpen(false); }} style={{ flex: 1, padding: 12, background: "none", border: "1px solid rgba(201,169,110,0.18)", color: "rgba(240,230,208,0.5)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Clear All</button>
-            <button onClick={() => setMobileFiltersOpen(false)} style={{ flex: 1, padding: 12, background: "#c9a96e", border: "none", color: "#0d0c0b", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 500 }}>Apply</button>
+            <button
+              onClick={() => {
+                clearAll();
+                setMobileFiltersOpen(false);
+              }}
+              style={{
+                flex: 1,
+                padding: 12,
+                background: "none",
+                border: "1px solid rgba(201,169,110,0.18)",
+                color: "rgba(240,230,208,0.5)",
+                fontSize: 11,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                fontFamily: "'DM Sans',sans-serif",
+              }}
+            >
+              Clear All
+            </button>
+            <button
+              onClick={() => setMobileFiltersOpen(false)}
+              style={{
+                flex: 1,
+                padding: 12,
+                background: "#c9a96e",
+                border: "none",
+                color: "#0d0c0b",
+                fontSize: 11,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                fontFamily: "'DM Sans',sans-serif",
+                fontWeight: 500,
+              }}
+            >
+              Apply
+            </button>
           </div>
         </div>
       </div>
@@ -943,7 +1189,6 @@ export default function CollectionPage() {
       <div className="listing-layout">
         {/* Sticky Sidebar — desktop only */}
         <aside className="listing-sidebar">
-
           {/* Search */}
           <div style={{ marginBottom: 40 }}>
             <div

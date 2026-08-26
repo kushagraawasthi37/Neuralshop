@@ -34,6 +34,8 @@ export const adminInventoryApi = {
     api.post('/admin/inventory/bulk/json', { inventory }),
 }
 
+
+//It need to belong to superAdmin Right now this functionality is not implemented
 export const adminCouponsApi = {
   list: () => api.get('/coupons/admin/all'),
   create: (data) => api.post('/coupons/admin/create', data),

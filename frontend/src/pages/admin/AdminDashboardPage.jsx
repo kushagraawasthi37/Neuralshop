@@ -281,6 +281,7 @@ export default function AdminDashboardPage() {
     queryFn: () => analyticsApi.dashboard().then((r) => r.data.data),
   });
 
+  //By default we threshold low stock items at 10, admin can change it through the slider in the inventory panel
   const { data: inventory = [] } = useQuery({
     queryKey: ["admin-inventory"],
     queryFn: () =>
@@ -310,6 +311,7 @@ export default function AdminDashboardPage() {
           ? pendingReturns
           : null;
 
+  //Array of string to display the stats of the dashboard in the ticker at the top of the page
   const tickerData = [
     `Total Revenue ₹${Number(dashboard?.totalRevenue || 0).toLocaleString("en-IN")}`,
     `Total Orders ${Number(dashboard?.totalOrders || 0).toLocaleString("en-IN")}`,

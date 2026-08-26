@@ -17,7 +17,7 @@ import {
 } from "../../components/auth/AuthField";
 
 const schema = z.object({
-  email: z.string().email("Enter a valid email address"),
+  email: z.email("Enter a valid email address"),
 });
 
 export default function ForgotPasswordPage() {
@@ -30,10 +30,11 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
+
   const {
     register,
     handleSubmit,
-    getValues,
+    getValues,//getValues() → form ke current values read karne ke liye.
     formState: { errors },
   } = useForm({ resolver: zodResolver(schema) });
 
