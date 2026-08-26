@@ -12,9 +12,13 @@ const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
 const supported = !!SpeechRecognition;
 
+//Convert the text to speech using the browser's speech synthesis API
 function speak(text) {
+  //speechSynthesis-> is the Web Speech API's speech synthesis interface, which allows web applications to convert text into spoken words.
   if (!text || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  window.speechSynthesis.cancel(); //Stop any ongoing speech synthesis before starting a new one
+
+  // Create a new utterance with the provided text. It represents the speech request that will be spoken by the browser.
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = "en-IN";
   utt.rate = 0.95;
@@ -22,9 +26,10 @@ function speak(text) {
 
   // Prefer a natural voice if available
   const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(
-    (v) => v.lang.startsWith("en") && v.name.toLowerCase().includes("female"),
-  ) || voices.find((v) => v.lang.startsWith("en"));
+  const preferred =
+    voices.find(
+      (v) => v.lang.startsWith("en") && v.name.toLowerCase().includes("female"),
+    ) || voices.find((v) => v.lang.startsWith("en"));
   if (preferred) utt.voice = preferred;
 
   window.speechSynthesis.speak(utt);
@@ -50,8 +55,18 @@ function MicIcon({ listening }) {
       <line x1="8" y1="23" x2="16" y2="23" />
       {listening && (
         <circle cx="12" cy="8" r="1.5" fill="currentColor" opacity="0.7">
-          <animate attributeName="r" values="1.5;3;1.5" dur="1s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.7;0.2;0.7" dur="1s" repeatCount="indefinite" />
+          <animate
+            attributeName="r"
+            values="1.5;3;1.5"
+            dur="1s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values="0.7;0.2;0.7"
+            dur="1s"
+            repeatCount="indefinite"
+          />
         </circle>
       )}
     </svg>
@@ -84,15 +99,23 @@ export default function VoiceAssistant() {
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
   // Product context injected by ProductDetailPage via custom event
-  const productCtxRef = useRef({ productId: null, productName: null, availableSizes: [], selectedSize: null });
+  const productCtxRef = useRef({
+    productId: null,
+    productName: null,
+    availableSizes: [],
+    selectedSize: null,
+  });
 
   const recRef = useRef(null);
   const panelRef = useRef(null);
 
   // ── Listen for product context updates from ProductDetailPage ────────────────
   useEffect(() => {
-    const handler = (e) => { productCtxRef.current = e.detail; };
+    const handler = (e) => {
+      productCtxRef.current = e.detail;
+    };
     window.addEventListener("voice:product_context", handler);
     return () => window.removeEventListener("voice:product_context", handler);
   }, []);
@@ -125,7 +148,9 @@ export default function VoiceAssistant() {
 
   const startListening = useCallback(() => {
     if (!supported) {
-      setError("Voice is not supported in this browser. Please use Chrome or Edge.");
+      setError(
+        "Voice is not supported in this browser. Please use Chrome or Edge.",
+      );
       return;
     }
     setTranscript("");
@@ -149,7 +174,8 @@ export default function VoiceAssistant() {
 
     rec.onerror = (e) => {
       setListening(false);
-      if (e.error !== "aborted") setError("Couldn't hear you. Please try again.");
+      if (e.error !== "aborted")
+        setError("Couldn't hear you. Please try again.");
     };
 
     rec.onend = () => {
@@ -171,110 +197,138 @@ export default function VoiceAssistant() {
   }, [transcript]);
 
   // ── NLU + action execution ────────────────────────────────────────────────────
-  const sendToNLU = useCallback(async (text) => {
-    setLoading(true);
-    setError("");
+  const sendToNLU = useCallback(
+    async (text) => {
+      setLoading(true);
+      setError("");
 
-    const pCtx = productCtxRef.current;
-    const context = {
-      page: location.pathname,
-      productId: pCtx.productId || productId || null,
-      productName: pCtx.productName || null,
-      cartItemCount: cartItems.length,
-      isCartEmpty: cartItems.length === 0,
-      isLoggedIn,
-      availableSizes: pCtx.availableSizes || [],
-      selectedSize: pCtx.selectedSize || null,
-    };
+      const pCtx = productCtxRef.current;
+      const context = {
+        page: location.pathname,
+        productId: pCtx.productId || productId || null,
+        productName: pCtx.productName || null,
+        cartItemCount: cartItems.length,
+        isCartEmpty: cartItems.length === 0,
+        isLoggedIn,
+        availableSizes: pCtx.availableSizes || [],
+        selectedSize: pCtx.selectedSize || null,
+      };
 
-    try {
-      const res = await voiceApi.interpret(text, context);
-      const result = res.data?.data;
+      try {
+        const res = await voiceApi.interpret(text, context);
+        const result = res.data?.data;
 
-      if (!result) throw new Error("No response");
+        if (!result) throw new Error("No response");
 
-      setResponse(result.speak || "");
-      if (result.speak) speak(result.speak);
+        setResponse(result.speak || "");
+        if (result.speak) speak(result.speak);
 
-      executeAction(result);
-    } catch (_) {
-      const msg = "Sorry, something went wrong. Please try again.";
-      setResponse(msg);
-      speak(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [location.pathname, cartItems, isLoggedIn, productId]);
+        executeAction(result);
+      } catch (_) {
+        const msg = "Sorry, something went wrong. Please try again.";
+        setResponse(msg);
+        speak(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [location.pathname, cartItems, isLoggedIn, productId],
+  );
 
-  const executeAction = useCallback((result) => {
-    const { action, params = {} } = result;
+  const executeAction = useCallback(
+    (result) => {
+      const { action, params = {} } = result;
 
-    switch (action) {
-      case "navigate":
-        if (params.route) {
-          setTimeout(() => { setOpen(false); navigate(params.route); }, 1200);
-        }
-        break;
+      switch (action) {
+        case "navigate":
+          if (params.route) {
+            setTimeout(() => {
+              setOpen(false);
+              navigate(params.route);
+            }, 1200);
+          }
+          break;
 
-      case "search":
-        if (params.query) {
+        case "search":
+          if (params.query) {
+            setTimeout(() => {
+              setOpen(false);
+              navigate(
+                `/collections?search=${encodeURIComponent(params.query)}`,
+              );
+            }, 1200);
+          }
+          break;
+
+        case "filter_collection": {
+          const qs = new URLSearchParams();
+          if (params.category) qs.set("category", params.category);
+          if (params.priceMax) qs.set("priceMax", String(params.priceMax));
+          if (params.priceMin) qs.set("priceMin", String(params.priceMin));
           setTimeout(() => {
             setOpen(false);
-            navigate(`/collections?search=${encodeURIComponent(params.query)}`);
+            navigate(`/collections?${qs.toString()}`);
           }, 1200);
+          break;
         }
-        break;
 
-      case "filter_collection": {
-        const qs = new URLSearchParams();
-        if (params.category) qs.set("category", params.category);
-        if (params.priceMax) qs.set("priceMax", String(params.priceMax));
-        if (params.priceMin) qs.set("priceMin", String(params.priceMin));
-        setTimeout(() => {
-          setOpen(false);
-          navigate(`/collections?${qs.toString()}`);
-        }, 1200);
-        break;
+        case "add_to_cart":
+          window.dispatchEvent(
+            new CustomEvent("voice:add_to_cart", {
+              detail: { size: params.size },
+            }),
+          );
+          break;
+
+        case "view_cart":
+          setTimeout(() => {
+            setOpen(false);
+            navigate("/cart");
+          }, 1200);
+          break;
+
+        case "checkout":
+          setTimeout(() => {
+            setOpen(false);
+            navigate(isLoggedIn ? "/checkout" : "/login?return=/checkout");
+          }, 1200);
+          break;
+
+        case "view_orders":
+          setTimeout(() => {
+            setOpen(false);
+            navigate("/account/orders");
+          }, 1200);
+          break;
+
+        case "view_wishlist":
+          setTimeout(() => {
+            setOpen(false);
+            navigate("/account/wishlist");
+          }, 1200);
+          break;
+
+        case "view_profile":
+          setTimeout(() => {
+            setOpen(false);
+            navigate("/account/profile");
+          }, 1200);
+          break;
+
+        case "logout":
+          setTimeout(() => {
+            setOpen(false);
+            navigate("/logout");
+          }, 1200);
+          break;
+
+        // validation_error, not_understood, speak_info — just speak, no navigation
+        default:
+          break;
       }
-
-      case "add_to_cart":
-        window.dispatchEvent(
-          new CustomEvent("voice:add_to_cart", { detail: { size: params.size } }),
-        );
-        break;
-
-      case "view_cart":
-        setTimeout(() => { setOpen(false); navigate("/cart"); }, 1200);
-        break;
-
-      case "checkout":
-        setTimeout(() => {
-          setOpen(false);
-          navigate(isLoggedIn ? "/checkout" : "/login?return=/checkout");
-        }, 1200);
-        break;
-
-      case "view_orders":
-        setTimeout(() => { setOpen(false); navigate("/account/orders"); }, 1200);
-        break;
-
-      case "view_wishlist":
-        setTimeout(() => { setOpen(false); navigate("/account/wishlist"); }, 1200);
-        break;
-
-      case "view_profile":
-        setTimeout(() => { setOpen(false); navigate("/account/profile"); }, 1200);
-        break;
-
-      case "logout":
-        setTimeout(() => { setOpen(false); navigate("/logout"); }, 1200);
-        break;
-
-      // validation_error, not_understood, speak_info — just speak, no navigation
-      default:
-        break;
-    }
-  }, [navigate, isLoggedIn]);
+    },
+    [navigate, isLoggedIn],
+  );
 
   // Don't render on admin or auth pages
   const path = location.pathname;
@@ -461,7 +515,10 @@ export default function VoiceAssistant() {
             <div className="va-title">Neural Assistant</div>
             <button
               className="va-close"
-              onClick={() => { setOpen(false); stopListening(); }}
+              onClick={() => {
+                setOpen(false);
+                stopListening();
+              }}
             >
               ×
             </button>
@@ -477,18 +534,29 @@ export default function VoiceAssistant() {
             <>
               <div
                 className="va-status"
-                style={{ color: listening ? "#c9a96e" : "rgba(201,169,110,0.45)" }}
+                style={{
+                  color: listening ? "#c9a96e" : "rgba(201,169,110,0.45)",
+                }}
               >
                 {listening
                   ? "● Listening…"
                   : loading
-                  ? "● Processing…"
-                  : "○ Ready"}
+                    ? "● Processing…"
+                    : "○ Ready"}
               </div>
 
               {transcript && (
                 <div className="va-transcript">
-                  <span style={{ color: "rgba(201,169,110,0.5)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+                  <span
+                    style={{
+                      color: "rgba(201,169,110,0.5)",
+                      fontSize: 10,
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
                     You said
                   </span>
                   {transcript}
@@ -497,7 +565,16 @@ export default function VoiceAssistant() {
 
               {response && (
                 <div className="va-response">
-                  <span style={{ color: "rgba(201,169,110,0.5)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+                  <span
+                    style={{
+                      color: "rgba(201,169,110,0.5)",
+                      fontSize: 10,
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
                     Neural
                   </span>
                   {response}
@@ -512,11 +589,17 @@ export default function VoiceAssistant() {
                 disabled={loading}
               >
                 {loading ? (
-                  <><span className="va-spinner" /> Thinking…</>
+                  <>
+                    <span className="va-spinner" /> Thinking…
+                  </>
                 ) : listening ? (
-                  <><MicIcon listening={true} /> Stop</>
+                  <>
+                    <MicIcon listening={true} /> Stop
+                  </>
                 ) : (
-                  <><MicIcon listening={false} /> Tap to Speak</>
+                  <>
+                    <MicIcon listening={false} /> Tap to Speak
+                  </>
                 )}
               </button>
 
