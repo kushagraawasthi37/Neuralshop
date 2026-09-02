@@ -226,10 +226,7 @@ model ReturnRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orderItem OrderItem @relation(
-  fields: [orderItemId],
-  references: [id]
-  )
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
 
   @@index([userId])
   @@index([status])

@@ -20,6 +20,31 @@ if (config.razorpay?.keyId && config.razorpay?.keySecret) {
   });
 }
 
+export const setPaymentGatewayForTests = (gateway) => {
+  razorpayInstance = gateway;
+};
+
+const buildPaymentReceipt = (idempotencyKey) =>
+  idempotencyKey
+    ? `ord_${crypto.createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 24)}`
+    : `ord_${crypto.randomBytes(8).toString("hex")}`;
+
+const buildPaymentResult = (payment, razorpayKey) => ({
+  paymentId: payment.id,
+  razorpayOrderId: payment.razorpayOrderId,
+  amount: payment.amount,
+  currency: "INR",
+  key: razorpayKey,
+});
+
+const getStoredResult = (response) => response?.result ?? response;
+
+const findGatewayOrderByReceipt = async (receipt) => {
+  if (!razorpayInstance?.orders?.all) return null;
+  const orders = await razorpayInstance.orders.all({ receipt });
+  return orders?.items?.find((order) => order.receipt === receipt) ?? null;
+};
+
 /*  Checked
  * ♻️ Idempotency-protected payment initiation service
  * Creates Razorpay order and stores payment record
@@ -29,40 +54,7 @@ export const initiatePaymentService = async (
   orderId,
   idempotencyKey,
 ) => {
-  // ♻️ Reserve idempotency entry early to prevent duplicate payment initialization
-  if (idempotencyKey) {
-    try {
-      await prisma.idempotencyKey.create({
-        data: {
-          key: idempotencyKey,
-          userId,
-          method: "POST",
-          endpoint: `/orders/${orderId}/pay`,
-          response: {},
-          status: "pending",
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        },
-      });
-    } catch (error) {
-      if (error?.code === "P2002") {
-        const existing = await prisma.idempotencyKey.findUnique({
-          where: { key: idempotencyKey },
-        });
-        if (existing?.status === "completed") {
-          return existing.response;
-        }
-        throw new ApiError(
-          409,
-          "Duplicate payment initiation request in progress or already processed",
-          [],
-          "payment",
-        );
-      }
-      throw error;
-    }
-  }
-
-  // Get order details
+  // Validate the order before creating durable payment state.
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { payment: true },
@@ -80,31 +72,112 @@ export const initiatePaymentService = async (
     throw new ApiError(400, "Order is not in pending state", [], "payment");
   }
 
-  if (order.payment) {
-    throw new ApiError(
-      400,
-      "Payment already initiated for this order",
-      [],
-      "payment",
-    );
-  }
-
   if (!razorpayInstance) {
     throw new ApiError(500, "Payment gateway not configured", [], "payment");
   }
 
-  // Create Razorpay order
+  const fingerprint = JSON.stringify({ userId, orderId, amount: order.totalAmount });
+  const receipt = buildPaymentReceipt(idempotencyKey);
+
+  // The key is a durable claim. Its fingerprint prevents reusing one key for
+  // a different order or amount.
+  if (idempotencyKey) {
+    try {
+      await prisma.idempotencyKey.create({
+        data: {
+          key: idempotencyKey,
+          userId,
+          method: "POST",
+          endpoint: `/orders/${orderId}/pay`,
+          response: { fingerprint },
+          status: "pending",
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+    } catch (error) {
+      if (error?.code === "P2002") {
+        const existing = await prisma.idempotencyKey.findUnique({
+          where: { key: idempotencyKey },
+        });
+        if (existing?.status === "completed") {
+          if (existing.response?.fingerprint !== fingerprint) {
+            throw new ApiError(409, "Idempotency key cannot be reused with a different payment", [], "payment");
+          }
+          return getStoredResult(existing.response);
+        }
+        if (existing?.response?.fingerprint && existing.response.fingerprint !== fingerprint) {
+          throw new ApiError(409, "Idempotency key cannot be reused with a different payment", [], "payment");
+        }
+        if (existing?.status === "processing") {
+          throw new ApiError(409, "Payment initiation is already in progress", [], "payment");
+        }
+      }
+      throw error;
+    }
+
+    const claimed = await prisma.idempotencyKey.updateMany({
+      where: { key: idempotencyKey, status: "pending" },
+      data: { status: "processing", response: { fingerprint } },
+    });
+    if (claimed.count !== 1) {
+      throw new ApiError(409, "Payment initiation is already in progress", [], "payment");
+    }
+  }
+
+  // Persist the payment row before calling Razorpay. If the process dies after
+  // gateway creation, the deterministic receipt lets the next attempt find it.
+  let payment = order.payment;
+  if (payment && !payment.razorpayOrderId && !idempotencyKey) {
+    throw new ApiError(409, "Payment initiation is already in progress", [], "payment");
+  }
+
+  if (!payment) {
+    try {
+      payment = await prisma.payment.create({
+        data: {
+          orderId,
+          amount: order.totalAmount,
+          provider: "razorpay",
+          status: "pending",
+        },
+      });
+    } catch (error) {
+      if (error?.code !== "P2002") throw error;
+      payment = await prisma.payment.findUnique({ where: { orderId } });
+    }
+  }
+
+  if (payment.razorpayOrderId) {
+    const result = buildPaymentResult(payment, config.razorpay.keyId);
+    if (idempotencyKey) {
+      await prisma.idempotencyKey.update({
+        where: { key: idempotencyKey },
+        data: { response: { fingerprint, result }, status: "completed" },
+      });
+    }
+    return result;
+  }
+
   const razorpayOrderOptions = {
     amount: Math.round(order.totalAmount * 100), // Convert to paisa
     currency: "INR",
-    receipt: `ord_${crypto.randomBytes(8).toString("hex")}`,
+    receipt,
     payment_capture: 1, // Auto capture
   };
 
   let razorpayOrder;
   try {
-    razorpayOrder = await razorpayInstance.orders.create(razorpayOrderOptions);
+    razorpayOrder = await findGatewayOrderByReceipt(receipt);
+    if (!razorpayOrder) {
+      razorpayOrder = await razorpayInstance.orders.create(razorpayOrderOptions);
+    }
   } catch (error) {
+    if (idempotencyKey) {
+      await prisma.idempotencyKey.updateMany({
+        where: { key: idempotencyKey, status: "processing" },
+        data: { status: "failed" },
+      });
+    }
     throw new ApiError(
       500,
       "Failed to create payment order",
@@ -113,56 +186,24 @@ export const initiatePaymentService = async (
     );
   }
 
-  // 🔒 Create payment record in transaction
+  // Attach the gateway order and finalize the durable idempotency response.
   try {
     const result = await prisma.$transaction(async (tx) => {
-      const payment = await tx.payment.create({
-        data: {
-          orderId,
-          amount: order.totalAmount,
-          provider: "razorpay",
-          razorpayOrderId: razorpayOrder.id,
-          status: "pending",
-        },
+      const updatedPayment = await tx.payment.update({
+        where: { id: payment.id },
+        data: { razorpayOrderId: razorpayOrder.id },
       });
 
-      // ♻️ Store idempotency response
+      const paymentResult = buildPaymentResult(updatedPayment, config.razorpay.keyId);
+
       if (idempotencyKey) {
-        await tx.idempotencyKey.upsert({
+        await tx.idempotencyKey.update({
           where: { key: idempotencyKey },
-          update: {
-            response: {
-              paymentId: payment.id,
-              razorpayOrderId: razorpayOrder.id,
-              amount: order.totalAmount,
-              currency: "INR",
-            },
-            status: "completed",
-          },
-          create: {
-            key: idempotencyKey,
-            userId,
-            method: "POST",
-            endpoint: `/orders/${orderId}/pay`,
-            response: {
-              paymentId: payment.id,
-              razorpayOrderId: razorpayOrder.id,
-              amount: order.totalAmount,
-              currency: "INR",
-            },
-            status: "completed",
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          },
+          data: { response: { fingerprint, result: paymentResult }, status: "completed" },
         });
       }
 
-      return {
-        paymentId: payment.id,
-        razorpayOrderId: razorpayOrder.id,
-        amount: order.totalAmount,
-        currency: "INR",
-        key: config.razorpay.keyId,
-      };
+      return paymentResult;
     });
 
     const payload = result;
@@ -184,7 +225,7 @@ export const initiatePaymentService = async (
   } catch (error) {
     if (idempotencyKey) {
       await prisma.idempotencyKey.updateMany({
-        where: { key: idempotencyKey, status: "pending" },
+        where: { key: idempotencyKey, status: { in: ["pending", "processing"] } },
         data: { status: "failed" },
       });
     }
@@ -372,7 +413,7 @@ export const handleWebhookService = async (
   } catch (error) {
     if (idempotencyKey) {
       await prisma.idempotencyKey.updateMany({
-        where: { key: idempotencyKey, status: "pending" },
+        where: { key: idempotencyKey, status: { in: ["pending", "processing"] } },
         data: { status: "failed" },
       });
     }

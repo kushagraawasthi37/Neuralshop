@@ -1,5 +1,6 @@
 import redisClient from "../config/redis.js";
 import { logger } from "./logger.js";
+import crypto from "crypto";
 
 // ─── Idempotency middleware ───────────────────────────────────────────────
 // Prevents duplicate submissions (double-click checkout, network retry) by
@@ -10,12 +11,19 @@ import { logger } from "./logger.js";
 
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
+const requestFingerprint = (req) =>
+  crypto
+    .createHash("sha256")
+    .update(JSON.stringify({ method: req.method, path: req.originalUrl, body: req.body ?? {} }))
+    .digest("hex");
+
 export const checkIdempotency = async (req, res, next) => {
   const idempotencyKey = req.headers["idempotency-key"];
 
   if (!idempotencyKey) return next();
 
   const redisKey = `idempotency:${idempotencyKey}`;
+  const fingerprint = requestFingerprint(req);
 
   try {
     const cached = await redisClient.get(redisKey);
@@ -24,7 +32,15 @@ export const checkIdempotency = async (req, res, next) => {
         idempotencyKey,
         requestId: res.locals.requestId,
       });
-      const { statusCode, data } = JSON.parse(cached);
+      const cachedResponse = JSON.parse(cached);
+      if (cachedResponse.fingerprint && cachedResponse.fingerprint !== fingerprint) {
+        return res.status(409).json({
+          success: false,
+          statusCode: 409,
+          message: "Idempotency key cannot be reused with a different request",
+        });
+      }
+      const { statusCode, data } = cachedResponse;
       return res.status(statusCode).json(data);
     }
 
@@ -43,6 +59,7 @@ export const checkIdempotency = async (req, res, next) => {
             JSON.stringify({
               statusCode: res.statusCode,
               data: typeof data === "string" ? JSON.parse(data) : data,
+              fingerprint,
             }),
             "EX",
             IDEMPOTENCY_TTL_SECONDS,

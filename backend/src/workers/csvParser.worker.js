@@ -5,7 +5,7 @@
 // the rows and performs the database updates.
 
 import { Worker, isMainThread, parentPort, workerData } from "worker_threads";
-import { fileURLToPath } from "url";IJ
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 
